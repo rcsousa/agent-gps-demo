@@ -15,7 +15,7 @@ docker compose ps           # todos os serviços devem aparecer como "healthy"
 
 | Endereço | O que é |
 | --- | --- |
-| <http://localhost:8080> | Demo (por enquanto, o painel de status dos serviços) |
+| <http://localhost:8080> | Demo (por enquanto, leva ao dashboard de status em `/status`) |
 | <http://localhost:8080/bastidores/> | Este site |
 | <http://localhost:7474> | Neo4j Browser (usuário e senha do `.env`) |
 
@@ -110,15 +110,33 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 | `alcada-ana-excedida` | Pedágio |
 | `proveniencia-fraca-ana` | Ponte interditada |
 
+### O dashboard de status
+
+Em <http://localhost:8080/status> fica o console de quem monta e apresenta a demo:
+
+- no topo, os indicadores: serviços no ar, tools (e quantas estão fora do ar), skills, prompts, o provedor de LLM e o barramento;
+- abaixo, as abas **Serviços**, **Tools**, **Skills** e **Prompts**, cada uma com busca. Na aba Tools, há também um filtro por servidor.
+
+Clique numa linha para abrir o **painel lateral**, que mostra o item por dentro:
+
+| Item | O que o painel mostra |
+| --- | --- |
+| Tool | Descrição, servidor, as skills que a permitem, o **contrato** (parâmetros e JSON Schema), o **código Python real** com arquivo e linha, e as **últimas chamadas** no barramento |
+| Skill | Frontmatter e governança, o `SKILL.md` renderizado, os arquivos de referência com digest verificado e o uso recente |
+| Prompt | Canal, interlocutor e argumentos, a **prévia** renderizada para a Ana e o `.md` de origem |
+| Servidor | Status, latência e tudo o que ele oferece, incluindo o que fica oculto |
+
+![Uma tool no painel lateral: visão geral](assets/dashboard/tool-visao-geral.png)
+
+![O código da tool, servido pelo próprio servidor MCP](assets/dashboard/tool-codigo.png)
+
+![As últimas chamadas da tool no barramento](assets/dashboard/tool-chamadas.png)
+
+A URL acompanha a navegação. Por exemplo, `/status/tools/seguradoras.cotar_seguro` abre direto o painel dessa tool: dá para mandar o link para alguém.
+
 ### Desligar uma tool
 
-Além dos incidentes, dá para criar falhas sob medida, tool a tool. No painel de status (<http://localhost:8080>), a seção **Tools por servidor** mostra:
-
-- o que cada servidor MCP oferece;
-- o nome com que cada tool aparece no gateway;
-- o que fica oculto, como as tools `ping`.
-
-O toggle de cada linha desliga ou religa a tool. **"Religar todas"** volta tudo ao normal.
+Além dos incidentes, dá para criar falhas sob medida, tool a tool. Na aba **Tools** do dashboard, o toggle de cada linha (ou do painel da tool) desliga ou religa a tool, e **"Religar todas"** volta tudo ao normal. O indicador do topo mostra quantas estão fora.
 
 Uma tool desligada **continua visível** para o agente, mas toda chamada falha com "trecho interditado". É a falha que o agente precisa perceber e contornar. O controle passa pelo simulador, pelo caminho `/simulador` do web; o agente não o alcança.
 

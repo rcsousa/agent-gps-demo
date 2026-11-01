@@ -18,7 +18,7 @@ docker compose ps             # todos os serviços "healthy"
 
 | Endereço | O que é |
 | --- | --- |
-| <http://localhost:8080> | Demo |
+| <http://localhost:8080/status> | Dashboard de status: serviços, tools, skills e prompts por dentro |
 | <http://localhost:8080/bastidores/> | Bastidores (documentação) |
 | <http://localhost:7474> | Neo4j Browser |
 
@@ -75,4 +75,4 @@ docs/                           spec e infográfico
 
 ## Fases
 
-O desenvolvimento segue as fases da spec. Fase atual: **5.1 · Prompts por canal**.
+O desenvolvimento segue as fases da spec. Fase atual: **5.2 · Dashboard de status**.

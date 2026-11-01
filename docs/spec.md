@@ -289,15 +289,19 @@ A moldura é IBM Carbon, sóbria e profissional. O mapa é a área lúdica, onde
 
 **Painel de status (bastidores da operação)**
 
-Uma tela de apoio ao apresentador e a quem monta a demo. Ela mostra:
+Um dashboard de apoio ao apresentador e a quem monta a demo, em `/status` (até a tela de abertura existir, a raiz leva para lá). Ele mostra:
 
-- **Saúde da plataforma:** o gateway, o barramento e o provedor de LLM, com a chave configurada ou ausente.
-- **Os servidores MCP atrás do gateway,** com latência e número de tools de cada um.
-- **A seção "Tools por servidor":**
-  - o que cada servidor oferece, com o nome que cada tool tem no gateway;
-  - o que fica oculto (uso interno);
-  - uma tag "No ar" ou "Fora do ar" em cada tool;
-  - um toggle para desligar ou religar cada tool e o botão "Religar todas".
+- **Indicadores:** serviços no ar, tools (e quantas estão fora), skills, prompts, o provedor de LLM (com a chave configurada ou ausente) e o barramento.
+- **Abas com tabelas, busca e filtro:**
+  - **Serviços:** latência e o que cada servidor oferece;
+  - **Tools:** com as skills que usam cada uma, uma tag "No ar" ou "Fora do ar", um toggle para desligar ou religar e o botão "Religar todas";
+  - **Skills** e **Prompts**.
+- **Um painel lateral de detalhe**, aberto pela linha, com URL própria para compartilhar:
+  - **tool:** contrato (parâmetros e JSON Schema), o código Python real com arquivo e linha, as skills que a permitem e as últimas chamadas no barramento;
+  - **skill:** governança, o `SKILL.md` renderizado e os arquivos com digest verificado;
+  - **prompt:** canal, interlocutor, a prévia renderizada para a Ana e a fonte.
+
+O código é servido pelo próprio servidor MCP, num resource template `fonte://<servidor>/{tipo}/{nome}`. Ele fica fora do `resources/list` e, portanto, invisível ao LLM.
 
 O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `simulator`, pelo caminho `/simulador` do `web`, e nunca ao `agent`. Os dados de status chegam pelo caminho `web` → `agent` → `mcp-gateway`.
 
@@ -368,6 +372,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 4. **Skills-workflow:** as 4 skills no `skills-mcp`, com metadados de governança aplicados pelo gateway e testes de descoberta e leitura.
 5. **Agente e eventos:** host MCP falando só com o gateway, dois provedores de LLM, barramento de eventos, modos sem contexto, sem skill e com skill.
    - **5.1 Prompts por canal:** `canais-mcp` com a persona de cada canal como prompt MCP, agregada pelo gateway.
+   - **5.2 Dashboard de status:** indicadores, abas de serviços, tools, skills e prompts, e painel de detalhe com contrato, código e uso.
 6. **Mapa:** Modo Mapa com cidade, rota, trânsito, rotas alternativas e zoom semântico; tela de abertura com o infográfico navegável e as áreas clicáveis.
 7. **Raio-X e apresentador:** Modo Raio-X, painel de incidentes, placar comparativo, replay offline.
 8. **Bastidores:** site de documentação com os 8 capítulos e o botão por cena.
@@ -415,4 +420,5 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] A Ana é respondida pelo apresentador, com opções sugeridas pelo agente
 - [x] Modelo padrão: Claude Opus 5.5 (`claude-opus-5-5`), com *fallbacks* do lado do servidor
 - [x] Provedor `roteiro` para ensaio sem chave e para os testes ponta a ponta
+- [x] Dashboard de status em `/status`, com o código de tools e prompts servido pelo próprio servidor MCP (`fonte://`), fora do catálogo do agente
 - [x] Persona do agente por canal de atendimento, como prompt MCP do `canais-mcp`; regras do host no agente; workflow nas skills
