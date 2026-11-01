@@ -22,11 +22,13 @@ COPY ruff.toml /src/ruff.toml
 COPY libs/ /src/libs/
 
 # Dependências primeiro, para aproveitar o cache de camadas.
-COPY services/${SERVICE}/pyproject.toml ./
-RUN uv sync --no-install-project
+# --locked: o build falha se o uv.lock estiver desatualizado em relação ao pyproject.
+# Para atualizar: ./scripts/travar-dependencias.sh
+COPY services/${SERVICE}/pyproject.toml services/${SERVICE}/uv.lock ./
+RUN uv sync --locked --no-install-project
 
 COPY services/${SERVICE}/ ./
-RUN uv sync \
+RUN uv sync --locked \
     && useradd --create-home --uid 1000 bussola \
     && chown -R bussola /src
 

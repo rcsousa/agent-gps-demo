@@ -1,0 +1,180 @@
+# Bairro Risco: elegibilidade, adequação, scores, alçadas e áreas de risco.
+
+proveniencia_padrao:
+  fonte: Motor de regras de risco v4.3
+  data: 2026-09-15
+  responsavel: Diretoria de Riscos
+  confianca: alta
+
+entidades:
+  # --8<-- [start:elegibilidade]
+  - id: regra-imovel-residencial
+    tipo: RegraElegibilidade
+    nome: Imóvel de uso residencial
+    descricao: O seguro residencial só cobre imóveis de uso residencial (habitual ou veraneio), nunca comercial.
+    atributos: { condicao: "imovel.uso in [residencial_habitual, veraneio]", bloqueante: true }
+  - id: regra-regiao-atendida
+    tipo: RegraElegibilidade
+    nome: Região atendida pela seguradora
+    descricao: O CEP do imóvel precisa estar na área de atuação da seguradora.
+    atributos: { condicao: "imovel.uf in seguradora.ufs_atendidas", bloqueante: true }
+  - id: regra-valor-maximo-imovel
+    tipo: RegraElegibilidade
+    nome: Valor máximo do imóvel
+    descricao: O valor do imóvel não pode passar da importância segurada máxima do produto.
+    atributos: { condicao: "imovel.valor_estimado <= produto.importancia_segurada_maxima", bloqueante: true }
+  - id: regra-sem-restricao-cadastral
+    tipo: RegraElegibilidade
+    nome: Sem restrição cadastral
+    descricao: A cliente não pode ter restrição cadastral ativa.
+    atributos: { condicao: "cliente.restricao_cadastral == false", bloqueante: true }
+  - id: regra-construcao-alvenaria
+    tipo: RegraElegibilidade
+    nome: Construção em alvenaria
+    descricao: Exigida pela Horizonte; construções mistas vão para análise.
+    atributos: { condicao: "imovel.construcao == alvenaria", bloqueante: false }
+  - id: regra-vistoria-area-risco
+    tipo: RegraElegibilidade
+    nome: Vistoria em área de risco
+    descricao: Imóvel em área de risco alto só segue depois de vistoria prévia.
+    atributos: { condicao: "area.nivel == alto => vistoria.concluida", bloqueante: true }
+    estado: { status: ok, vigencia: { inicio: 2026-10-01 } }
+  - id: regra-imovel-ocupado
+    tipo: RegraElegibilidade
+    nome: Imóvel ocupado
+    descricao: Imóveis desocupados por mais de 60 dias não são aceitos.
+    atributos: { condicao: "imovel.desocupado_dias <= 60", bloqueante: true }
+  - id: regra-carencia-pos-sinistro
+    tipo: RegraElegibilidade
+    nome: Carência após sinistro
+    descricao: Imóvel com sinistro nos últimos 12 meses passa por análise.
+    atributos: { condicao: "imovel.sinistros_12m == 0", bloqueante: false }
+  # --8<-- [end:elegibilidade]
+
+  - id: adequacao-necessidade-declarada
+    tipo: RegraAdequacao
+    nome: Necessidade declarada
+    descricao: A oferta precisa responder à necessidade que a cliente declarou.
+    atributos: { pergunta: "O produto cobre o bem e o risco que a cliente mencionou?" }
+  - id: adequacao-cobertura-x-valor
+    tipo: RegraAdequacao
+    nome: Cobertura compatível com o valor do imóvel
+    descricao: A importância segurada deve ficar entre 80% e 100% do valor do imóvel.
+    atributos: { faixa_percentual: "80-100" }
+  - id: adequacao-renda-x-premio
+    tipo: RegraAdequacao
+    nome: Prêmio compatível com a renda
+    descricao: O prêmio anual não deve passar de 3% da renda anual estimada.
+    atributos: { limite_percentual_renda: 3 }
+  - id: adequacao-sem-duplicidade
+    tipo: RegraAdequacao
+    nome: Sem cobertura duplicada
+    descricao: Não oferecer cobertura que a cliente já tem em outro produto.
+    atributos: {}
+  - id: adequacao-cliente-vulneravel
+    tipo: RegraAdequacao
+    nome: Cuidado com cliente vulnerável
+    descricao: Clientes acima de 70 anos ou com baixa literacia financeira recebem explicação reforçada.
+    atributos: { idade_referencia: 70 }
+
+  - id: score-credito
+    tipo: Score
+    nome: Score de crédito
+    descricao: Probabilidade de inadimplência em 12 meses.
+    atributos: { versao_modelo: "7.1", escala: "0-1000" }
+  - id: score-relacionamento
+    tipo: Score
+    nome: Score de relacionamento
+    descricao: Engajamento e tempo de casa.
+    atributos: { versao_modelo: "2.4", escala: "0-100" }
+  - id: score-risco-imovel
+    tipo: Score
+    nome: Score de risco do imóvel
+    descricao: Risco físico do imóvel a partir de localização, construção e histórico.
+    atributos: { versao_modelo: "3.0", escala: "0-100" }
+  - id: score-propensao-seguro
+    tipo: Score
+    nome: Score de propensão a seguro
+    descricao: Chance de a cliente aceitar uma oferta de seguro.
+    atributos: { versao_modelo: "1.8", escala: "0-100" }
+
+  # --8<-- [start:alcadas]
+  - id: alcada-automatica
+    tipo: LimiteAlcada
+    nome: Alçada automática
+    descricao: Prêmio anual até R$ 3.000 e importância segurada até R$ 1,5 milhão podem ser emitidos sem aprovação humana.
+    atributos: { premio_anual_maximo: 3000, importancia_segurada_maxima: 1500000 }
+  - id: alcada-especialista
+    tipo: LimiteAlcada
+    nome: Alçada do especialista
+    descricao: Acima da alçada automática e até R$ 15.000 de prêmio, um especialista de seguros aprova.
+    atributos: { premio_anual_maximo: 15000, importancia_segurada_maxima: 5000000 }
+  - id: alcada-comite
+    tipo: LimiteAlcada
+    nome: Alçada do comitê
+    descricao: Acima da alçada do especialista, o comitê de riscos decide.
+    atributos: { sem_limite_superior: true }
+  # --8<-- [end:alcadas]
+
+  - id: area-sp-zona-sul
+    tipo: AreaRisco
+    nome: São Paulo, zona sul
+    descricao: Risco baixo de alagamento e de roubo médio.
+    atributos: { nivel: baixo, fatores: [roubo] }
+  - id: area-sp-zona-oeste
+    tipo: AreaRisco
+    nome: São Paulo, zona oeste
+    descricao: Risco baixo.
+    atributos: { nivel: baixo, fatores: [] }
+  - id: area-sp-centro
+    tipo: AreaRisco
+    nome: São Paulo, centro
+    descricao: Risco médio de roubo.
+    atributos: { nivel: medio, fatores: [roubo] }
+  - id: area-sp-zona-leste
+    tipo: AreaRisco
+    nome: São Paulo, zona leste
+    descricao: Risco médio de alagamento em pontos isolados.
+    atributos: { nivel: medio, fatores: [alagamento] }
+  - id: area-varzea-tiete
+    tipo: AreaRisco
+    nome: Várzea do Tietê
+    descricao: Área de risco alto de alagamento. A política de vistoria vale aqui.
+    atributos: { nivel: alto, fatores: [alagamento, enchente] }
+  - id: area-campinas
+    tipo: AreaRisco
+    nome: Campinas
+    descricao: Risco baixo.
+    atributos: { nivel: baixo, fatores: [] }
+  - id: area-litoral-norte
+    tipo: AreaRisco
+    nome: Litoral norte
+    descricao: Risco médio de vendaval e de imóvel desocupado.
+    atributos: { nivel: medio, fatores: [vendaval, desocupacao] }
+
+relacoes:
+  - [regra-vistoria-area-risco, REGIDO_POR, politica-vistoria-areas-risco]
+  - [regra-imovel-residencial, REGIDO_POR, norma-seguros-danos]
+  - [regra-regiao-atendida, REGIDO_POR, norma-seguros-danos]
+  - [regra-valor-maximo-imovel, REGIDO_POR, norma-seguros-danos]
+  - [regra-sem-restricao-cadastral, REGIDO_POR, politica-oferta-responsavel]
+  - [regra-sem-restricao-cadastral, USA, score-credito]
+  - [regra-carencia-pos-sinistro, USA, score-risco-imovel]
+  - [regra-vistoria-area-risco, USA, score-risco-imovel]
+  - [adequacao-necessidade-declarada, REGIDO_POR, politica-oferta-responsavel]
+  - [adequacao-cobertura-x-valor, REGIDO_POR, politica-oferta-responsavel]
+  - [adequacao-renda-x-premio, REGIDO_POR, norma-suitability]
+  - [adequacao-sem-duplicidade, REGIDO_POR, norma-cdc]
+  - [adequacao-cliente-vulneravel, REGIDO_POR, norma-cdc]
+  - [adequacao-renda-x-premio, USA, score-credito]
+  - [adequacao-necessidade-declarada, USA, score-propensao-seguro]
+  - [alcada-automatica, REGIDO_POR, politica-alcadas]
+  - [alcada-especialista, REGIDO_POR, politica-alcadas]
+  - [alcada-comite, REGIDO_POR, politica-alcadas]
+  # --8<-- [start:pedagio]
+  - [alcada-automatica, EXIGE, alcada-especialista]
+  - [alcada-especialista, EXIGE, fila-aprovacao-alcada]
+  - [alcada-especialista, EXIGE, alcada-comite]
+  # --8<-- [end:pedagio]
+  - [area-varzea-tiete, EXIGE, regra-vistoria-area-risco]
+  - [area-varzea-tiete, EXIGE, exigencia-vistoria-previa]

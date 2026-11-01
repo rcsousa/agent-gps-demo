@@ -1,0 +1,185 @@
+# Bairro Regulatório: políticas internas, normas, bases legais da LGPD,
+# exigências de registro e finalidades de uso de dados.
+#
+# As normas externas citadas por número (LGPD, CDC) são reais. As demais
+# são referências ilustrativas da demo, sem número oficial.
+
+proveniencia_padrao:
+  fonte: Biblioteca de políticas e normas do Banco Bússola
+  data: 2026-10-15
+  responsavel: Diretoria de Compliance
+  confianca: alta
+
+entidades:
+  - id: politica-oferta-responsavel
+    tipo: Politica
+    nome: Política de oferta responsável
+    descricao: Toda oferta precisa ser adequada ao perfil e à necessidade declarada, e explicada em linguagem simples.
+    atributos: { codigo: POL-COM-012 }
+    estado: { status: ok, vigencia: { inicio: 2025-01-01 } }
+  - id: politica-privacidade
+    tipo: Politica
+    nome: Política de privacidade e proteção de dados
+    descricao: Dados pessoais só são usados com base legal e para a finalidade informada.
+    atributos: { codigo: POL-PRI-001 }
+    estado: { status: ok, vigencia: { inicio: 2024-06-01 } }
+  - id: politica-alcadas
+    tipo: Politica
+    nome: Política de alçadas de seguros
+    descricao: Define quem pode aprovar cada faixa de prêmio e de importância segurada.
+    atributos: { codigo: POL-RSK-031 }
+    estado: { status: ok, vigencia: { inicio: 2026-01-01 } }
+  # --8<-- [start:vistoria]
+  - id: politica-vistoria-areas-risco
+    tipo: Politica
+    nome: Vistoria obrigatória em áreas de risco
+    descricao: Imóveis em áreas de risco alto de alagamento exigem vistoria prévia antes da emissão.
+    atributos: { codigo: POL-RSK-044 }
+    estado: { status: ok, vigencia: { inicio: 2026-10-01 } }
+    proveniencia: { fonte: "Comitê de Riscos, ata 2026-09", data: 2026-09-24, responsavel: Diretoria de Riscos }
+  # --8<-- [end:vistoria]
+  - id: politica-uso-de-ia
+    tipo: Politica
+    nome: Política de uso de agentes de IA
+    descricao: Agentes só agem por skills aprovadas, pelo gateway, com proveniência registrada e humano no circuito acima da alçada.
+    atributos: { codigo: POL-TEC-090 }
+    estado: { status: ok, vigencia: { inicio: 2026-07-01 } }
+  - id: politica-registro-aceite
+    tipo: Politica
+    nome: Política de registro de aceite
+    descricao: Todo aceite de contratação é registrado com data, canal e versão da proposta.
+    atributos: { codigo: POL-OPE-007 }
+    estado: { status: ok, vigencia: { inicio: 2024-03-01 } }
+  - id: politica-pld
+    tipo: Politica
+    nome: Política de prevenção à lavagem de dinheiro
+    descricao: Pagamentos atípicos são sinalizados para análise.
+    atributos: { codigo: POL-PLD-002 }
+    estado: { status: ok, vigencia: { inicio: 2023-01-01 } }
+
+  - id: norma-lgpd
+    tipo: Norma
+    nome: LGPD (Lei 13.709/2018)
+    descricao: Lei Geral de Proteção de Dados Pessoais.
+    atributos: { origem: externa, ilustrativa: false }
+    proveniencia: { fonte: Diário Oficial da União, data: 2018-08-15, responsavel: Diretoria Jurídica }
+  - id: norma-cdc
+    tipo: Norma
+    nome: Código de Defesa do Consumidor (Lei 8.078/1990)
+    descricao: Proteção do consumidor, incluindo dever de informação e adequação.
+    atributos: { origem: externa, ilustrativa: false }
+    proveniencia: { fonte: Diário Oficial da União, data: 1990-09-12, responsavel: Diretoria Jurídica }
+  - id: norma-seguros-danos
+    tipo: Norma
+    nome: Norma de seguros de danos (referência ilustrativa)
+    descricao: Regras gerais para seguros de danos, como o residencial.
+    atributos: { origem: externa, ilustrativa: true }
+  - id: norma-registro-operacoes
+    tipo: Norma
+    nome: Norma de registro de operações de seguro (referência ilustrativa)
+    descricao: Exige registrar apólices emitidas em sistema de registro.
+    atributos: { origem: externa, ilustrativa: true }
+  - id: norma-suitability
+    tipo: Norma
+    nome: Norma de adequação de produtos ao cliente (referência ilustrativa)
+    descricao: Exige avaliar se o produto é adequado ao perfil.
+    atributos: { origem: externa, ilustrativa: true }
+  - id: norma-governanca-ia
+    tipo: Norma
+    nome: Norma interna de governança de IA
+    descricao: Regras de rastreabilidade e supervisão humana para sistemas de IA.
+    atributos: { origem: interna, ilustrativa: false }
+
+  # --8<-- [start:bases-legais]
+  - id: base-consentimento
+    tipo: BaseLegal
+    nome: Consentimento (LGPD, art. 7º, I)
+    descricao: O titular autorizou o uso para uma finalidade específica.
+    atributos: { artigo: "7º, I" }
+  - id: base-execucao-contrato
+    tipo: BaseLegal
+    nome: Execução de contrato (LGPD, art. 7º, V)
+    descricao: O uso é necessário para executar um contrato pedido pelo titular.
+    atributos: { artigo: "7º, V" }
+  - id: base-obrigacao-legal
+    tipo: BaseLegal
+    nome: Obrigação legal (LGPD, art. 7º, II)
+    descricao: O uso é exigido por lei ou regulação.
+    atributos: { artigo: "7º, II" }
+  - id: base-legitimo-interesse
+    tipo: BaseLegal
+    nome: Legítimo interesse (LGPD, art. 7º, IX)
+    descricao: Interesse legítimo do banco, respeitados os direitos do titular.
+    atributos: { artigo: "7º, IX" }
+  - id: base-protecao-credito
+    tipo: BaseLegal
+    nome: Proteção do crédito (LGPD, art. 7º, X)
+    descricao: Uso para análise de crédito.
+    atributos: { artigo: "7º, X" }
+  # --8<-- [end:bases-legais]
+
+  - id: exigencia-registro-aceite
+    tipo: ExigenciaRegistro
+    nome: Registro do aceite
+    descricao: Gravar o aceite da cliente com a versão da proposta.
+    atributos: { prazo: imediato }
+  - id: exigencia-registro-apolice
+    tipo: ExigenciaRegistro
+    nome: Registro da apólice
+    descricao: Registrar a apólice emitida no sistema de registro de operações.
+    atributos: { prazo: "1 dia útil" }
+  - id: exigencia-registro-consentimento
+    tipo: ExigenciaRegistro
+    nome: Registro do consentimento
+    descricao: Guardar a evidência do consentimento no cofre.
+    atributos: { prazo: imediato }
+  - id: exigencia-vistoria-previa
+    tipo: ExigenciaRegistro
+    nome: Laudo de vistoria prévia
+    descricao: Anexar o laudo de vistoria antes de emitir.
+    atributos: { prazo: "antes da emissão" }
+  - id: exigencia-trilha-ia
+    tipo: ExigenciaRegistro
+    nome: Trilha de decisão do agente
+    descricao: Registrar as tools chamadas, a skill usada e a proveniência de cada decisão.
+    atributos: { prazo: imediato }
+
+  - id: finalidade-oferta-personalizada
+    tipo: FinalidadeDados
+    nome: Oferta personalizada de seguros
+    descricao: Usar dados de relacionamento para sugerir seguros adequados.
+    atributos: {}
+  - id: finalidade-compartilhamento-seguradoras
+    tipo: FinalidadeDados
+    nome: Compartilhamento com seguradoras parceiras
+    descricao: Enviar dados do imóvel e da cliente às seguradoras para cotação e emissão.
+    atributos: {}
+  - id: finalidade-cobranca
+    tipo: FinalidadeDados
+    nome: Cobrança do prêmio
+    descricao: Usar dados da conta para debitar o prêmio.
+    atributos: {}
+
+relacoes:
+  - [politica-privacidade, REGIDO_POR, norma-lgpd]
+  - [politica-oferta-responsavel, REGIDO_POR, norma-cdc]
+  - [politica-oferta-responsavel, REGIDO_POR, norma-suitability]
+  - [politica-alcadas, REGIDO_POR, norma-seguros-danos]
+  - [politica-vistoria-areas-risco, REGIDO_POR, norma-seguros-danos]
+  - [politica-uso-de-ia, REGIDO_POR, norma-governanca-ia]
+  - [politica-registro-aceite, REGIDO_POR, norma-registro-operacoes]
+  - [politica-uso-de-ia, EXIGE, exigencia-trilha-ia]
+  - [politica-registro-aceite, EXIGE, exigencia-registro-aceite]
+  - [politica-vistoria-areas-risco, EXIGE, exigencia-vistoria-previa]
+  - [base-consentimento, REGIDO_POR, norma-lgpd]
+  - [base-execucao-contrato, REGIDO_POR, norma-lgpd]
+  - [base-obrigacao-legal, REGIDO_POR, norma-lgpd]
+  - [base-legitimo-interesse, REGIDO_POR, norma-lgpd]
+  - [base-protecao-credito, REGIDO_POR, norma-lgpd]
+  - [exigencia-registro-apolice, REGIDO_POR, norma-registro-operacoes]
+  - [exigencia-registro-consentimento, REGIDO_POR, politica-privacidade]
+  # --8<-- [start:finalidades]
+  - [finalidade-oferta-personalizada, REQUER, base-consentimento]
+  - [finalidade-compartilhamento-seguradoras, REQUER, base-consentimento]
+  - [finalidade-cobranca, REQUER, base-execucao-contrato]
+  # --8<-- [end:finalidades]

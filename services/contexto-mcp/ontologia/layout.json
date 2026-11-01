@@ -1,0 +1,790 @@
+{
+ "versao": 1,
+ "grade": 20,
+ "nos": {
+  "adequacao-cliente-vulneravel": [
+   440,
+   380
+  ],
+  "adequacao-cobertura-x-valor": [
+   520,
+   320
+  ],
+  "adequacao-necessidade-declarada": [
+   540,
+   340
+  ],
+  "adequacao-renda-x-premio": [
+   560,
+   320
+  ],
+  "adequacao-sem-duplicidade": [
+   440,
+   300
+  ],
+  "alcada-automatica": [
+   480,
+   380
+  ],
+  "alcada-comite": [
+   500,
+   400
+  ],
+  "alcada-especialista": [
+   500,
+   380
+  ],
+  "api-cotacao-ancora": [
+   460,
+   560
+  ],
+  "api-cotacao-farol": [
+   480,
+   540
+  ],
+  "api-cotacao-horizonte": [
+   520,
+   560
+  ],
+  "api-emissao-ancora": [
+   480,
+   580
+  ],
+  "api-emissao-farol": [
+   500,
+   560
+  ],
+  "api-emissao-horizonte": [
+   500,
+   580
+  ],
+  "area-campinas": [
+   460,
+   280
+  ],
+  "area-litoral-norte": [
+   600,
+   260
+  ],
+  "area-sp-centro": [
+   560,
+   420
+  ],
+  "area-sp-zona-leste": [
+   420,
+   320
+  ],
+  "area-sp-zona-oeste": [
+   640,
+   300
+  ],
+  "area-sp-zona-sul": [
+   600,
+   400
+  ],
+  "area-varzea-tiete": [
+   580,
+   320
+  ],
+  "assistencia-chaveiro": [
+   780,
+   180
+  ],
+  "assistencia-desentupimento": [
+   760,
+   200
+  ],
+  "assistencia-eletricista": [
+   840,
+   180
+  ],
+  "assistencia-encanador": [
+   780,
+   160
+  ],
+  "assistencia-guincho": [
+   880,
+   80
+  ],
+  "assistencia-pet": [
+   800,
+   220
+  ],
+  "assistencia-vidraceiro": [
+   760,
+   160
+  ],
+  "base-consentimento": [
+   500,
+   120
+  ],
+  "base-execucao-contrato": [
+   520,
+   140
+  ],
+  "base-legitimo-interesse": [
+   520,
+   160
+  ],
+  "base-obrigacao-legal": [
+   480,
+   160
+  ],
+  "base-protecao-credito": [
+   540,
+   140
+  ],
+  "canal-agencia": [
+   740,
+   500
+  ],
+  "canal-app": [
+   860,
+   480
+  ],
+  "canal-central": [
+   920,
+   500
+  ],
+  "canal-internet-banking": [
+   840,
+   360
+  ],
+  "cliente-ana": [
+   200,
+   100
+  ],
+  "cliente-bruno": [
+   100,
+   200
+  ],
+  "cliente-carla": [
+   280,
+   160
+  ],
+  "cliente-diego": [
+   320,
+   100
+  ],
+  "cliente-elisa": [
+   240,
+   260
+  ],
+  "cliente-fabio": [
+   320,
+   220
+  ],
+  "cliente-gabriela": [
+   100,
+   120
+  ],
+  "cliente-helena": [
+   160,
+   260
+  ],
+  "cobertura-alagamento": [
+   760,
+   180
+  ],
+  "cobertura-auto-colisao": [
+   840,
+   80
+  ],
+  "cobertura-auto-terceiros": [
+   860,
+   100
+  ],
+  "cobertura-danos-eletricos": [
+   800,
+   160
+  ],
+  "cobertura-desmoronamento": [
+   820,
+   220
+  ],
+  "cobertura-incendio": [
+   820,
+   200
+  ],
+  "cobertura-perda-aluguel": [
+   780,
+   220
+  ],
+  "cobertura-rc-familiar": [
+   800,
+   140
+  ],
+  "cobertura-roubo": [
+   820,
+   160
+  ],
+  "cobertura-vendaval": [
+   780,
+   200
+  ],
+  "cobertura-vida-invalidez": [
+   900,
+   260
+  ],
+  "cobertura-vida-morte": [
+   920,
+   240
+  ],
+  "cobertura-vidros": [
+   820,
+   140
+  ],
+  "consentimento-ana-compartilhamento": [
+   200,
+   120
+  ],
+  "consentimento-ana-oferta": [
+   220,
+   100
+  ],
+  "consentimento-bruno-oferta": [
+   100,
+   220
+  ],
+  "consentimento-carla-oferta": [
+   260,
+   160
+  ],
+  "consentimento-diego-oferta": [
+   320,
+   80
+  ],
+  "consentimento-elisa-oferta": [
+   220,
+   260
+  ],
+  "consentimento-fabio-oferta": [
+   320,
+   200
+  ],
+  "consentimento-gabriela-oferta": [
+   100,
+   140
+  ],
+  "consentimento-helena-oferta": [
+   140,
+   260
+  ],
+  "conta-ana-corrente": [
+   180,
+   100
+  ],
+  "conta-ana-poupanca": [
+   200,
+   80
+  ],
+  "conta-bruno": [
+   100,
+   180
+  ],
+  "conta-carla": [
+   280,
+   140
+  ],
+  "conta-diego": [
+   320,
+   120
+  ],
+  "conta-elisa": [
+   240,
+   240
+  ],
+  "conta-fabio": [
+   300,
+   220
+  ],
+  "conta-gabriela": [
+   120,
+   140
+  ],
+  "conta-helena": [
+   160,
+   240
+  ],
+  "contratacao-seguro-residencial": [
+   840,
+   480
+  ],
+  "contratado-ana-auto": [
+   220,
+   120
+  ],
+  "contratado-ana-cartao": [
+   180,
+   80
+  ],
+  "contratado-fabio-cartao": [
+   320,
+   240
+  ],
+  "contratado-gabriela-vida": [
+   120,
+   120
+  ],
+  "especialista-joana": [
+   840,
+   620
+  ],
+  "especialista-marina": [
+   800,
+   440
+  ],
+  "especialista-rafael": [
+   840,
+   440
+  ],
+  "especialista-tiago": [
+   760,
+   580
+  ],
+  "exigencia-registro-aceite": [
+   420,
+   120
+  ],
+  "exigencia-registro-apolice": [
+   400,
+   120
+  ],
+  "exigencia-registro-consentimento": [
+   460,
+   140
+  ],
+  "exigencia-trilha-ia": [
+   460,
+   60
+  ],
+  "exigencia-vistoria-previa": [
+   580,
+   60
+  ],
+  "fila-aprovacao-alcada": [
+   820,
+   440
+  ],
+  "fila-atendimento-geral": [
+   760,
+   560
+  ],
+  "fila-vistoria": [
+   840,
+   600
+  ],
+  "finalidade-cobranca": [
+   500,
+   180
+  ],
+  "finalidade-compartilhamento-seguradoras": [
+   480,
+   120
+  ],
+  "finalidade-oferta-personalizada": [
+   520,
+   120
+  ],
+  "franquia-alagamento": [
+   780,
+   140
+  ],
+  "franquia-auto-colisao": [
+   820,
+   80
+  ],
+  "franquia-danos-eletricos": [
+   840,
+   200
+  ],
+  "franquia-roubo": [
+   840,
+   160
+  ],
+  "franquia-vendaval": [
+   760,
+   220
+  ],
+  "franquia-vidros": [
+   840,
+   140
+  ],
+  "imovel-ana": [
+   220,
+   80
+  ],
+  "imovel-bruno": [
+   120,
+   200
+  ],
+  "imovel-carla": [
+   260,
+   140
+  ],
+  "imovel-diego": [
+   300,
+   100
+  ],
+  "imovel-elisa": [
+   220,
+   240
+  ],
+  "imovel-fabio": [
+   300,
+   200
+  ],
+  "imovel-gabriela": [
+   80,
+   120
+  ],
+  "imovel-helena": [
+   140,
+   240
+  ],
+  "norma-cdc": [
+   600,
+   160
+  ],
+  "norma-governanca-ia": [
+   480,
+   80
+  ],
+  "norma-lgpd": [
+   500,
+   140
+  ],
+  "norma-registro-operacoes": [
+   420,
+   140
+  ],
+  "norma-seguros-danos": [
+   580,
+   80
+  ],
+  "norma-suitability": [
+   620,
+   120
+  ],
+  "pagamento-cartao-credito": [
+   920,
+   420
+  ],
+  "pagamento-debito-em-conta": [
+   800,
+   500
+  ],
+  "pagamento-pix": [
+   900,
+   560
+  ],
+  "parada-adequacao": [
+   540,
+   320
+  ],
+  "parada-aprovacao-humana": [
+   800,
+   460
+  ],
+  "parada-consentimento": [
+   480,
+   140
+  ],
+  "parada-cotacao": [
+   440,
+   500
+  ],
+  "parada-elegibilidade": [
+   560,
+   340
+  ],
+  "parada-emissao": [
+   480,
+   600
+  ],
+  "parada-identificacao": [
+   120,
+   80
+  ],
+  "parada-intencao": [
+   840,
+   500
+  ],
+  "parada-pagamento": [
+   820,
+   500
+  ],
+  "parada-proposta": [
+   820,
+   460
+  ],
+  "parada-vistoria": [
+   520,
+   420
+  ],
+  "politica-alcadas": [
+   560,
+   100
+  ],
+  "politica-oferta-responsavel": [
+   600,
+   140
+  ],
+  "politica-pld": [
+   580,
+   180
+  ],
+  "politica-privacidade": [
+   500,
+   160
+  ],
+  "politica-registro-aceite": [
+   420,
+   160
+  ],
+  "politica-uso-de-ia": [
+   480,
+   60
+  ],
+  "politica-vistoria-areas-risco": [
+   560,
+   80
+  ],
+  "produto-auto-farol": [
+   860,
+   80
+  ],
+  "produto-residencial-ancora": [
+   820,
+   180
+  ],
+  "produto-residencial-farol": [
+   800,
+   180
+  ],
+  "produto-residencial-horizonte": [
+   800,
+   200
+  ],
+  "produto-vida-horizonte": [
+   920,
+   260
+  ],
+  "regra-carencia-pos-sinistro": [
+   600,
+   340
+  ],
+  "regra-construcao-alvenaria": [
+   560,
+   260
+  ],
+  "regra-imovel-ocupado": [
+   500,
+   260
+  ],
+  "regra-imovel-residencial": [
+   560,
+   300
+  ],
+  "regra-regiao-atendida": [
+   520,
+   340
+  ],
+  "regra-sem-restricao-cadastral": [
+   560,
+   360
+  ],
+  "regra-valor-maximo-imovel": [
+   480,
+   400
+  ],
+  "regra-vistoria-area-risco": [
+   580,
+   340
+  ],
+  "relacionamento-ana": [
+   180,
+   120
+  ],
+  "relacionamento-bruno": [
+   120,
+   220
+  ],
+  "relacionamento-carla": [
+   260,
+   180
+  ],
+  "relacionamento-diego": [
+   300,
+   120
+  ],
+  "relacionamento-elisa": [
+   260,
+   240
+  ],
+  "relacionamento-fabio": [
+   340,
+   220
+  ],
+  "relacionamento-gabriela": [
+   100,
+   160
+  ],
+  "relacionamento-helena": [
+   180,
+   260
+  ],
+  "rota-assistida": [
+   820,
+   480
+  ],
+  "rota-economica": [
+   840,
+   460
+  ],
+  "rota-rapida": [
+   800,
+   480
+  ],
+  "score-credito": [
+   540,
+   360
+  ],
+  "score-propensao-seguro": [
+   540,
+   300
+  ],
+  "score-relacionamento": [
+   420,
+   360
+  ],
+  "score-risco-imovel": [
+   580,
+   360
+  ],
+  "seguradora-ancora": [
+   460,
+   580
+  ],
+  "seguradora-farol": [
+   500,
+   540
+  ],
+  "seguradora-horizonte": [
+   520,
+   580
+  ],
+  "sistema-cofre-consentimentos": [
+   540,
+   640
+  ],
+  "sistema-core-bancario": [
+   540,
+   600
+  ],
+  "sistema-crm": [
+   540,
+   620
+  ],
+  "sistema-gateway-pagamentos": [
+   560,
+   620
+  ],
+  "sistema-motor-risco": [
+   520,
+   620
+  ],
+  "sistema-registro-operacoes": [
+   480,
+   560
+  ],
+  "sistema-vistoria": [
+   520,
+   600
+  ],
+  "sla-ancora": [
+   460,
+   540
+  ],
+  "sla-farol": [
+   480,
+   520
+  ],
+  "sla-horizonte": [
+   520,
+   540
+  ]
+ },
+ "avenidas": [
+  {
+   "de": "canais",
+   "para": "cliente",
+   "relacoes": 6
+  },
+  {
+   "de": "canais",
+   "para": "parceiros",
+   "relacoes": 18
+  },
+  {
+   "de": "canais",
+   "para": "regulatorio",
+   "relacoes": 7
+  },
+  {
+   "de": "canais",
+   "para": "risco",
+   "relacoes": 9
+  },
+  {
+   "de": "cliente",
+   "para": "parceiros",
+   "relacoes": 1
+  },
+  {
+   "de": "cliente",
+   "para": "produtos",
+   "relacoes": 2
+  },
+  {
+   "de": "cliente",
+   "para": "regulatorio",
+   "relacoes": 9
+  },
+  {
+   "de": "cliente",
+   "para": "risco",
+   "relacoes": 14
+  },
+  {
+   "de": "parceiros",
+   "para": "produtos",
+   "relacoes": 8
+  },
+  {
+   "de": "parceiros",
+   "para": "regulatorio",
+   "relacoes": 2
+  },
+  {
+   "de": "parceiros",
+   "para": "risco",
+   "relacoes": 4
+  },
+  {
+   "de": "produtos",
+   "para": "regulatorio",
+   "relacoes": 3
+  },
+  {
+   "de": "produtos",
+   "para": "risco",
+   "relacoes": 16
+  },
+  {
+   "de": "regulatorio",
+   "para": "risco",
+   "relacoes": 16
+  }
+ ]
+}

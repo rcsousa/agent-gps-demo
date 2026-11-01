@@ -50,6 +50,10 @@ markdown_extensions:
       permalink: true
   - pymdownx.details
   - pymdownx.superfences
+  # Trechos reais da ontologia, copiada para a imagem no build: a doc não desatualiza.
+  - pymdownx.snippets:
+      base_path: [ontologia]
+      check_paths: true
   - pymdownx.highlight
 
 nav:

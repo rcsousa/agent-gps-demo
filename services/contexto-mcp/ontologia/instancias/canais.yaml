@@ -1,0 +1,106 @@
+# Bairro Canais e operação: por onde a cliente chega, quem atende os
+# pedágios (especialistas humanos), filas e meios de pagamento.
+
+proveniencia_padrao:
+  fonte: Catálogo de canais e operação
+  data: 2026-10-10
+  responsavel: Diretoria de Operações
+  confianca: alta
+
+entidades:
+  - id: canal-app
+    tipo: Canal
+    nome: App Banco Bússola
+    descricao: Aplicativo do banco, onde a Ana faz o pedido.
+    atributos: { digital: true }
+    estado: { status: ok, latencia_ms: 80 }
+  - id: canal-internet-banking
+    tipo: Canal
+    nome: Internet banking
+    descricao: Acesso pelo navegador.
+    atributos: { digital: true }
+    estado: { status: ok, latencia_ms: 110 }
+  - id: canal-agencia
+    tipo: Canal
+    nome: Agência
+    descricao: Atendimento presencial.
+    atributos: { digital: false }
+  - id: canal-central
+    tipo: Canal
+    nome: Central de atendimento
+    descricao: Atendimento por telefone e chat.
+    atributos: { digital: false }
+
+  # --8<-- [start:especialistas]
+  - id: especialista-marina
+    tipo: Especialista
+    nome: Marina Costa
+    descricao: Especialista em seguros residenciais. Aprova dentro da alçada do especialista.
+    atributos: { alcada: alcada-especialista, turno: manhã }
+    estado: { status: ok }
+  - id: especialista-rafael
+    tipo: Especialista
+    nome: Rafael Lopes
+    descricao: Especialista em seguros residenciais e de alto valor.
+    atributos: { alcada: alcada-especialista, turno: tarde }
+    estado: { status: ok }
+  # --8<-- [end:especialistas]
+  - id: especialista-joana
+    tipo: Especialista
+    nome: Joana Ferreira
+    descricao: Analista de vistorias.
+    atributos: { alcada: nenhuma, turno: integral }
+    estado: { status: ok }
+  - id: especialista-tiago
+    tipo: Especialista
+    nome: Tiago Mendes
+    descricao: Atendente da central, encaminha casos complexos.
+    atributos: { alcada: nenhuma, turno: integral }
+    estado: { status: ok }
+
+  - id: fila-aprovacao-alcada
+    tipo: Fila
+    nome: Fila de aprovação de alçada
+    descricao: O pedágio da demo. Propostas acima da alçada automática esperam aqui por um especialista.
+    atributos: { sla_minutos: 15 }
+    estado: { status: ok, latencia_ms: 420000 }
+  - id: fila-vistoria
+    tipo: Fila
+    nome: Fila de vistorias
+    descricao: Agendamento e análise de laudos de vistoria.
+    atributos: { sla_dias: 3 }
+    estado: { status: ok }
+  - id: fila-atendimento-geral
+    tipo: Fila
+    nome: Fila de atendimento geral
+    descricao: Dúvidas e casos que o agente não resolve.
+    atributos: { sla_minutos: 30 }
+    estado: { status: ok }
+
+  - id: pagamento-debito-em-conta
+    tipo: MeioPagamento
+    nome: Débito em conta
+    descricao: Débito mensal na conta corrente.
+    atributos: { recorrente: true }
+    estado: { status: ok }
+  - id: pagamento-cartao-credito
+    tipo: MeioPagamento
+    nome: Cartão de crédito
+    descricao: Cobrança mensal no cartão.
+    atributos: { recorrente: true }
+    estado: { status: ok }
+  - id: pagamento-pix
+    tipo: MeioPagamento
+    nome: Pix
+    descricao: Pagamento à vista do prêmio anual.
+    atributos: { recorrente: false }
+    estado: { status: ok }
+
+relacoes:
+  - [fila-aprovacao-alcada, ATENDIDA_POR, especialista-marina]
+  - [fila-aprovacao-alcada, ATENDIDA_POR, especialista-rafael]
+  - [fila-vistoria, ATENDIDA_POR, especialista-joana]
+  - [fila-atendimento-geral, ATENDIDA_POR, especialista-tiago]
+  - [pagamento-debito-em-conta, PROCESSADO_POR, sistema-gateway-pagamentos]
+  - [pagamento-cartao-credito, PROCESSADO_POR, sistema-gateway-pagamentos]
+  - [pagamento-pix, PROCESSADO_POR, sistema-gateway-pagamentos]

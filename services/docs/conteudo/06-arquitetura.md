@@ -35,6 +35,7 @@ simulator ──► graph e servidores de domínio (fora do alcance do agente)
 | `contexto-mcp` | Camada de contexto; único serviço que acessa o grafo | Python, SDK MCP, driver Neo4j |
 | `cliente-mcp`, `consentimento-mcp`, `risco-mcp`, `seguradoras-mcp`, `pagamentos-mcp`, `atendimento-mcp` | Domínios de negócio | Python, SDK MCP |
 | `graph` | Ontologia, instâncias e estado vivo | Neo4j 5 Community |
+| `seed` | Recarrega o grafo com o estado-base da ontologia a cada subida e termina | Python (mesma imagem do `contexto-mcp`) |
 | `bus` | Barramento de eventos | Redis 7 (Streams) |
 | `simulator` | Injeta incidentes e trânsito | Python, FastAPI |
 
@@ -50,9 +51,9 @@ simulator ──► graph e servidores de domínio (fora do alcance do agente)
 
 ### Ordem de subida
 
-Os `depends_on` usam `condition: service_healthy`:
+Os `depends_on` usam `condition: service_healthy`, e o `seed` usa `service_completed_successfully`:
 
-`graph` → `contexto-mcp` · (`bus` + os 8 servidores MCP) → `mcp-gateway` → `agent` → `web` (junto com `docs`).
+`graph` → `seed` (termina) → `contexto-mcp` · (`bus` + os 8 servidores MCP) → `mcp-gateway` → `agent` → `web` (junto com `docs`).
 
 ### Como trocar o provedor de LLM
 

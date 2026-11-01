@@ -1,0 +1,369 @@
+# Bairro Cliente: a Ana (personagem padrão) e 7 clientes-cenário.
+# Cada cliente-cenário prepara um incidente da spec; o atributo
+# "cenario" diz qual. Todos os dados são fictícios.
+
+proveniencia_padrao:
+  fonte: CRM Bússola
+  data: 2026-10-28
+  responsavel: Time de Dados de Clientes
+  confianca: alta
+
+entidades:
+  # --8<-- [start:ana]
+  - id: cliente-ana
+    tipo: Cliente
+    nome: Ana Ribeiro
+    descricao: Personagem padrão da demo. Quer um seguro residencial para o apartamento.
+    atributos:
+      idade: 38
+      correntista_desde: "2020-08"
+      anos_de_relacionamento: 6
+      cidade: São Paulo
+      uf: SP
+      segmento: Varejo alta renda
+      restricao_cadastral: false
+      cenario: padrao
+  # --8<-- [end:ana]
+  - id: conta-ana-corrente
+    tipo: Conta
+    nome: Conta corrente da Ana
+    descricao: Conta principal, com débito automático habilitado.
+    atributos: { modalidade: corrente, agencia: "0412", saldo_medio_faixa: "R$ 10 mil a R$ 25 mil" }
+  - id: conta-ana-poupanca
+    tipo: Conta
+    nome: Poupança da Ana
+    descricao: Conta poupança vinculada.
+    atributos: { modalidade: poupanca, agencia: "0412" }
+  - id: relacionamento-ana
+    tipo: Relacionamento
+    nome: Relacionamento da Ana
+    descricao: Seis anos de relacionamento, sem atrasos, três produtos ativos.
+    atributos: { anos: 6, produtos_ativos: 3, atrasos_12m: 0, nps: 9 }
+  - id: imovel-ana
+    tipo: Imovel
+    nome: Apartamento da Ana
+    descricao: Apartamento próprio na Vila Mariana, uso residencial habitual.
+    atributos:
+      tipo_imovel: apartamento
+      uso: residencial_habitual
+      construcao: alvenaria
+      bairro_endereco: Vila Mariana
+      cidade: São Paulo
+      uf: SP
+      valor_estimado: 780000
+      area_m2: 82
+  - id: contratado-ana-auto
+    tipo: ProdutoContratado
+    nome: Seguro auto da Ana
+    descricao: Seguro auto contratado pelo banco em 2024, vigente.
+    atributos: { contratado_em: "2024-03-15", premio_anual: 2350 }
+    estado: { status: ok, vigencia: { inicio: 2026-03-15, fim: 2027-03-14 } }
+  - id: contratado-ana-cartao
+    tipo: ProdutoContratado
+    nome: Cartão de crédito Bússola Platinum
+    descricao: Cartão de crédito ativo.
+    atributos: { contratado_em: "2021-02-10", limite_faixa: "R$ 15 mil a R$ 30 mil" }
+  - id: consentimento-ana-oferta
+    tipo: Consentimento
+    nome: Consentimento da Ana para ofertas personalizadas
+    descricao: Autoriza usar dados de relacionamento para ofertas de seguros.
+    atributos: { canal_coleta: app-bussola, versao_termo: "3.2" }
+    estado: { status: ok, vigencia: { inicio: 2026-01-10, fim: 2027-01-09 } }
+    proveniencia: { fonte: Cofre de consentimentos, responsavel: Encarregado de Dados (DPO) }
+  - id: consentimento-ana-compartilhamento
+    tipo: Consentimento
+    nome: Consentimento da Ana para compartilhar dados com seguradoras
+    descricao: Autoriza enviar dados do imóvel às seguradoras parceiras para cotação.
+    atributos: { canal_coleta: app-bussola, versao_termo: "3.2" }
+    estado: { status: ok, vigencia: { inicio: 2026-01-10, fim: 2027-01-09 } }
+    proveniencia: { fonte: Cofre de consentimentos, responsavel: Encarregado de Dados (DPO) }
+
+  # --- Bruno: consentimento expirado (incidente "contramão") -----------
+  - id: cliente-bruno
+    tipo: Cliente
+    nome: Bruno Teixeira
+    descricao: Cliente com consentimento de oferta vencido.
+    atributos: { idade: 45, anos_de_relacionamento: 9, cidade: São Paulo, uf: SP, segmento: Varejo, restricao_cadastral: false, cenario: consentimento-expirado }
+  - id: conta-bruno
+    tipo: Conta
+    nome: Conta corrente do Bruno
+    descricao: Conta principal.
+    atributos: { modalidade: corrente, agencia: "0187" }
+  - id: relacionamento-bruno
+    tipo: Relacionamento
+    nome: Relacionamento do Bruno
+    descricao: Cliente antigo, pouco ativo no app.
+    atributos: { anos: 9, produtos_ativos: 2, atrasos_12m: 0 }
+  - id: imovel-bruno
+    tipo: Imovel
+    nome: Casa do Bruno
+    descricao: Casa térrea em Pinheiros.
+    atributos: { tipo_imovel: casa, uso: residencial_habitual, construcao: alvenaria, cidade: São Paulo, uf: SP, valor_estimado: 1150000 }
+  - id: consentimento-bruno-oferta
+    tipo: Consentimento
+    nome: Consentimento do Bruno para ofertas personalizadas
+    descricao: Venceu em agosto e não foi renovado.
+    atributos: { canal_coleta: internet-banking, versao_termo: "2.8" }
+    estado: { status: fora, vigencia: { inicio: 2025-09-01, fim: 2026-08-31 } }
+    proveniencia: { fonte: Cofre de consentimentos, responsavel: Encarregado de Dados (DPO) }
+
+  # --- Carla: imóvel em área de risco (incidente "desvio por obra") ----
+  - id: cliente-carla
+    tipo: Cliente
+    nome: Carla Nogueira
+    descricao: Cliente com imóvel em área de alagamento.
+    atributos: { idade: 33, anos_de_relacionamento: 4, cidade: São Paulo, uf: SP, segmento: Varejo, restricao_cadastral: false, cenario: imovel-area-de-risco }
+  - id: conta-carla
+    tipo: Conta
+    nome: Conta corrente da Carla
+    descricao: Conta principal.
+    atributos: { modalidade: corrente, agencia: "0533" }
+  - id: relacionamento-carla
+    tipo: Relacionamento
+    nome: Relacionamento da Carla
+    descricao: Cliente digital, usa só o app.
+    atributos: { anos: 4, produtos_ativos: 2, atrasos_12m: 0 }
+  - id: imovel-carla
+    tipo: Imovel
+    nome: Sobrado da Carla
+    descricao: Sobrado próximo à várzea do Tietê.
+    atributos: { tipo_imovel: sobrado, uso: residencial_habitual, construcao: alvenaria, cidade: São Paulo, uf: SP, valor_estimado: 640000 }
+  - id: consentimento-carla-oferta
+    tipo: Consentimento
+    nome: Consentimento da Carla para ofertas personalizadas
+    descricao: Vigente.
+    atributos: { canal_coleta: app-bussola, versao_termo: "3.2" }
+    estado: { status: ok, vigencia: { inicio: 2026-05-02, fim: 2027-05-01 } }
+    proveniencia: { fonte: Cofre de consentimentos, responsavel: Encarregado de Dados (DPO) }
+
+  # --- Diego: prêmio acima da alçada (incidente "pedágio") -------------
+  - id: cliente-diego
+    tipo: Cliente
+    nome: Diego Martins
+    descricao: Cliente com imóvel de alto valor; o prêmio passa do limite de alçada automática.
+    atributos: { idade: 52, anos_de_relacionamento: 12, cidade: São Paulo, uf: SP, segmento: Private, restricao_cadastral: false, cenario: premio-acima-da-alcada }
+  - id: conta-diego
+    tipo: Conta
+    nome: Conta corrente do Diego
+    descricao: Conta Private.
+    atributos: { modalidade: corrente, agencia: "0001" }
+  - id: relacionamento-diego
+    tipo: Relacionamento
+    nome: Relacionamento do Diego
+    descricao: Cliente Private, atendido por gerente dedicado.
+    atributos: { anos: 12, produtos_ativos: 7, atrasos_12m: 0 }
+  - id: imovel-diego
+    tipo: Imovel
+    nome: Cobertura do Diego
+    descricao: Cobertura duplex no Jardim Europa.
+    atributos: { tipo_imovel: apartamento_cobertura, uso: residencial_habitual, construcao: alvenaria, cidade: São Paulo, uf: SP, valor_estimado: 4200000 }
+  - id: consentimento-diego-oferta
+    tipo: Consentimento
+    nome: Consentimento do Diego para ofertas personalizadas
+    descricao: Vigente.
+    atributos: { canal_coleta: agencia, versao_termo: "3.1" }
+    estado: { status: ok, vigencia: { inicio: 2026-02-20, fim: 2027-02-19 } }
+    proveniencia: { fonte: Cofre de consentimentos, responsavel: Encarregado de Dados (DPO) }
+
+  # --- Elisa: cadastro com proveniência fraca (incidente "ponte interditada")
+  # --8<-- [start:elisa]
+  - id: cliente-elisa
+    tipo: Cliente
+    nome: Elisa Prado
+    descricao: Cliente cujo cadastro de renda e imóvel veio de uma planilha legada.
+    atributos: { idade: 41, anos_de_relacionamento: 2, cidade: Campinas, uf: SP, segmento: Varejo, restricao_cadastral: false, cenario: proveniencia-fraca }
+    proveniencia: { fonte: Planilha importada (cadastro legado), data: 2023-04-11, responsavel: Desconhecido, confianca: baixa }
+  # --8<-- [end:elisa]
+  - id: conta-elisa
+    tipo: Conta
+    nome: Conta corrente da Elisa
+    descricao: Conta principal.
+    atributos: { modalidade: corrente, agencia: "2210" }
+  - id: relacionamento-elisa
+    tipo: Relacionamento
+    nome: Relacionamento da Elisa
+    descricao: Relacionamento recente, migrado de outra instituição.
+    atributos: { anos: 2, produtos_ativos: 1, atrasos_12m: 1 }
+  - id: imovel-elisa
+    tipo: Imovel
+    nome: Casa da Elisa
+    descricao: Casa em condomínio; valor declarado sem laudo.
+    atributos: { tipo_imovel: casa, uso: residencial_habitual, construcao: alvenaria, cidade: Campinas, uf: SP, valor_estimado: 950000 }
+    proveniencia: { fonte: Planilha importada (cadastro legado), data: 2023-04-11, responsavel: Desconhecido, confianca: baixa }
+  - id: consentimento-elisa-oferta
+    tipo: Consentimento
+    nome: Consentimento da Elisa para ofertas personalizadas
+    descricao: Vigente.
+    atributos: { canal_coleta: app-bussola, versao_termo: "3.2" }
+    estado: { status: ok, vigencia: { inicio: 2026-06-15, fim: 2027-06-14 } }
+    proveniencia: { fonte: Cofre de consentimentos, responsavel: Encarregado de Dados (DPO) }
+
+  # --- Fábio, Gabriela e Helena: perfis neutros -------------------------
+  - id: cliente-fabio
+    tipo: Cliente
+    nome: Fábio Lima
+    descricao: Cliente jovem, mora de aluguel.
+    atributos: { idade: 27, anos_de_relacionamento: 3, cidade: São Paulo, uf: SP, segmento: Varejo, restricao_cadastral: false, cenario: neutro }
+  - id: conta-fabio
+    tipo: Conta
+    nome: Conta corrente do Fábio
+    descricao: Conta digital.
+    atributos: { modalidade: corrente, agencia: "0900" }
+  - id: relacionamento-fabio
+    tipo: Relacionamento
+    nome: Relacionamento do Fábio
+    descricao: Cliente digital.
+    atributos: { anos: 3, produtos_ativos: 2, atrasos_12m: 0 }
+  - id: imovel-fabio
+    tipo: Imovel
+    nome: Apartamento alugado do Fábio
+    descricao: Kitnet alugada no Centro.
+    atributos: { tipo_imovel: apartamento, uso: residencial_habitual, construcao: alvenaria, cidade: São Paulo, uf: SP, valor_estimado: 290000, propriedade: alugado }
+  - id: consentimento-fabio-oferta
+    tipo: Consentimento
+    nome: Consentimento do Fábio para ofertas personalizadas
+    descricao: Vigente.
+    atributos: { canal_coleta: app-bussola, versao_termo: "3.2" }
+    estado: { status: ok, vigencia: { inicio: 2026-04-01, fim: 2027-03-31 } }
+    proveniencia: { fonte: Cofre de consentimentos, responsavel: Encarregado de Dados (DPO) }
+  - id: contratado-fabio-cartao
+    tipo: ProdutoContratado
+    nome: Cartão de crédito Bússola Gold do Fábio
+    descricao: Cartão ativo.
+    atributos: { contratado_em: "2023-07-01" }
+
+  - id: cliente-gabriela
+    tipo: Cliente
+    nome: Gabriela Souza
+    descricao: Cliente com casa de veraneio no litoral.
+    atributos: { idade: 58, anos_de_relacionamento: 15, cidade: Santos, uf: SP, segmento: Varejo alta renda, restricao_cadastral: false, cenario: neutro }
+  - id: conta-gabriela
+    tipo: Conta
+    nome: Conta corrente da Gabriela
+    descricao: Conta principal.
+    atributos: { modalidade: corrente, agencia: "1404" }
+  - id: relacionamento-gabriela
+    tipo: Relacionamento
+    nome: Relacionamento da Gabriela
+    descricao: Cliente antiga, atendida na agência.
+    atributos: { anos: 15, produtos_ativos: 5, atrasos_12m: 0 }
+  - id: imovel-gabriela
+    tipo: Imovel
+    nome: Casa de praia da Gabriela
+    descricao: Casa de veraneio em Ubatuba.
+    atributos: { tipo_imovel: casa, uso: veraneio, construcao: alvenaria, cidade: Ubatuba, uf: SP, valor_estimado: 870000 }
+  - id: consentimento-gabriela-oferta
+    tipo: Consentimento
+    nome: Consentimento da Gabriela para ofertas personalizadas
+    descricao: Vigente.
+    atributos: { canal_coleta: agencia, versao_termo: "3.0" }
+    estado: { status: ok, vigencia: { inicio: 2026-03-03, fim: 2027-03-02 } }
+    proveniencia: { fonte: Cofre de consentimentos, responsavel: Encarregado de Dados (DPO) }
+  - id: contratado-gabriela-vida
+    tipo: ProdutoContratado
+    nome: Seguro de vida da Gabriela
+    descricao: Seguro de vida contratado em 2019.
+    atributos: { contratado_em: "2019-09-12", premio_anual: 1820 }
+
+  - id: cliente-helena
+    tipo: Cliente
+    nome: Helena Araújo
+    descricao: Cliente recém-chegada, ainda sem produtos de seguro.
+    atributos: { idade: 31, anos_de_relacionamento: 1, cidade: São Paulo, uf: SP, segmento: Varejo, restricao_cadastral: false, cenario: neutro }
+  - id: conta-helena
+    tipo: Conta
+    nome: Conta corrente da Helena
+    descricao: Conta digital.
+    atributos: { modalidade: corrente, agencia: "0900" }
+  - id: relacionamento-helena
+    tipo: Relacionamento
+    nome: Relacionamento da Helena
+    descricao: Primeiro ano de relacionamento.
+    atributos: { anos: 1, produtos_ativos: 1, atrasos_12m: 0 }
+  - id: imovel-helena
+    tipo: Imovel
+    nome: Apartamento da Helena
+    descricao: Apartamento financiado na Mooca.
+    atributos: { tipo_imovel: apartamento, uso: residencial_habitual, construcao: alvenaria, cidade: São Paulo, uf: SP, valor_estimado: 520000 }
+  - id: consentimento-helena-oferta
+    tipo: Consentimento
+    nome: Consentimento da Helena para ofertas personalizadas
+    descricao: Vigente.
+    atributos: { canal_coleta: app-bussola, versao_termo: "3.2" }
+    estado: { status: ok, vigencia: { inicio: 2026-09-20, fim: 2027-09-19 } }
+    proveniencia: { fonte: Cofre de consentimentos, responsavel: Encarregado de Dados (DPO) }
+
+relacoes:
+  # Ana
+  - [cliente-ana, POSSUI, conta-ana-corrente]
+  - [cliente-ana, POSSUI, conta-ana-poupanca]
+  - [cliente-ana, POSSUI, imovel-ana]
+  - [cliente-ana, POSSUI, contratado-ana-auto]
+  - [cliente-ana, POSSUI, contratado-ana-cartao]
+  - [cliente-ana, TEM_RELACIONAMENTO, relacionamento-ana]
+  - [cliente-ana, CONCEDEU, consentimento-ana-oferta]
+  - [cliente-ana, CONCEDEU, consentimento-ana-compartilhamento]
+  - [consentimento-ana-oferta, AUTORIZA, finalidade-oferta-personalizada]
+  - [consentimento-ana-compartilhamento, AUTORIZA, finalidade-compartilhamento-seguradoras]
+  - [contratado-ana-auto, REFERE_SE_A, produto-auto-farol]
+  - [imovel-ana, LOCALIZADO_EM, area-sp-zona-sul]
+  - [cliente-ana, AVALIADO_POR, score-credito]
+  - [cliente-ana, AVALIADO_POR, score-relacionamento]
+  - [imovel-ana, AVALIADO_POR, score-risco-imovel]
+  - [conta-ana-corrente, PERMITE, pagamento-debito-em-conta]
+  # Bruno
+  - [cliente-bruno, POSSUI, conta-bruno]
+  - [cliente-bruno, POSSUI, imovel-bruno]
+  - [cliente-bruno, TEM_RELACIONAMENTO, relacionamento-bruno]
+  - [cliente-bruno, CONCEDEU, consentimento-bruno-oferta]
+  - [consentimento-bruno-oferta, AUTORIZA, finalidade-oferta-personalizada]
+  - [imovel-bruno, LOCALIZADO_EM, area-sp-zona-oeste]
+  - [conta-bruno, PERMITE, pagamento-debito-em-conta]
+  # Carla
+  - [cliente-carla, POSSUI, conta-carla]
+  - [cliente-carla, POSSUI, imovel-carla]
+  - [cliente-carla, TEM_RELACIONAMENTO, relacionamento-carla]
+  - [cliente-carla, CONCEDEU, consentimento-carla-oferta]
+  - [consentimento-carla-oferta, AUTORIZA, finalidade-oferta-personalizada]
+  - [imovel-carla, LOCALIZADO_EM, area-varzea-tiete]
+  - [imovel-carla, AVALIADO_POR, score-risco-imovel]
+  # Diego
+  - [cliente-diego, POSSUI, conta-diego]
+  - [cliente-diego, POSSUI, imovel-diego]
+  - [cliente-diego, TEM_RELACIONAMENTO, relacionamento-diego]
+  - [cliente-diego, CONCEDEU, consentimento-diego-oferta]
+  - [consentimento-diego-oferta, AUTORIZA, finalidade-oferta-personalizada]
+  - [imovel-diego, LOCALIZADO_EM, area-sp-zona-oeste]
+  - [cliente-diego, AVALIADO_POR, score-credito]
+  # Elisa
+  - [cliente-elisa, POSSUI, conta-elisa]
+  - [cliente-elisa, POSSUI, imovel-elisa]
+  - [cliente-elisa, TEM_RELACIONAMENTO, relacionamento-elisa]
+  - [cliente-elisa, CONCEDEU, consentimento-elisa-oferta]
+  - [consentimento-elisa-oferta, AUTORIZA, finalidade-oferta-personalizada]
+  - [imovel-elisa, LOCALIZADO_EM, area-campinas]
+  # Fábio
+  - [cliente-fabio, POSSUI, conta-fabio]
+  - [cliente-fabio, POSSUI, imovel-fabio]
+  - [cliente-fabio, POSSUI, contratado-fabio-cartao]
+  - [cliente-fabio, TEM_RELACIONAMENTO, relacionamento-fabio]
+  - [cliente-fabio, CONCEDEU, consentimento-fabio-oferta]
+  - [consentimento-fabio-oferta, AUTORIZA, finalidade-oferta-personalizada]
+  - [imovel-fabio, LOCALIZADO_EM, area-sp-centro]
+  # Gabriela
+  - [cliente-gabriela, POSSUI, conta-gabriela]
+  - [cliente-gabriela, POSSUI, imovel-gabriela]
+  - [cliente-gabriela, POSSUI, contratado-gabriela-vida]
+  - [cliente-gabriela, TEM_RELACIONAMENTO, relacionamento-gabriela]
+  - [cliente-gabriela, CONCEDEU, consentimento-gabriela-oferta]
+  - [consentimento-gabriela-oferta, AUTORIZA, finalidade-oferta-personalizada]
+  - [contratado-gabriela-vida, REFERE_SE_A, produto-vida-horizonte]
+  - [imovel-gabriela, LOCALIZADO_EM, area-litoral-norte]
+  # Helena
+  - [cliente-helena, POSSUI, conta-helena]
+  - [cliente-helena, POSSUI, imovel-helena]
+  - [cliente-helena, TEM_RELACIONAMENTO, relacionamento-helena]
+  - [cliente-helena, CONCEDEU, consentimento-helena-oferta]
+  - [consentimento-helena-oferta, AUTORIZA, finalidade-oferta-personalizada]
+  - [imovel-helena, LOCALIZADO_EM, area-sp-zona-leste]
+  - [conta-helena, PERMITE, pagamento-pix]

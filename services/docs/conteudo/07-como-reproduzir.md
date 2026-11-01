@@ -15,7 +15,7 @@ docker compose ps           # todos os serviços devem aparecer como "healthy"
 
 | Endereço | O que é |
 | --- | --- |
-| <http://localhost:8080> | Demo (na Fase 1, o painel de status dos serviços) |
+| <http://localhost:8080> | Demo (por enquanto, o painel de status dos serviços) |
 | <http://localhost:8080/bastidores/> | Este site |
 | <http://localhost:7474> | Neo4j Browser (usuário e senha do `.env`) |
 
@@ -31,8 +31,47 @@ docker compose run --rm --no-deps agent pytest
 ./scripts/testar.sh
 
 # Checagem ponta a ponta, com a demo no ar
-docker compose --profile test run --rm smoke
+docker compose --profile test run --rm --build smoke
 ```
+
+### Atualizar dependências
+
+Cada serviço Python tem um `uv.lock` versionado, e o build usa `uv sync --locked`. Na prática, duas máquinas instalam exatamente as mesmas versões. Se alguém mudar um `pyproject.toml` e esquecer o lock, o build falha logo, em vez de instalar versões diferentes sem aviso.
+
+```bash
+# Depois de mudar um pyproject.toml
+./scripts/travar-dependencias.sh agent        # só o serviço alterado
+./scripts/travar-dependencias.sh              # todos
+
+# Para subir as versões dentro das faixas permitidas
+./scripts/travar-dependencias.sh --upgrade
+```
+
+O script roda o `uv` dentro de um container, então não é preciso instalar nada na máquina.
+
+### Consultar o mapa ao vivo
+
+Para ver as respostas reais da camada de contexto, com a demo no ar:
+
+```bash
+./scripts/contexto.sh consultar_entidade '{"id": "cliente-ana"}'
+./scripts/contexto.sh consultar_rota
+./scripts/contexto.sh consultar_regras '{"id": "produto-residencial-farol"}'
+./scripts/contexto.sh contexto://mapa
+```
+
+No Neo4j Browser, a vizinhança da Ana:
+
+```cypher
+MATCH p=(:Cliente {id:'cliente-ana'})-[*1..2]-() RETURN p
+```
+
+### Mudar a ontologia
+
+1. Edite os arquivos em `services/contexto-mcp/ontologia/`.
+2. Se adicionou ou removeu entidades, recalcule o layout da cidade: `./scripts/gerar-layout.sh`.
+3. Versione `ontologia/layout.json` junto. O seed se recusa a subir com layout desatualizado, e um teste também acusa.
+4. `docker compose up -d --build`: o `seed` recarrega o grafo.
 
 ### Simular um serviço fora do ar
 

@@ -1,0 +1,160 @@
+# Esquema da camada de contexto do Banco Bússola.
+#
+# tipos: cada tipo de entidade mora num bairro (domínio) do mapa.
+#   O nome do tipo vira rótulo no Neo4j, por isso fica sem acento;
+#   o nome de exibição é o que aparece para as pessoas.
+# relacoes: as "ruas" do mapa, com os tipos de origem e destino permitidos.
+#   "*" aceita qualquer tipo.
+
+# --8<-- [start:tipos]
+tipos:
+  # --- Bairro Cliente -------------------------------------------------
+  Cliente:            { bairro: cliente, exibicao: Cliente }
+  Conta:              { bairro: cliente, exibicao: Conta }
+  Relacionamento:     { bairro: cliente, exibicao: Relacionamento }
+  ProdutoContratado:  { bairro: cliente, exibicao: Produto contratado }
+  Consentimento:      { bairro: cliente, exibicao: Consentimento }
+  Imovel:             { bairro: cliente, exibicao: Imóvel }
+
+  # --- Bairro Produtos ------------------------------------------------
+  ProdutoSeguro:      { bairro: produtos, exibicao: Produto de seguro }
+  Cobertura:          { bairro: produtos, exibicao: Cobertura }
+  Assistencia:        { bairro: produtos, exibicao: Assistência }
+  Franquia:           { bairro: produtos, exibicao: Franquia }
+
+  # --- Bairro Risco ---------------------------------------------------
+  RegraElegibilidade: { bairro: risco, exibicao: Regra de elegibilidade }
+  RegraAdequacao:     { bairro: risco, exibicao: Regra de adequação }
+  Score:              { bairro: risco, exibicao: Score }
+  LimiteAlcada:       { bairro: risco, exibicao: Limite de alçada }
+  AreaRisco:          { bairro: risco, exibicao: Área de risco }
+
+  # --- Bairro Regulatório ---------------------------------------------
+  Politica:           { bairro: regulatorio, exibicao: Política }
+  Norma:              { bairro: regulatorio, exibicao: Norma }
+  BaseLegal:          { bairro: regulatorio, exibicao: Base legal }
+  ExigenciaRegistro:  { bairro: regulatorio, exibicao: Exigência de registro }
+  FinalidadeDados:    { bairro: regulatorio, exibicao: Finalidade de uso de dados }
+
+  # --- Bairro Parceiros -----------------------------------------------
+  Seguradora:         { bairro: parceiros, exibicao: Seguradora }
+  ApiCotacao:         { bairro: parceiros, exibicao: API de cotação }
+  ApiEmissao:         { bairro: parceiros, exibicao: API de emissão }
+  SLA:                { bairro: parceiros, exibicao: SLA }
+  Sistema:            { bairro: parceiros, exibicao: Sistema }
+
+  # --- Bairro Canais e operação ---------------------------------------
+  Canal:              { bairro: canais, exibicao: Canal }
+  Especialista:       { bairro: canais, exibicao: Especialista humano }
+  Fila:               { bairro: canais, exibicao: Fila }
+  MeioPagamento:      { bairro: canais, exibicao: Meio de pagamento }
+  Jornada:            { bairro: canais, exibicao: Jornada }
+  Rota:               { bairro: canais, exibicao: Rota }
+
+  # --- Paradas: ficam no bairro do trecho que executam ----------------
+  Parada:             { bairro: variavel, exibicao: Parada }
+# --8<-- [end:tipos]
+
+# --8<-- [start:relacoes]
+relacoes:
+  POSSUI:
+    descricao: A cliente possui uma conta, um imóvel ou um produto.
+    origem: [Cliente]
+    destino: [Conta, Imovel, ProdutoContratado]
+  TEM_RELACIONAMENTO:
+    descricao: Histórico e segmento da cliente no banco.
+    origem: [Cliente]
+    destino: [Relacionamento]
+  CONCEDEU:
+    descricao: A cliente concedeu um consentimento.
+    origem: [Cliente]
+    destino: [Consentimento]
+  AUTORIZA:
+    descricao: O consentimento autoriza uma finalidade de uso de dados.
+    origem: [Consentimento]
+    destino: [FinalidadeDados]
+  REFERE_SE_A:
+    descricao: O produto contratado é uma instância de um produto do catálogo.
+    origem: [ProdutoContratado]
+    destino: [ProdutoSeguro]
+  LOCALIZADO_EM:
+    descricao: O imóvel fica numa área com perfil de risco conhecido.
+    origem: [Imovel]
+    destino: [AreaRisco]
+  AVALIADO_POR:
+    descricao: A cliente ou o imóvel é avaliado por um score.
+    origem: [Cliente, Imovel]
+    destino: [Score]
+  OFERECIDO_POR:
+    descricao: O produto é oferecido por uma seguradora parceira.
+    origem: [ProdutoSeguro]
+    destino: [Seguradora]
+  INCLUI:
+    descricao: O produto inclui uma cobertura ou assistência.
+    origem: [ProdutoSeguro]
+    destino: [Cobertura, Assistencia]
+  TEM_FRANQUIA:
+    descricao: A cobertura tem uma franquia.
+    origem: [Cobertura]
+    destino: [Franquia]
+  EXIGE:
+    descricao: Para seguir, é preciso cumprir a regra, o registro ou a aprovação indicada.
+    origem: [ProdutoSeguro, AreaRisco, LimiteAlcada, Parada, Politica]
+    destino: [RegraElegibilidade, RegraAdequacao, ExigenciaRegistro, Fila, LimiteAlcada]
+  REQUER:
+    descricao: O uso de dados requer uma base legal ou um consentimento.
+    origem: [FinalidadeDados, Parada]
+    destino: [BaseLegal, Consentimento, FinalidadeDados]
+  SUJEITA_A:
+    descricao: A ação está sujeita a um limite de alçada ou a uma política.
+    origem: [Parada, ProdutoSeguro]
+    destino: [LimiteAlcada, Politica]
+  USA:
+    descricao: A regra ou a rota usa um score, um sistema ou uma API.
+    origem: [RegraElegibilidade, RegraAdequacao, Rota, Parada]
+    destino: [Score, Sistema, ApiCotacao, ApiEmissao]
+  REGIDO_POR:
+    descricao: A regra, política ou base legal deriva de uma norma ou política.
+    origem: [RegraElegibilidade, RegraAdequacao, LimiteAlcada, Politica, BaseLegal, ExigenciaRegistro, ProdutoSeguro]
+    destino: [Norma, Politica]
+  EXPOE:
+    descricao: A seguradora expõe uma API.
+    origem: [Seguradora]
+    destino: [ApiCotacao, ApiEmissao]
+  GARANTIDO_POR:
+    descricao: A API tem um acordo de nível de serviço.
+    origem: [ApiCotacao, ApiEmissao]
+    destino: [SLA]
+  INTEGRA_COM:
+    descricao: O sistema troca dados com outro sistema ou API.
+    origem: [Sistema]
+    destino: [Sistema, ApiCotacao, ApiEmissao]
+  ATENDIDA_POR:
+    descricao: A fila é atendida por especialistas humanos.
+    origem: [Fila]
+    destino: [Especialista]
+  PERMITE:
+    descricao: A conta permite um meio de pagamento.
+    origem: [Conta]
+    destino: [MeioPagamento]
+  PROCESSADO_POR:
+    descricao: O meio de pagamento é processado por um sistema.
+    origem: [MeioPagamento]
+    destino: [Sistema]
+  INICIA_EM:
+    descricao: A jornada começa num canal.
+    origem: [Jornada]
+    destino: [Canal]
+  TEM_ROTA:
+    descricao: A jornada pode ser feita por uma rota.
+    origem: [Jornada]
+    destino: [Rota]
+  PASSA_POR:
+    descricao: A rota passa pela parada, na ordem indicada.
+    origem: [Rota]
+    destino: [Parada]
+  TOCA:
+    descricao: A parada consulta ou altera a entidade.
+    origem: [Parada]
+    destino: ["*"]
+# --8<-- [end:relacoes]
