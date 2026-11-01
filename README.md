@@ -29,6 +29,8 @@ docker compose ps             # todos os serviços "healthy"
 docker compose --profile test run --rm smoke  # ponta a ponta, com a demo no ar
 ```
 
+Dependências Python ficam travadas num `uv.lock` por serviço. Depois de mudar um `pyproject.toml`, rode `./scripts/travar-dependencias.sh <serviço>`.
+
 ## Estrutura
 
 ```

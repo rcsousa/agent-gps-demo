@@ -34,6 +34,21 @@ docker compose run --rm --no-deps agent pytest
 docker compose --profile test run --rm smoke
 ```
 
+### Atualizar dependências
+
+Cada serviço Python tem um `uv.lock` versionado, e o build usa `uv sync --locked`. Na prática, duas máquinas instalam exatamente as mesmas versões. Se alguém mudar um `pyproject.toml` e esquecer o lock, o build falha logo, em vez de instalar versões diferentes sem aviso.
+
+```bash
+# Depois de mudar um pyproject.toml
+./scripts/travar-dependencias.sh agent        # só o serviço alterado
+./scripts/travar-dependencias.sh              # todos
+
+# Para subir as versões dentro das faixas permitidas
+./scripts/travar-dependencias.sh --upgrade
+```
+
+O script roda o `uv` dentro de um container, então não é preciso instalar nada na máquina.
+
 ### Simular um serviço fora do ar
 
 ```bash

@@ -1,7 +1,13 @@
 #!/usr/bin/env sh
-# Roda lint e testes de unidade de todos os serviços Python, dentro dos containers.
+# Confere os locks e roda lint e testes de unidade de todos os serviços Python,
+# dentro dos containers.
 # Uso: ./scripts/testar.sh
 set -e
+
+cd "$(dirname "$0")/.."
+
+echo "== uv.lock em dia"
+./scripts/travar-dependencias.sh --check
 
 SERVICOS="agent mcp-gateway skills-mcp contexto-mcp cliente-mcp consentimento-mcp risco-mcp seguradoras-mcp pagamentos-mcp atendimento-mcp simulator"
 
