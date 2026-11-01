@@ -262,10 +262,65 @@ function ArquivoDeSkill({ uri }: { uri: string }) {
             </Tag>{' '}
             <code>{arquivo.digest.slice(0, 23)}…</code> · {t.arquivos.bytes(arquivo.size)}
           </p>
-          <Markdown texto={semFrontmatter(arquivo.texto)} />
+          {uri.endsWith('.yaml') ? (
+            <Codigo texto={arquivo.texto} rotulo={uri} />
+          ) : (
+            <Markdown texto={semFrontmatter(arquivo.texto)} />
+          )}
         </>
       )}
     </Carregavel>
+  );
+}
+
+function OrdemGarantida(props: { skill: SkillDoCatalogo; ir: Ir }) {
+  const f = t.campos;
+  if (props.skill.ordem.length === 0) return <p className="painel__explicacao">{f.semOrdem}</p>;
+  const link = (tool: string) => (
+    <LinkInterno key={tool} rota={{ aba: 'tools', item: tool }} ir={props.ir}>
+      <code>{tool}</code>
+    </LinkInterno>
+  );
+  return (
+    <>
+      <p className="painel__explicacao">{f.ordemExplicacao}</p>
+      <Table size="sm">
+        <TableHead>
+          <TableRow>
+            <TableHeader>{f.ordemTool}</TableHeader>
+            <TableHeader>{f.ordemExige}</TableHeader>
+            <TableHeader>{f.ordemImpedida}</TableHeader>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {props.skill.ordem.map((regra) => (
+            <TableRow key={regra.tool}>
+              <TableCell>{link(regra.tool)}</TableCell>
+              <TableCell>
+                {regra.exige.length ? (
+                  <ul className="painel__lista">
+                    {regra.exige.map((exigencia) => (
+                      <li key={exigencia}>
+                        <code>{exigencia}</code>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  '—'
+                )}
+              </TableCell>
+              <TableCell>
+                {regra.impedida_por.length ? (
+                  <span className="catalogo__tags">{regra.impedida_por.map(link)}</span>
+                ) : (
+                  '—'
+                )}
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </>
   );
 }
 
@@ -348,6 +403,7 @@ export function DetalheSkill(props: { skill: SkillDoCatalogo; catalogo: Catalogo
           </>,
         ],
         [t.abas.skillMd, <ArquivoDeSkill key="md" uri={skill.uri} />],
+        [t.abas.ordem, <OrdemGarantida key="o" skill={skill} ir={props.ir} />],
         [t.abas.arquivos, <ArquivosDaSkill key="a" skill={skill} />],
         [
           t.abas.uso,
