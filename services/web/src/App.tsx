@@ -1,8 +1,8 @@
 import { Content, Header, HeaderMenuItem, HeaderName, HeaderNavigation, Theme } from '@carbon/react';
 
 import { SimboloBussola } from './componentes/SimboloBussola';
-import { StatusServicos } from './componentes/StatusServicos';
 import { mensagens } from './mensagens/pt-BR';
+import { PaginaStatus } from './status/PaginaStatus';
 
 export function App() {
   return (
@@ -17,11 +17,14 @@ export function App() {
           </span>
         </HeaderName>
         <HeaderNavigation aria-label={mensagens.navegacao.rotulo}>
+          <HeaderMenuItem href="/status" isActive>
+            {mensagens.navegacao.status}
+          </HeaderMenuItem>
           <HeaderMenuItem href="/bastidores/">{mensagens.navegacao.bastidores}</HeaderMenuItem>
         </HeaderNavigation>
       </Header>
       <Content className="pagina">
-        <StatusServicos />
+        <PaginaStatus />
       </Content>
     </Theme>
   );
