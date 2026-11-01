@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from mcp import types
 from mcp.client.client import Client
 
-from bussola_comum.skills import anuncia_skills, listar_skills, skills_usadas, tools_permitidas
+from bussola_comum.skills import anuncia_skills, listar_skills, tools_da_skill
 from mcp_gateway.upstreams import Upstream
 
 log = logging.getLogger("mcp-gateway.catalogo")
@@ -43,15 +43,7 @@ class Catalogo:
 
     def tools_da_skill(self, uri: str) -> set[str] | None:
         """Tools que a skill permite, somadas às das skills que ela usa. None se a skill não existe."""
-        if uri not in self.skills:
-            return None
-        frontmatter = self.skills[uri][1]["frontmatter"]
-        permitidas = tools_permitidas(frontmatter)
-        por_nome = {e["frontmatter"]["name"]: e["frontmatter"] for _, e in self.skills.values()}
-        for nome in skills_usadas(frontmatter):
-            if nome in por_nome:
-                permitidas |= tools_permitidas(por_nome[nome])
-        return permitidas
+        return tools_da_skill({u: e for u, (_, e) in self.skills.items()}, uri)
 
     def upstream(self, nome: str) -> Upstream | None:
         return next((u for u in self.upstreams if u.nome == nome), None)
