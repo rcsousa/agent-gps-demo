@@ -9,7 +9,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from bussola_comum import cadastro
-from bussola_comum.dominio import ConfigDominio, agora, novo_id, preparar_dominio
+from bussola_comum.dominio import ConfigDominio, agora, novo_id, preparar_dominio, reais
 from bussola_comum.estado_vivo import EstadoVivo
 from bussola_comum.saude import Checagem
 
@@ -91,8 +91,8 @@ def criar_servidor(
                 "regra-valor-maximo-imovel",
                 "Valor máximo do imóvel",
                 "ok" if imovel["importancia_segurada"] <= p["importancia_segurada_maxima"] else "falhou",
-                f"Importância segurada de R$ {imovel['importancia_segurada']:,.0f}; "
-                f"máximo do produto R$ {p['importancia_segurada_maxima']:,.0f}.",
+                f"Importância segurada de {reais(imovel['importancia_segurada'], centavos=False)}; "
+                f"máximo do produto {reais(p['importancia_segurada_maxima'], centavos=False)}.",
             ),
             regra(
                 "regra-sem-restricao-cadastral",
@@ -183,7 +183,7 @@ def criar_servidor(
                     "adequacao-renda-x-premio",
                     "Prêmio compatível com a renda",
                     "ok" if premio_anual <= limite else "falhou",
-                    f"Prêmio de R$ {premio_anual:,.2f} para limite de R$ {limite:,.2f} (3% da renda anual).",
+                    f"Prêmio de {reais(premio_anual)} para limite de {reais(limite)} (3% da renda anual).",
                 )
             )
         resposta = {

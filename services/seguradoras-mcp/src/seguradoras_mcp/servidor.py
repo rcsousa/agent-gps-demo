@@ -10,7 +10,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
 
 from bussola_comum import cadastro
-from bussola_comum.dominio import ConfigDominio, agora, novo_id, preparar_dominio
+from bussola_comum.dominio import ConfigDominio, agora, novo_id, preparar_dominio, reais
 from bussola_comum.estado_vivo import EstadoVivo
 from bussola_comum.saude import Checagem
 
@@ -129,8 +129,8 @@ def criar_servidor(
             "premio_anual": cotacao["premio_anual"],
             "importancia_segurada": cotacao["importancia_segurada"],
             "resumo": (
-                f"{cotacao['produto_nome']}: R$ {cotacao['premio_anual']:,.2f} por ano "
-                f"(R$ {cotacao['premio_mensal']:,.2f} por mês), cobrindo "
+                f"{cotacao['produto_nome']}: {reais(cotacao['premio_anual'])} por ano "
+                f"({reais(cotacao['premio_mensal'])} por mês), cobrindo "
                 + ", ".join(cotacao["coberturas"])
                 + "."
             ),
