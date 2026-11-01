@@ -251,7 +251,9 @@ Decisões de arquitetura:
 - **O gateway é o ponto de observação.** Todo evento do Raio-X sai dele e do agente, então o que aparece na tela é o que de fato trafegou.
 - **Gateway próprio em Python.** O suporte à extensão de skills em gateways prontos ainda varia, e assim agregamos skills e tools do nosso jeito.
 - **Provedor de LLM por variável de ambiente:** `LLM_PROVIDER=anthropic|azure_openai`, com uma interface única no `agent`.
-  - Modelo padrão da Anthropic: Claude Opus 5.5 (`claude-opus-5-5`), trocável por `ANTHROPIC_MODEL`. Os *fallbacks* do lado do servidor ficam ligados por padrão (`ANTHROPIC_FALLBACKS`).
+  - Modelo padrão: Claude Opus 5.5 (`claude-opus-5-5`) **no Microsoft Foundry, na Azure** (`ANTHROPIC_PLATAFORMA=foundry`). A API da Anthropic continua disponível com `ANTHROPIC_PLATAFORMA=api`. O Foundry é uma variante do provedor `anthropic`, não um terceiro provedor.
+  - Os *fallbacks* do lado do servidor ficam ligados por padrão na API da Anthropic (`ANTHROPIC_FALLBACKS`); o Foundry não os oferece.
+  - Cache automático de prompt, incluindo o histórico da conversa, e nova tentativa quando o deployment atinge o limite de tokens por minuto.
   - Um terceiro provedor, `roteiro`, faz um ensaio determinístico sem LLM, pelas mesmas tools e pelo mesmo gateway. Serve para ensaiar sem chave e para os testes ponta a ponta, e aparece como "roteiro" nos eventos.
 - **A Ana é respondida pelo apresentador.** Quando o agente pergunta algo à cliente, a execução pausa até o apresentador responder. A pergunta traz opções sugeridas, para a resposta sair em um clique.
 - **O prompt do agente tem três camadas, cada uma no seu lugar:**
@@ -418,7 +420,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Skills servidas pela SEP-2640 implementada sobre o mecanismo de extensões do SDK (SEP-2133); consumo isolado em `bussola_comum.skills`
 - [x] Governança por skill: skill ativa declarada em `_meta["bussola/skill"]`; fora da skill = bloqueio (contramão)
 - [x] A Ana é respondida pelo apresentador, com opções sugeridas pelo agente
-- [x] Modelo padrão: Claude Opus 5.5 (`claude-opus-5-5`), com *fallbacks* do lado do servidor
+- [x] Modelo padrão: Claude Opus 5.5 (`claude-opus-5-5`) no Microsoft Foundry (Azure); *fallbacks* do lado do servidor só na API da Anthropic
 - [x] Provedor `roteiro` para ensaio sem chave e para os testes ponta a ponta
 - [x] Dashboard de status em `/status`, com o código de tools e prompts servido pelo próprio servidor MCP (`fonte://`), fora do catálogo do agente
 - [x] Persona do agente por canal de atendimento, como prompt MCP do `canais-mcp`; regras do host no agente; workflow nas skills

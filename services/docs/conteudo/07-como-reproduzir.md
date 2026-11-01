@@ -219,7 +219,7 @@ O canal escolhe a persona: `--canal app` (padrão), `agencia` ou `central`.
 #   ? pergunta: Confirme com a Ana: o seguro é para o apartamento dela na Vila Mariana, em São Paulo?
 ```
 
-Com `ANTHROPIC_API_KEY` (ou as `AZURE_OPENAI_*`) no `.env`, rode sem `--provedor`: vale o `LLM_PROVIDER`. Depois de mudar o `.env`, recrie o agente com `docker compose up -d agent`.
+Com o modelo configurado no `.env` (por padrão, o Claude no Microsoft Foundry: `ANTHROPIC_FOUNDRY_BASE_URL` e `ANTHROPIC_FOUNDRY_API_KEY`; veja o capítulo 6), rode sem `--provedor`: vale o `LLM_PROVIDER`. O indicador de LLM do dashboard mostra o modelo, a plataforma e se a chave está configurada. Depois de mudar o `.env`, recrie o agente com `docker compose up -d agent`.
 
 Pela API, o mesmo caminho que o painel do apresentador vai usar:
 
