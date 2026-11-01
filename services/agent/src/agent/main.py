@@ -31,6 +31,7 @@ class PedidoExecucao(BaseModel):
     provedor: str | None = None
     pedido: str | None = None
     canal: str | None = None
+    modelo: str | None = None
 
 
 class RespostaCliente(BaseModel):
@@ -99,6 +100,7 @@ def criar_app(
                 if config.llm_provider == "anthropic"
                 else config.azure_openai_deployment,
                 "configurado": config.llm_configurado,
+                "modelos": config.modelos_anthropic if config.llm_provider == "anthropic" else [],
             },
             "servicos": servicos,
             "ferramentas": ferramentas,
@@ -171,7 +173,18 @@ def criar_app(
                 raise HTTPException(
                     400, f"Canal desconhecido: {pedido.canal}. Use um de: {', '.join(canais)}."
                 )
-        execucao = await motor.iniciar(pedido.modo, pedido.provedor, pedido.pedido, pedido.canal)
+        if pedido.modelo:
+            provedor = pedido.provedor or config.llm_provider
+            if provedor != "anthropic":
+                raise HTTPException(400, "A escolha de modelo vale só para o provedor anthropic.")
+            permitidos = config.modelos_anthropic
+            if pedido.modelo not in permitidos:
+                raise HTTPException(
+                    400, f"Modelo não permitido: {pedido.modelo}. Use um de: {', '.join(permitidos)}."
+                )
+        execucao = await motor.iniciar(
+            pedido.modo, pedido.provedor, pedido.pedido, pedido.canal, pedido.modelo
+        )
         return {
             "id": execucao.id,
             "modo": execucao.modo,

@@ -57,7 +57,11 @@ export function Indicadores({ status }: { status: Status }) {
       <Indicador
         titulo={t.llm}
         valor={t.provedores[status.llm.provedor] ?? status.llm.provedor}
-        tecnico={[status.llm.modelo, status.llm.plataforma && t.plataformas[status.llm.plataforma]]
+        tecnico={[
+          status.llm.modelo +
+            (status.llm.modelos.length > 1 ? ` ${t.outrosModelos(status.llm.modelos.length - 1)}` : ''),
+          status.llm.plataforma && t.plataformas[status.llm.plataforma],
+        ]
           .filter(Boolean)
           .join(' · ')}
         rodape={

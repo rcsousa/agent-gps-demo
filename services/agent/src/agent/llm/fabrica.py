@@ -9,23 +9,23 @@ from agent.llm.roteiro import SessaoRoteiro
 PROVEDORES = ("anthropic", "azure_openai", "roteiro")
 
 
-def modelo_de(provedor: str, config: Config) -> str:
+def modelo_de(provedor: str, config: Config, pedido: str = "") -> str:
     """O modelo que a execução vai usar, conhecido antes de abrir a sessão (para o run.started)."""
     return {
-        "anthropic": config.anthropic_model,
+        "anthropic": pedido or config.anthropic_model,
         "azure_openai": config.azure_openai_deployment,
         "roteiro": SessaoRoteiro.modelo,
     }.get(provedor, provedor)
 
 
 def criar_sessao(
-    provedor: str, modo: str, sistema: str, pedido: str, config: Config, canal: str = "app"
+    provedor: str, modo: str, sistema: str, pedido: str, config: Config, canal: str = "app", modelo: str = ""
 ) -> SessaoLLM:
     if provedor == "anthropic":
         return SessaoAnthropic(
             sistema,
             pedido,
-            modelo=config.anthropic_model,
+            modelo=modelo or config.anthropic_model,
             esforco=config.anthropic_effort,
             fallbacks=config.anthropic_fallbacks,
             api_key=config.anthropic_api_key,

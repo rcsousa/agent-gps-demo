@@ -46,6 +46,7 @@ export const mensagens = {
     llmAusente: 'Chave ausente · só o roteiro roda',
     provedores: { anthropic: 'Anthropic', azure_openai: 'Azure OpenAI' } as Record<string, string>,
     plataformas: { api: 'API da Anthropic', foundry: 'Microsoft Foundry' } as Record<string, string>,
+    outrosModelos: (n: number) => `(+${n} ${n === 1 ? 'modelo' : 'modelos'})`,
     barramento: 'Barramento',
     barramentoDetalhe: 'bus · Redis Streams',
   },
