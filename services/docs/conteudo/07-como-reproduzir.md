@@ -144,4 +144,18 @@ Datas podem ser relativas (`$hoje`, `$ontem`). Depois de `docker compose up -d -
 
 ### Escrever uma nova skill
 
-Este conteúdo chega na Fase 4, com o `skills-mcp`.
+1. Crie `services/skills-mcp/skills/<nome>/SKILL.md`. O frontmatter precisa de `name` igual ao nome da pasta, de `description` (o que a skill faz e quando usar) e de `allowed-tools` com os nomes qualificados do gateway (`cliente.obter_perfil`...).
+2. Se reutilizar outras skills, liste-as em `metadata.usa-skills` e aponte para elas pela URI (`skill://<nome>/SKILL.md`).
+3. Coloque os trechos longos em `references/*.md` e cite cada um pela URI completa no `SKILL.md`.
+4. `docker compose up -d --build skills-mcp`. Em até 30 s o gateway relê o catálogo, e `./scripts/gateway.sh --skills` mostra a skill nova.
+
+Os testes recusam:
+
+- skill com `name` diferente da pasta;
+- tool fora do formato `prefixo.tool`;
+- `usa-skills` que não existe;
+- arquivo de apoio citado e ausente, ou presente e não citado.
+
+O smoke confere que toda tool permitida existe no gateway.
+
+Para testar a governança: `./scripts/gateway.sh <tool> '{...}' --skill <nome>`.

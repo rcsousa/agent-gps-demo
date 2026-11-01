@@ -1,9 +1,82 @@
 # 3. Skills como GPS
 
 !!! abstract "Resumo executivo"
-    A skill é o GPS: diz ao agente quais tools usar, em que ordem e o que fazer quando o caminho muda. É a porta de entrada para a camada de contexto.
+    Pelo gateway, o agente enxerga 38 tools de 8 sistemas. Sem orientação, ele precisa adivinhar quais usar e em que ordem, e é aí que gasta mais, erra mais e quebra regras.
+
+    A **skill** é o GPS: um roteiro escrito pelo banco que diz quais tools usar, em que ordem, o que conferir entre uma e outra e o que fazer quando o caminho muda.
+
+    Ela é a **porta de entrada** para a camada de contexto. O agente começa perguntando "quais roteiros existem?", e não "o que eu consigo chamar?". Com uma skill ativa, o gateway só deixa passar o que o roteiro permite: tentar outra coisa é **contramão**.
 
 ## Aprofundamento técnico
 
-!!! note "Em construção"
-    Este capítulo será escrito na Fase 4 (skills-workflow no skills-mcp), junto com o código que ele explica.
+### O que é uma Agent Skill
+
+Uma skill é uma pasta com um `SKILL.md`: frontmatter YAML (nome, descrição e metadados) e instruções em markdown. Ao lado dele ficam arquivos de apoio, que o agente lê só quando precisa. A skill principal da demo:
+
+```yaml
+--8<-- "contratacao-seguro-residencial/SKILL.md:1:12"
+```
+
+- `allowed-tools` é o campo padrão do formato Agent Skills: a lista das tools que a skill usa.
+- Em `metadata` ficam os dados de governança do Banco Bússola:
+  - as skills reutilizadas (`usa-skills`);
+  - a alçada;
+  - quando a aprovação humana é obrigatória.
+
+As quatro skills da demo:
+
+| Skill | Papel |
+| --- | --- |
+| `contratacao-seguro-residencial` | Rota principal: as 9 paradas, do pedido à apólice |
+| `verificacao-consentimento` | Trecho reutilizável: base legal LGPD e renovação |
+| `cotacao-multisseguradora` | Rota econômica: cotar as três e comparar |
+| `escalonamento-humano` | O pedágio: aprovação de um especialista acima da alçada |
+
+### SEP-2640: skills servidas por MCP
+
+A extensão oficial `io.modelcontextprotocol/skills` serve skills pelo primitivo *resources*. O SDK MCP em Python ainda não traz essa extensão pronta, então ela foi implementada no `skills-mcp` sobre o mecanismo genérico de extensões do SDK (SEP-2133). O fluxo, como o Raio-X vai mostrar:
+
+```
+1. skills/list            → nomes, descrições e arquivos de cada skill, com digest SHA-256
+2. resources/read         skill://contratacao-seguro-residencial/SKILL.md
+                          (o host confere tamanho, digest e frontmatter antes de usar)
+3. tools/call             cliente.obter_perfil ...       _meta: {"bussola/skill": "skill://…/SKILL.md"}
+4. resources/read         skill://…/references/elegibilidade.md   (só ao chegar na parada 4)
+```
+
+A resposta de `skills/list` traz, para cada skill:
+
+```json
+{
+  "uri": "skill://verificacao-consentimento/SKILL.md",
+  "frontmatter": { "name": "verificacao-consentimento", "description": "…", "allowed-tools": "…" },
+  "resources": [
+    { "uri": "skill://verificacao-consentimento/SKILL.md", "digest": "sha256:40cc…", "size": 1690 }
+  ]
+}
+```
+
+O digest garante que o que o agente lê é o que foi listado. O gateway repassa as entradas sem tocá-las, então a verificação vale de ponta a ponta. O módulo `bussola_comum.skills` concentra o consumo da extensão: listar, obter e ler com verificação. Se o suporte nos SDKs mudar, só ele muda.
+
+### Progressive disclosure: o zoom do mapa
+
+O `SKILL.md` principal não carrega tudo. Cada trecho tem seu arquivo, lido só quando o agente chega lá:
+
+- `references/elegibilidade.md`: parada 4;
+- `references/cotacao.md`: parada 6;
+- `references/emissao.md`: parada 9;
+- `references/desvios.md`: a regra de recálculo para cada incidente.
+
+No mapa, é o zoom no bairro do trecho em execução. No custo, são menos tokens no contexto.
+
+### Governança no gateway: a contramão
+
+O agente declara a skill ativa em cada chamada, no `_meta` (`"bussola/skill": "skill://contratacao-seguro-residencial/SKILL.md"`). O gateway então:
+
+1. **barra tools desligadas pelo apresentador** (`motivo: desligada`);
+2. **barra skill desconhecida** (`motivo: skill_desconhecida`);
+3. **só deixa passar** as tools de `allowed-tools`, somadas às das skills de `usa-skills`. O resto é **contramão** (`motivo: fora_da_skill`), recusada sem chegar ao servidor e com a lista do que é permitido.
+
+Nenhuma das 15 tools de distração está em skill alguma. **Sem skill declarada, o gateway não restringe nada**: é assim que as cenas 2 e 3 mostram o agente sem GPS.
+
+Cada chamada registra a skill na proveniência e no evento `tool.called`. As leituras do protocolo também viram eventos: `skills.listed` e `resource.read`.

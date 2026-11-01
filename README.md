@@ -35,6 +35,7 @@ Dependências Python ficam travadas num `uv.lock` por serviço. Depois de mudar 
 
 ```bash
 ./scripts/gateway.sh --listar                          # as tools que o agente enxerga
+./scripts/gateway.sh --skills                          # as skills (SEP-2640), com digests
 ./scripts/gateway.sh contexto.consultar_rota           # rotas com estimativas do trânsito atual
 ./scripts/incidente.sh aplicar cotacao-ancora-fora     # o apresentador derruba uma API
 ./scripts/incidente.sh reset                           # tudo volta ao estado-base
@@ -60,4 +61,4 @@ docs/                           spec e infográfico
 
 ## Fases
 
-O desenvolvimento segue as fases da spec. Fase atual: **3 · Gateway, domínios e simulador**.
+O desenvolvimento segue as fases da spec. Fase atual: **4 · Skills-workflow**.
