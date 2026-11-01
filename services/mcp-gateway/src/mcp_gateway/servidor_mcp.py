@@ -156,6 +156,10 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
     async def ler_resource(ctx, params: types.ReadResourceRequestParams) -> types.ReadResourceResult:
         uri = str(params.uri)
         alvo = catalogo.resources.get(uri)
+        if alvo is None and uri.startswith("fonte://"):
+            # Código-fonte para o dashboard: template de cada servidor, fora do catálogo do agente.
+            upstream = catalogo.upstream(uri.removeprefix("fonte://").split("/", 1)[0])
+            alvo = (upstream, None) if upstream else None
         if alvo is None:
             raise MCPError(code=PARAMETROS_INVALIDOS, message=f"Resource desconhecido no gateway: '{uri}'.")
         async with catalogo.conectar(alvo[0]) as cliente:

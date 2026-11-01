@@ -72,6 +72,9 @@ class Catalogo:
             )
         return itens
 
+    def skills_de(self, upstream: Upstream) -> list[str]:
+        return sorted(u for u, (origem, _) in self.skills.items() if origem.nome == upstream.nome)
+
     def prompts_de(self, upstream: Upstream) -> list[str]:
         return sorted(n for n, p in self.prompts.items() if p.upstream.nome == upstream.nome)
 
