@@ -15,7 +15,8 @@ web ──► agent ──► mcp-gateway ──► skills-mcp
  │                    │          ├─► risco-mcp
  │                    │          ├─► seguradoras-mcp
  │                    │          ├─► pagamentos-mcp
- │                    │          └─► atendimento-mcp
+ │                    │          ├─► atendimento-mcp
+ │                    │          └─► canais-mcp (prompts)
  │                    ▼
  │                   bus (Redis Streams) ◄── agent, simulator
  └─► /bastidores ──► docs
@@ -34,6 +35,7 @@ simulator ──► contexto-mcp /interno (grafo) e bus (domínios) · fora do a
 | `skills-mcp` | Catálogo de skills-workflow (`io.modelcontextprotocol/skills`) | Python, SDK MCP |
 | `contexto-mcp` | Camada de contexto; único serviço que acessa o grafo | Python, SDK MCP, driver Neo4j |
 | `cliente-mcp`, `consentimento-mcp`, `risco-mcp`, `seguradoras-mcp`, `pagamentos-mcp`, `atendimento-mcp` | Domínios de negócio | Python, SDK MCP |
+| `canais-mcp` | Canais de atendimento: a persona do agente em cada canal, como prompts MCP | Python, SDK MCP |
 | `graph` | Ontologia, instâncias e estado vivo | Neo4j 5 Community |
 | `seed` | Recarrega o grafo com o estado-base da ontologia a cada subida e termina | Python (mesma imagem do `contexto-mcp`) |
 | `bus` | Barramento de eventos | Redis 7 (Streams) |
@@ -100,7 +102,7 @@ As rotas `/interno/*` do `contexto-mcp` são protegidas por `SIMULADOR_TOKEN`. E
 
 Os `depends_on` usam `condition: service_healthy`, e o `seed` usa `service_completed_successfully`:
 
-`graph` → `seed` (termina) → `contexto-mcp` · (`bus` + os 8 servidores MCP) → `mcp-gateway` → `agent` → `web` (junto com `docs`). O `simulator` sobe depois do `contexto-mcp`.
+`graph` → `seed` (termina) → `contexto-mcp` · (`bus` + os 9 servidores MCP) → `mcp-gateway` → `agent` → `web` (junto com `docs`). O `simulator` sobe depois do `contexto-mcp`.
 
 ### O agente: um host MCP que só conhece o gateway
 
@@ -118,9 +120,36 @@ A mesma tarefa roda em **três modos**, que são as cenas 2 a 5 da demo:
 
 - `agente.carregar_skill` e `agente.ler_arquivo_skill`: leem o `SKILL.md` e as `references/*.md` sob demanda, conferindo tamanho e digest (*progressive disclosure*);
 - `navegacao.planejar_rota`, `navegacao.iniciar_parada` e `navegacao.recalcular_rota`: o modelo narra a viagem, e cada uma vira um evento do mapa, com a estimativa lida em `contexto.consultar_rota`;
-- `conversa.perguntar_cliente`: a execução pausa (`aguardando_cliente`) até o apresentador responder pela Ana. A pergunta pode trazer opções sugeridas, para a resposta sair em um clique.
+- `conversa.perguntar_cliente`: a execução pausa (`aguardando_cliente`) até o apresentador responder, no papel de quem está do outro lado no canal (a Ana, o gerente ou o atendente). A pergunta pode trazer opções sugeridas, para a resposta sair em um clique.
 
 Toda chamada ao gateway leva também `_meta["bussola/execucao"]` com o id da execução. O gateway repete esse id na proveniência e no `tool.called`, e o Raio-X filtra o barramento por execução.
+
+### O prompt do agente em três camadas
+
+O system prompt não fica todo no código. Ele é montado a cada execução, em três camadas, e cada uma mora num lugar:
+
+| Camada | O que diz | Onde mora |
+| --- | --- | --- |
+| **Persona do canal** | Quem é o agente, com quem fala e em que tom | Prompts MCP do `canais-mcp`, pelo gateway (`canais.atendimento_app`, `_agencia`, `_central`) |
+| **Instruções do host** | Como usar as ferramentas que só o agente tem (`conversa.*`, `navegacao.*`, `agente.*`) | Código do agente (`agent/prompts.py`) |
+| **Workflow do negócio** | Quais tools, em que ordem, o que fazer nos desvios | Skills (SEP-2640), carregadas sob demanda |
+
+Cada execução escolhe um **canal**, que é uma entidade da ontologia:
+
+| Canal | Com quem o agente fala | Como muda o atendimento |
+| --- | --- | --- |
+| `app` (padrão) | A própria Ana, no celular | Frases curtas, opções para tocar, confirmações dela pelo app |
+| `agencia` | O gerente, ao lado da Ana | Fala com o gerente na terceira pessoa da Ana; o aceite é dela, dito ao gerente |
+| `central` | O atendente, ao telefone com a Ana | Texto para ler em voz alta, sem tabelas nem links; o atendente confirma o aceite palavra por palavra |
+
+O agente pede a persona com `prompts/get` ao gateway, passando o `cliente_id`. O gateway roteia o pedido ao `canais-mcp`, carimba a proveniência e publica `prompt.read`. O agente registra o que usou em `prompt.loaded`. Assim, até o jeito de atender vem do banco, versionado e observável no Raio-X, e um canal novo entra sem mudar o agente.
+
+Duas exceções usam uma persona mínima embutida no agente, e o `prompt.loaded` diz `origem: embutido`:
+
+- o modo `sem_contexto`, que por definição não consulta o banco;
+- a persona indisponível (por exemplo, o `canais-mcp` fora do ar). A execução segue, com o motivo no evento.
+
+O provedor `roteiro` não lê prompt, porque não tem LLM. Ele adapta as falas ao canal da execução, para o efeito aparecer no ensaio sem chave. Com um modelo de verdade, quem muda o comportamento é o texto da persona.
 
 ### A interface única de LLM
 
@@ -144,7 +173,8 @@ Tudo vai para o stream `bussola:eventos`, no formato `{tipo, origem, instante, d
 
 | Evento | Quem emite | Quando |
 | --- | --- | --- |
-| `run.started` / `run.finished` | agent | Início e fim, com modo, provedor, modelo, status, apólice e métricas |
+| `run.started` / `run.finished` | agent | Início (sempre o primeiro evento) e fim, com modo, canal, provedor, modelo, status, apólice e métricas |
+| `prompt.loaded` | agent | A persona usada: nome, canal e origem (`gateway` ou `embutido`, com o motivo) |
 | `skill.loaded` | agent | A skill foi carregada e verificada |
 | `route.planned`, `step.started`, `route.recalculated` | agent | Ferramentas de navegação |
 | `incident.detected` | agent | O resultado de uma tool revela um incidente (API fora, contramão, pedágio...) |
@@ -153,6 +183,7 @@ Tudo vai para o stream `bussola:eventos`, no formato `{tipo, origem, instante, d
 | `agent.message` | agent | Texto do agente para a cliente |
 | `tool.called` | gateway | Toda chamada de tool, com a skill ativa e o `execucao_id` |
 | `skills.listed`, `resource.read` | gateway | Leituras do catálogo de skills |
+| `prompt.read` | gateway | Leitura de um prompt, com proveniência e `execucao_id` |
 
 O agente não sabe o que o simulador fez. O `incident.detected` vem do que as tools responderam, já com a metáfora do mapa (Rua interditada, Contramão, Pedágio...).
 

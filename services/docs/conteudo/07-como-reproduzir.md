@@ -193,6 +193,14 @@ Com um incidente aplicado antes ou durante a viagem, o agente percebe e recalcul
 # ◆ rota recalculada: rota-rapida → rota-economica · ...
 ```
 
+O canal escolhe a persona: `--canal app` (padrão), `agencia` ou `central`.
+
+```bash
+./scripts/agente.sh executar --modo com_skill --provedor roteiro --canal agencia --auto
+# ◆ persona do canal: canais.atendimento_agencia (pelo gateway)
+#   ? pergunta: Confirme com a Ana: o seguro é para o apartamento dela na Vila Mariana, em São Paulo?
+```
+
 Com `ANTHROPIC_API_KEY` (ou as `AZURE_OPENAI_*`) no `.env`, rode sem `--provedor`: vale o `LLM_PROVIDER`. Depois de mudar o `.env`, recrie o agente com `docker compose up -d agent`.
 
 Pela API, o mesmo caminho que o painel do apresentador vai usar:
@@ -204,3 +212,24 @@ curl -N localhost:8080/api/execucoes/<id>/eventos          # SSE
 curl -s -X POST localhost:8080/api/execucoes/<id>/resposta -H 'Content-Type: application/json' \
   -d '{"texto": "Aceito"}'
 ```
+
+### Escrever a persona de um canal novo
+
+As personas são prompts MCP servidos pelo `canais-mcp`, um arquivo por canal:
+
+```bash
+./scripts/gateway.sh --prompts                                                   # as personas
+./scripts/gateway.sh --prompt canais.atendimento_central '{"cliente_id": "cliente-ana"}'
+```
+
+1. Crie `services/canais-mcp/prompts/<canal>.md`. O frontmatter precisa de:
+    - `name`, igual a `atendimento_<canal>`;
+    - `canal`, o id de um `Canal` da ontologia (por exemplo, `canal-internet-banking`);
+    - `title` e `description`;
+    - `interlocutor`: com quem o agente fala nesse canal.
+2. Escreva a persona em pt-BR: quem é o agente, com quem fala, o tom e o que pode prometer. Use `{cliente_nome}` e `{cliente_id}`, que o servidor preenche com o cadastro. Deixe de fora as regras de negócio: elas são da skill.
+3. `docker compose up -d --build canais-mcp`. Em até 30 s o gateway relê o catálogo, e o canal passa a valer em `--canal <canal>`.
+
+Os testes recusam um frontmatter incompleto ou um `name` fora do padrão. O smoke confere que o canal de cada persona existe na ontologia.
+
+Para ver o fallback, pare o servidor: `docker compose stop canais-mcp`. A execução segue com a persona embutida, e o terminal mostra `◆ persona embutida` com o motivo. Depois, `docker compose start canais-mcp`.

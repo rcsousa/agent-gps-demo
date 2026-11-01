@@ -49,9 +49,10 @@ Sem chave de API, o provedor `roteiro` faz um ensaio determinístico pelas mesma
 ./scripts/agente.sh executar --modo com_skill --provedor roteiro   # a viagem ao vivo no terminal
 ./scripts/agente.sh responder <id> --sugestao 1                    # o apresentador responde pela Ana
 ./scripts/agente.sh executar --modo sem_skill --provedor roteiro --auto
+./scripts/agente.sh executar --modo com_skill --provedor roteiro --canal agencia --auto
 ```
 
-Modos: `sem_contexto`, `sem_skill` e `com_skill`. Com `ANTHROPIC_API_KEY` (ou as `AZURE_OPENAI_*`) no `.env`, rode sem `--provedor`.
+Modos: `sem_contexto`, `sem_skill` e `com_skill`. Canais: `app` (padrão), `agencia` e `central`. Com `ANTHROPIC_API_KEY` (ou as `AZURE_OPENAI_*`) no `.env`, rode sem `--provedor`.
 
 ## Estrutura
 
@@ -64,6 +65,7 @@ services/
   mcp-gateway/                  ponto único de acesso MCP; upstreams em config/upstreams.yaml
   skills-mcp/ contexto-mcp/ cliente-mcp/ consentimento-mcp/
   risco-mcp/ seguradoras-mcp/ pagamentos-mcp/ atendimento-mcp/
+  canais-mcp/                   persona do agente por canal (prompts MCP em prompts/*.md)
   simulator/                    injeta incidentes (fora do alcance do agente)
   smoke/                        checagem ponta a ponta (perfil test)
   web/                          React + Carbon, servido por nginx
@@ -73,4 +75,4 @@ docs/                           spec e infográfico
 
 ## Fases
 
-O desenvolvimento segue as fases da spec. Fase atual: **5 · Agente e eventos**.
+O desenvolvimento segue as fases da spec. Fase atual: **5.1 · Prompts por canal**.

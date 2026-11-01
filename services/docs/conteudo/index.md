@@ -17,5 +17,5 @@ Este site explica o que acontece por trás de cada cena da demo do Banco Bússol
 7. [Como reproduzir](07-como-reproduzir.md): subir a demo e rodar cada cena.
 8. [Glossário e perguntas frequentes](08-glossario-e-faq.md).
 
-!!! info "Estado atual: Fase 5 · Agente e eventos"
-    O mapa existe, o gateway reúne 38 tools e 4 skills de 8 servidores MCP e aplica a governança por skill, e o simulador muda o mundo de verdade. O agente dirige a jornada nos três modos (sem contexto, sem skill e com skill) e publica cada passo no barramento. Os capítulos 1, 2, 3, 5, 6 e 7 descrevem o que já funciona; os outros ganham conteúdo nas próximas fases.
+!!! info "Estado atual: Fase 5.1 · Prompts por canal"
+    O mapa existe, o gateway reúne 38 tools, 4 skills e 3 prompts de 9 servidores MCP e aplica a governança por skill, e o simulador muda o mundo de verdade. O agente dirige a jornada nos três modos (sem contexto, sem skill e com skill) e publica cada passo no barramento. A persona do agente vem do banco, por canal (app, agência e central). Os capítulos 1, 2, 3, 5, 6 e 7 descrevem o que já funciona; os outros ganham conteúdo nas próximas fases.
