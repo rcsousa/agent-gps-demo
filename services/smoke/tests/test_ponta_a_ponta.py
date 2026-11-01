@@ -230,3 +230,22 @@ def test_chamadas_viram_eventos_no_barramento():
     [(_, evento)] = redis.xrevrange("bussola:eventos", count=1)
     assert redis.xlen("bussola:eventos") > antes
     assert evento["tipo"] == "tool.called" and json.loads(evento["dados"])["tool"] == "cliente.obter_perfil"
+
+
+def test_desligar_tool_pelo_painel_do_web(mundo_limpo):
+    """O painel desliga pelo caminho do web (/simulador), e o agente sente a falha no gateway."""
+    nome = "seguradoras.cotar_seguro"
+    httpx.post(f"http://web/simulador/tools/{nome}/desligar", timeout=10).raise_for_status()
+
+    resultado = gateway(nome, {"cliente_id": "cliente-ana", "seguradora": "farol"})
+    assert resultado.is_error and "fora do ar" in resultado.content[0].text
+    assert resultado.meta["bussola/proveniencia"]["motivo"] == "desligada"
+
+    status = httpx.get("http://web/api/status", timeout=10).json()
+    assert status["ferramentas_fora"] == 1
+    [seguradoras] = [s for s in status["servicos"] if s["nome"] == "seguradoras-mcp"]
+    assert {f["nome"] for f in seguradoras["ferramentas"] if f["fora"]} == {"cotar_seguro"}
+    assert {f["nome"] for f in seguradoras["ferramentas"] if not f["visivel"]} == {"ping"}
+
+    httpx.post("http://web/simulador/tools/religar-todas", timeout=10).raise_for_status()
+    assert not gateway(nome, {"cliente_id": "cliente-ana", "seguradora": "farol"}).is_error

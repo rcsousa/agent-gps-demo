@@ -110,6 +110,28 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 | `alcada-ana-excedida` | Pedágio |
 | `proveniencia-fraca-ana` | Ponte interditada |
 
+### Desligar uma tool
+
+Além dos incidentes, dá para criar falhas sob medida, tool a tool. No painel de status (<http://localhost:8080>), a seção **Tools por servidor** mostra:
+
+- o que cada servidor MCP oferece;
+- o nome com que cada tool aparece no gateway;
+- o que fica oculto, como as tools `ping`.
+
+O toggle de cada linha desliga ou religa a tool. **"Religar todas"** volta tudo ao normal.
+
+Uma tool desligada **continua visível** para o agente, mas toda chamada falha com "trecho interditado". É a falha que o agente precisa perceber e contornar. O controle passa pelo simulador, pelo caminho `/simulador` do web; o agente não o alcança.
+
+Pela linha de comando:
+
+```bash
+./scripts/incidente.sh desligar seguradoras.cotar_seguro
+./scripts/incidente.sh tools                       # o que está fora do ar
+./scripts/incidente.sh religar seguradoras.cotar_seguro
+```
+
+`incidente.sh reset` também religa todas as tools.
+
 ### Criar um novo incidente
 
 Acrescente uma entrada em `services/simulator/incidentes.yaml`. Cada efeito aponta para uma entidade da ontologia, pelo id, e muda:
