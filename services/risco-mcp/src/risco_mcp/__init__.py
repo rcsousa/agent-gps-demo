@@ -1,0 +1,1 @@
+"""Elegibilidade, adequação e alçadas"""
