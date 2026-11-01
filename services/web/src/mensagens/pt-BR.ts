@@ -49,6 +49,15 @@ export const mensagens = {
       n === 0 ? 'Todas as tools no ar' : n === 1 ? '1 tool fora do ar' : `${n} tools fora do ar`,
     resumo: (total: number, fora: number) => (fora ? `${total} tools · ${fora} fora do ar` : `${total} tools`),
     skills: (n: number) => (n === 1 ? '1 skill' : `${n} skills`),
+    prompts: (n: number) => (n === 1 ? '1 prompt' : `${n} prompts`),
+    promptNoGateway: 'Prompt no gateway',
+    // Servidor só de prompts (canais-mcp) não mostra "0 tools".
+    resumoServidor: (tools: number, fora: number, prompts: number) => {
+      const partes: string[] = [];
+      if (tools || !prompts) partes.push(fora ? `${tools} tools · ${fora} fora do ar` : `${tools} tools`);
+      if (prompts) partes.push(prompts === 1 ? '1 prompt' : `${prompts} prompts`);
+      return partes.join(' · ');
+    },
     rotuloToggle: (nome: string) => `Ligar ou desligar ${nome}`,
     erroAcao: 'O simulador não respondeu.',
     erroAcaoDetalhe: 'Verifique se o serviço simulator está no ar (docker compose ps).',
@@ -64,5 +73,6 @@ export const mensagens = {
     'seguradoras-mcp': 'Seguradoras',
     'pagamentos-mcp': 'Pagamentos',
     'atendimento-mcp': 'Atendimento',
+    'canais-mcp': 'Canais',
   } as Record<string, string>,
 };

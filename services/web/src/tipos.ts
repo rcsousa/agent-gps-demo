@@ -15,6 +15,8 @@ export interface Servico {
   status: Estado;
   latencia_ms: number;
   ferramentas: Ferramenta[];
+  // Prompts que o servidor oferece, já com o nome qualificado do gateway.
+  prompts: string[];
 }
 
 export interface Status {
@@ -25,4 +27,5 @@ export interface Status {
   ferramentas: number;
   ferramentas_fora: number;
   skills: number;
+  prompts: number;
 }

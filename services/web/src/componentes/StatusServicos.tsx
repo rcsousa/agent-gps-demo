@@ -114,7 +114,7 @@ export function StatusServicos() {
                 estado={status.gateway}
                 detalhe={
                   status.gateway === 'ok'
-                    ? `${tt.resumo(status.ferramentas, status.ferramentas_fora)} · ${tt.skills(status.skills)}`
+                    ? `${tt.resumo(status.ferramentas, status.ferramentas_fora)} · ${tt.skills(status.skills)} · ${tt.prompts(status.prompts)}`
                     : undefined
                 }
               />
@@ -150,9 +150,10 @@ export function StatusServicos() {
                   tecnico={`${s.nome} · ${s.prefixo}.*`}
                   estado={s.status}
                   latenciaMs={s.latencia_ms}
-                  detalhe={tt.resumo(
+                  detalhe={tt.resumoServidor(
                     s.ferramentas.filter((f) => f.visivel).length,
                     s.ferramentas.filter((f) => f.fora).length,
+                    s.prompts.length,
                   )}
                 />
               </Column>

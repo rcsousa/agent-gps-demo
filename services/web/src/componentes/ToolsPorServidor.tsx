@@ -132,7 +132,7 @@ export function ToolsPorServidor(props: { servicos: Servico[]; aoMudar: () => Pr
                 <span className="tools__titulo">
                   <strong>{mensagens.servicos[servico.nome] ?? servico.nome}</strong>
                   <code>{servico.nome}</code>
-                  <span className="tools__resumo">{t.resumo(visiveis, fora)}</span>
+                  <span className="tools__resumo">{t.resumoServidor(visiveis, fora, servico.prompts.length)}</span>
                 </span>
               }
             >
@@ -145,6 +145,14 @@ export function ToolsPorServidor(props: { servicos: Servico[]; aoMudar: () => Pr
                     pendente={tool.qualificado !== null && pendentes.has(tool.qualificado)}
                     aoMudar={alternar}
                   />
+                ))}
+                {servico.prompts.map((prompt) => (
+                  <li key={prompt} className="tools__linha">
+                    <code className="tools__nome">{prompt.split('.').slice(1).join('.')}</code>
+                    <span className="tools__gateway">
+                      {t.promptNoGateway} <code>{prompt}</code>
+                    </span>
+                  </li>
                 ))}
               </ul>
             </AccordionItem>
