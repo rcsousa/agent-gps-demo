@@ -134,3 +134,36 @@ def test_api_http(mundo):
 
 def _ha(segundos: int) -> str:
     return (datetime.now(UTC) - timedelta(seconds=segundos)).isoformat(timespec="seconds")
+
+
+async def test_desligar_e_religar_tool(mundo):
+    resposta = await mundo.mudar_tool("seguradoras.cotar_seguro", no_ar=False)
+    assert resposta["fora"] == ["seguradoras.cotar_seguro"]
+    assert await mundo.estado.tool_fora("seguradoras.cotar_seguro")
+    await mundo.mudar_tool("seguradoras.cotar_seguro", no_ar=True)
+    assert await mundo.tools_fora() == []
+
+
+async def test_nome_de_tool_invalido(mundo):
+    with pytest.raises(ValueError, match="inválido"):
+        await mundo.mudar_tool("cotar_seguro", no_ar=False)
+
+
+async def test_reset_religa_todas_as_tools(mundo):
+    await mundo.mudar_tool("pagamentos.processar_pagamento", no_ar=False)
+    await mundo.mudar_tool("cliente.obter_perfil", no_ar=False)
+    await mundo.reset()
+    assert await mundo.tools_fora() == []
+
+
+def test_api_de_tools(mundo):
+    async def ok() -> bool:
+        return True
+
+    app = criar_app(Config(), checagens={"bus": ok}, mundo=mundo, passar_o_tempo=False)
+    with TestClient(app) as http:
+        assert http.post("/tools/seguradoras.emitir_apolice/desligar").json()["no_ar"] is False
+        assert http.get("/tools").json() == {"fora": ["seguradoras.emitir_apolice"]}
+        assert http.post("/tools/x/desligar").status_code == 400
+        assert http.post("/tools/seguradoras.emitir_apolice/talvez").status_code == 400
+        assert http.post("/tools/religar-todas").json() == {"fora": []}

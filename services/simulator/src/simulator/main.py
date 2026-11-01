@@ -70,6 +70,23 @@ def criar_app(
         await mundo.reset()
         return {"status": "estado-base"}
 
+    @app.get("/tools")
+    async def tools() -> dict:
+        return {"fora": await mundo.tools_fora()}
+
+    @app.post("/tools/religar-todas")
+    async def religar_todas() -> dict:
+        return await mundo.religar_todas()
+
+    @app.post("/tools/{nome}/{acao}")
+    async def mudar_tool(nome: str, acao: str) -> dict:
+        if acao not in ("desligar", "religar"):
+            raise HTTPException(400, "Use desligar ou religar.")
+        try:
+            return await mundo.mudar_tool(nome, no_ar=acao == "religar")
+        except ValueError as erro:
+            raise HTTPException(400, str(erro)) from erro
+
     @app.get("/aprovacoes")
     async def aprovacoes() -> list[dict]:
         return await mundo.aprovacoes()

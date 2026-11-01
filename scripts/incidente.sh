@@ -7,6 +7,9 @@
 #   ./scripts/incidente.sh reset
 #   ./scripts/incidente.sh aprovacoes
 #   ./scripts/incidente.sh aprovar <ticket>   |   recusar <ticket>
+#   ./scripts/incidente.sh tools                 # tools fora do ar
+#   ./scripts/incidente.sh desligar seguradoras.cotar_seguro
+#   ./scripts/incidente.sh religar seguradoras.cotar_seguro
 set -e
 
 cd "$(dirname "$0")/.."
@@ -20,7 +23,10 @@ case "$1" in
   aprovacoes) METODO=GET;  CAMINHO=/aprovacoes ;;
   aprovar)    METODO=POST; CAMINHO="/aprovacoes/$2/aprovar" ;;
   recusar)    METODO=POST; CAMINHO="/aprovacoes/$2/recusar" ;;
-  *) sed -n '2,10p' "$0"; exit 2 ;;
+  tools)      METODO=GET;  CAMINHO=/tools ;;
+  desligar)   METODO=POST; CAMINHO="/tools/$2/desligar" ;;
+  religar)    METODO=POST; CAMINHO="/tools/$2/religar" ;;
+  *) sed -n '2,13p' "$0"; exit 2 ;;
 esac
 
 docker compose exec -T simulator python -c "

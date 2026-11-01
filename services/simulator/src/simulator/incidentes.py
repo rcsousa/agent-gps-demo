@@ -62,4 +62,4 @@ class Grafo(Protocol):
     async def reset(self) -> None: ...
 
 
-Acao = Literal["aplicado", "removido", "reset", "aprovacao", "renovacao"]
+Acao = Literal["aplicado", "removido", "reset", "aprovacao", "renovacao", "tool"]

@@ -5,6 +5,7 @@ pelos domínios), decide o pedágio e confirma as renovações de consentimento.
 """
 
 import json
+import re
 from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
@@ -19,6 +20,7 @@ STREAM = "bussola:simulacao"
 PRAZO_APROVACAO_S = 30
 PRAZO_RENOVACAO_S = 5
 ESPECIALISTA_PADRAO = "especialista-marina"
+NOME_TOOL = re.compile(r"[a-z]+\.[a-z_]+")
 
 
 class GrafoHttp:
@@ -102,9 +104,33 @@ class Mundo:
         await self.estado.redis.delete(CHAVE_ATIVOS)
         await self.estado.limpar_efeitos()
         await self.estado.limpar_dominio()
+        await self.estado.religar_todas()
         if grafo:
             await self.grafo.reset()
         await self._registrar("reset", {"grafo": grafo})
+
+    # --- Tools fora do ar ----------------------------------------------------------
+
+    async def tools_fora(self) -> list[str]:
+        return sorted(await self.estado.tools_fora())
+
+    async def mudar_tool(self, nome: str, no_ar: bool) -> dict[str, Any]:
+        """Desliga ou religa uma tool pelo nome qualificado (ex.: seguradoras.cotar_seguro)."""
+        if not NOME_TOOL.fullmatch(nome):
+            raise ValueError(
+                f"Nome de tool inválido: '{nome}'. Use prefixo.tool, como seguradoras.cotar_seguro."
+            )
+        if no_ar:
+            await self.estado.religar_tool(nome)
+        else:
+            await self.estado.desligar_tool(nome)
+        await self._registrar("tool", {"tool": nome, "no_ar": no_ar})
+        return {"tool": nome, "no_ar": no_ar, "fora": await self.tools_fora()}
+
+    async def religar_todas(self) -> dict[str, Any]:
+        await self.estado.religar_todas()
+        await self._registrar("tool", {"tool": "*", "no_ar": True})
+        return {"fora": []}
 
     # --- Pedágio -------------------------------------------------------------------
 
