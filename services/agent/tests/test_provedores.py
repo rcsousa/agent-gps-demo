@@ -243,3 +243,15 @@ async def test_cache_automatico_cobre_o_historico():
     )
     await sessao.passo([])
     assert falso.pedidos[0]["cache_control"] == {"type": "ephemeral"}
+
+
+def test_fabrica_usa_o_modelo_da_execucao():
+    from agent.config import Config
+    from agent.llm.fabrica import criar_sessao, modelo_de
+
+    config = Config(llm_provider="anthropic", anthropic_plataforma="api", anthropic_api_key="chave-de-teste")
+    sessao = criar_sessao("anthropic", "com_skill", "s", "p", config, modelo="claude-haiku-5-5")
+    assert sessao.modelo == "claude-haiku-5-5"
+    assert criar_sessao("anthropic", "com_skill", "s", "p", config).modelo == config.anthropic_model
+    assert modelo_de("anthropic", config, "claude-haiku-5-5") == "claude-haiku-5-5"
+    assert modelo_de("roteiro", config, "claude-haiku-5-5") == "roteiro-de-ensaio"

@@ -168,7 +168,7 @@ def _motor(
     publicador = PublicadorFalso()
     servidor = _gateway(metas)
 
-    def fabrica(provedor, modo, sistema, pedido, config, canal="app"):
+    def fabrica(provedor, modo, sistema, pedido, config, canal="app", modelo=""):
         if sistemas is not None:
             sistemas.append(sistema)
         return sessao
@@ -190,6 +190,7 @@ def _tipos(publicador: PublicadorFalso) -> list[str]:
 async def test_com_skill_so_libera_as_tools_depois_de_carregar_e_envia_meta():
     sessao = SessaoFalsa(
         [
+            _passo(("cliente.obter_perfil", {"cliente_id": "cliente-ana"})),  # cedo demais
             _passo(("agente.carregar_skill", {"uri": SKILL})),
             _passo(("navegacao.planejar_rota", {"rota": "rota-rapida", "motivo": "livre"})),
             _passo(
@@ -204,9 +205,14 @@ async def test_com_skill_so_libera_as_tools_depois_de_carregar_e_envia_meta():
     execucao = await motor.iniciar("com_skill", "falso")
     await motor.aguardar(execucao.id)
 
-    assert "cliente.obter_perfil" not in sessao.tools_vistas[0]  # antes da skill
-    assert "cliente.obter_perfil" in sessao.tools_vistas[1]  # depois da skill
-    assert "cliente.listar_transacoes" not in sessao.tools_vistas[1]  # fora da skill
+    # A lista de tools é a mesma em todos os passos (mudar invalida o pensamento preservado).
+    assert all(vistas == sessao.tools_vistas[0] for vistas in sessao.tools_vistas)
+    assert "cliente.obter_perfil" in sessao.tools_vistas[0]
+    assert "cliente.listar_transacoes" not in sessao.tools_vistas[0]  # nenhuma skill a permite
+    # Antes da skill, o host recusa sem chegar ao gateway: só a chamada depois da skill chegou.
+    cedo = sessao.resultados[0][0]
+    assert cedo.erro and "carregue a skill antes" in cedo.texto
+    assert len(metas) == 2  # consultar_rota (planejar) e obter_perfil, ambos depois da skill
     assert metas[-1][CHAVE_SKILL_ATIVA] == SKILL and metas[-1][CHAVE_EXECUCAO] == execucao.id
     tipos = _tipos(publicador)
     assert tipos[0] == "run.started" and tipos[-1] == "run.finished"
@@ -214,7 +220,7 @@ async def test_com_skill_so_libera_as_tools_depois_de_carregar_e_envia_meta():
     parada = next(d for t, d in publicador.eventos if t == "step.started")
     assert parada["nome"] == "Parada 1" and parada["execucao_id"] == execucao.id
     final = await motor.obter(execucao.id)
-    assert final["status"] == "concluida" and final["metricas"]["tokens"]["entrada"] == 30
+    assert final["status"] == "concluida" and final["metricas"]["tokens"]["entrada"] == 40
 
 
 async def test_sem_skill_mede_tools_irrelevantes_e_nao_envia_skill():
