@@ -13,6 +13,7 @@ from mcp.shared.exceptions import MCPError
 
 from bussola_comum.estado_vivo import EstadoVivo
 from bussola_comum.skills import (
+    CHAVE_EXECUCAO,
     CHAVE_SKILL_ATIVA,
     IDENTIFICADOR,
     ParamsListar,
@@ -173,3 +174,13 @@ async def test_skill_desconhecida_e_bloqueada(gateway):
     resultado = await _chamar(servidor, "cliente.obter_perfil", "skill://nada/SKILL.md")
     assert resultado.is_error
     assert resultado.meta[CHAVE_PROVENIENCIA]["motivo"] == "skill_desconhecida"
+
+
+async def test_execucao_vai_do_meta_para_a_proveniencia_e_o_evento(gateway):
+    _, publicador, servidor = gateway
+    async with Client(servidor) as c:
+        resultado = await c.call_tool(
+            "cliente.obter_perfil", {}, meta={CHAVE_SKILL_ATIVA: PRINCIPAL, CHAVE_EXECUCAO: "exec-123"}
+        )
+    assert resultado.meta[CHAVE_PROVENIENCIA]["execucao_id"] == "exec-123"
+    assert publicador.eventos[-1][1]["execucao_id"] == "exec-123"

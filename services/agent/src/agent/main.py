@@ -4,40 +4,55 @@ Regra de arquitetura: o agente conhece apenas o mcp-gateway (GATEWAY_URL)
 e o barramento de eventos (BUS_URL). Nenhum servidor de domínio aparece aqui.
 """
 
+import json
 import logging
-from typing import Literal
+from typing import Any
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from redis.asyncio import Redis
+from sse_starlette.sse import EventSourceResponse
 
+from agent.config import Config
+from agent.execucao import MODOS, Motor
+from agent.llm.fabrica import PROVEDORES
 from bussola_comum.barramento import checar_barramento
-from bussola_comum.config import ConfigBase
+from bussola_comum.cliente_mcp import conectar
+from bussola_comum.eventos import STREAM, PublicadorRedis, decodificar
 from bussola_comum.saude import Checagem, rota_saude
 
 log = logging.getLogger("agent")
 
 
-class Config(ConfigBase):
-    servico_nome: str = "agent"
-    gateway_url: str = "http://mcp-gateway:8000"
-    gateway_token: str = ""
-    bus_url: str = "redis://bus:6379/0"
-    llm_provider: Literal["anthropic", "azure_openai"] = "anthropic"
-    anthropic_api_key: str = ""
-    azure_openai_api_key: str = ""
-
-    @property
-    def llm_configurado(self) -> bool:
-        chave = self.anthropic_api_key if self.llm_provider == "anthropic" else self.azure_openai_api_key
-        return bool(chave)
+class PedidoExecucao(BaseModel):
+    modo: str
+    provedor: str | None = None
+    pedido: str | None = None
 
 
-def criar_app(config: Config | None = None, checagens: dict[str, Checagem] | None = None) -> FastAPI:
+class RespostaCliente(BaseModel):
+    texto: str
+
+
+def criar_app(
+    config: Config | None = None,
+    checagens: dict[str, Checagem] | None = None,
+    motor: Motor | None = None,
+    redis: Redis | None = None,
+) -> FastAPI:
     config = config or Config()
     if checagens is None:
         checagens = {"bus": checar_barramento(config.bus_url)}
     if not config.llm_configurado:
-        log.warning("Chave do provedor de LLM (%s) ausente. Ok na Fase 1.", config.llm_provider)
+        log.warning("Chave do provedor de LLM (%s) ausente: só o provedor roteiro roda.", config.llm_provider)
+    redis = redis or Redis.from_url(config.bus_url, decode_responses=True)
+    motor = motor or Motor(
+        config,
+        redis,
+        PublicadorRedis(redis, "agent"),
+        lambda: conectar(f"{config.gateway_url}/mcp", config.gateway_token),
+    )
 
     app = FastAPI(title="agent")
     app.add_api_route("/saude", rota_saude(config.servico_nome, checagens), methods=["GET"])
@@ -74,5 +89,65 @@ def criar_app(config: Config | None = None, checagens: dict[str, Checagem] | Non
             "ferramentas_fora": ferramentas_fora,
             "skills": skills,
         }
+
+    # --- Execuções ------------------------------------------------------------------
+
+    @app.post("/api/execucoes", status_code=201)
+    async def iniciar(pedido: PedidoExecucao) -> dict:
+        if pedido.modo not in MODOS:
+            raise HTTPException(400, f"Modo desconhecido: {pedido.modo}. Use um de: {', '.join(MODOS)}.")
+        if pedido.provedor and pedido.provedor not in PROVEDORES:
+            raise HTTPException(
+                400, f"Provedor desconhecido: {pedido.provedor}. Use um de: {', '.join(PROVEDORES)}."
+            )
+        execucao = await motor.iniciar(pedido.modo, pedido.provedor, pedido.pedido)
+        return {"id": execucao.id, "modo": execucao.modo, "provedor": execucao.provedor}
+
+    @app.get("/api/execucoes")
+    async def listar() -> list[dict]:
+        return await motor.listar()
+
+    @app.get("/api/execucoes/{ident}")
+    async def obter(ident: str) -> dict:
+        execucao = await motor.obter(ident)
+        if execucao is None:
+            raise HTTPException(404, "Execução não encontrada.")
+        return execucao
+
+    @app.post("/api/execucoes/{ident}/resposta")
+    async def responder(ident: str, resposta: RespostaCliente) -> dict:
+        """O apresentador responde pela cliente."""
+        if not motor.responder(ident, resposta.texto):
+            raise HTTPException(409, "Não há pergunta pendente para esta execução.")
+        return {"ok": True}
+
+    @app.get("/api/execucoes/{ident}/eventos")
+    async def eventos(ident: str) -> EventSourceResponse:
+        """Eventos da execução desde o início, e depois ao vivo, até o run.finished."""
+        execucao = await motor.obter(ident)
+        if execucao is None:
+            raise HTTPException(404, "Execução não encontrada.")
+
+        async def fluxo() -> Any:
+            cursor = execucao["cursor_eventos"]
+            while True:
+                # Bloqueio curto (menor que o timeout de leitura do Redis); volta vazia vira keep-alive.
+                lotes = await redis.xread({STREAM: cursor}, block=2000, count=100)
+                if not lotes:
+                    yield {"comment": "aguardando"}
+                    continue
+                for cursor, campos in lotes[0][1]:
+                    evento = decodificar(campos)
+                    if evento["dados"].get("execucao_id") != ident:
+                        continue
+                    yield {
+                        "event": evento["tipo"],
+                        "id": cursor,
+                        "data": json.dumps(evento, ensure_ascii=False),
+                    }
+                    if evento["tipo"] == "run.finished":
+                        return
+
+        return EventSourceResponse(fluxo())
 
     return app

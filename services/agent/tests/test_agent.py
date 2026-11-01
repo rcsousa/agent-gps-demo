@@ -3,7 +3,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from agent.main import Config, criar_app
+from agent.config import Config
+from agent.main import criar_app
 
 
 async def _ok() -> bool:
@@ -30,7 +31,16 @@ def test_status_marca_gateway_fora_quando_nao_responde():
 
 
 def test_status_informa_provedor_de_llm():
-    corpo = _cliente(llm_provider="azure_openai", azure_openai_api_key="x").get("/api/status").json()
+    corpo = (
+        _cliente(
+            llm_provider="azure_openai",
+            azure_openai_api_key="x",
+            azure_openai_endpoint="https://exemplo.openai.azure.com",
+            azure_openai_deployment="gpt",
+        )
+        .get("/api/status")
+        .json()
+    )
     assert corpo["llm"] == {"provedor": "azure_openai", "configurado": True}
 
 

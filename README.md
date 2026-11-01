@@ -41,6 +41,18 @@ Dependências Python ficam travadas num `uv.lock` por serviço. Depois de mudar 
 ./scripts/incidente.sh reset                           # tudo volta ao estado-base
 ```
 
+## Dirigir o agente
+
+Sem chave de API, o provedor `roteiro` faz um ensaio determinístico pelas mesmas tools:
+
+```bash
+./scripts/agente.sh executar --modo com_skill --provedor roteiro   # a viagem ao vivo no terminal
+./scripts/agente.sh responder <id> --sugestao 1                    # o apresentador responde pela Ana
+./scripts/agente.sh executar --modo sem_skill --provedor roteiro --auto
+```
+
+Modos: `sem_contexto`, `sem_skill` e `com_skill`. Com `ANTHROPIC_API_KEY` (ou as `AZURE_OPENAI_*`) no `.env`, rode sem `--provedor`.
+
 ## Estrutura
 
 ```
@@ -48,7 +60,7 @@ docker-compose.yml              todos os serviços
 docker/python-service.Dockerfile imagem única dos serviços Python
 libs/bussola_comum/             config, logs, rota /saude e fábrica de servidores MCP
 services/
-  agent/                        host MCP (fala só com o gateway)
+  agent/                        host MCP (fala só com o gateway); provedores de LLM em src/agent/llm/
   mcp-gateway/                  ponto único de acesso MCP; upstreams em config/upstreams.yaml
   skills-mcp/ contexto-mcp/ cliente-mcp/ consentimento-mcp/
   risco-mcp/ seguradoras-mcp/ pagamentos-mcp/ atendimento-mcp/
@@ -61,4 +73,4 @@ docs/                           spec e infográfico
 
 ## Fases
 
-O desenvolvimento segue as fases da spec. Fase atual: **4 · Skills-workflow**.
+O desenvolvimento segue as fases da spec. Fase atual: **5 · Agente e eventos**.

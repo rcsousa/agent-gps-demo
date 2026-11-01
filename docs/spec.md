@@ -250,8 +250,15 @@ Decisões de arquitetura:
 - **O gateway é o ponto de observação.** Todo evento do Raio-X sai dele e do agente, então o que aparece na tela é o que de fato trafegou.
 - **Gateway próprio em Python.** O suporte à extensão de skills em gateways prontos ainda varia, e assim agregamos skills e tools do nosso jeito.
 - **Provedor de LLM por variável de ambiente:** `LLM_PROVIDER=anthropic|azure_openai`, com uma interface única no `agent`.
+  - Modelo padrão da Anthropic: Claude Opus 5.5 (`claude-opus-5-5`), trocável por `ANTHROPIC_MODEL`. Os *fallbacks* do lado do servidor ficam ligados por padrão (`ANTHROPIC_FALLBACKS`).
+  - Um terceiro provedor, `roteiro`, faz um ensaio determinístico sem LLM, pelas mesmas tools e pelo mesmo gateway. Serve para ensaiar sem chave e para os testes ponta a ponta, e aparece como "roteiro" nos eventos.
+- **A Ana é respondida pelo apresentador.** Quando o agente pergunta algo à cliente, a execução pausa até o apresentador responder. A pergunta traz opções sugeridas, para a resposta sair em um clique.
+- **Toda chamada é correlacionada à execução.** O agente envia `_meta["bussola/execucao"]`, e o gateway repete o id na proveniência e no `tool.called`.
 - **O simulador fica fora do alcance do agente.** Incidentes acontecem no mundo, e o agente só os percebe pelas respostas das tools e pelo estado no grafo.
-- **Um barramento de eventos** (`route.planned`, `step.started`, `tool.called`, `incident.detected`, `route.recalculated`, `human.required`) alimenta os dois modos visuais.
+- **Um barramento de eventos** alimenta os dois modos visuais. Todo evento traz o `execucao_id`:
+  - do mapa: `route.planned`, `step.started`, `incident.detected`, `route.recalculated`, `human.required`;
+  - da execução: `run.started` e `run.finished` (com as métricas do placar), `skill.loaded`, `client.asked`, `client.answered` e `agent.message`;
+  - do gateway: `tool.called`, `skills.listed` e `resource.read`.
 - **Replay offline** de execuções reais, para apresentar sem rede ou sem chave de API.
 - **Segredos** em `.env` (com `.env.example` versionado), nunca no código.
 - **Barramento em Redis Streams.** O serviço `bus` guarda os eventos em ordem (stream `bussola:eventos`), o que sustenta o replay e o Raio-X.
@@ -374,7 +381,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 
 | Risco | Mitigação |
 | --- | --- |
-| Resposta do LLM variar entre ensaios e a cena não sair como esperado | Temperatura baixa, seeds de cenário fixos e replay offline como plano B |
+| Resposta do LLM variar entre ensaios e a cena não sair como esperado | Seeds de cenário fixos, provedor `roteiro` para ensaio e replay offline como plano B (os modelos atuais não aceitam ajuste de temperatura) |
 | Rede ou chave de API falhar no dia | Replay offline e gravação em vídeo de cada cena |
 | A metáfora do mapa parecer só enfeite para o público técnico | Raio-X provando que cada animação é um evento real |
 | Grafo grande demais ficar ilegível | Zoom semântico e limite de 150 a 300 nós |
@@ -398,3 +405,6 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Cerca de 15 tools de distração no gateway para a cena 3 (ver Incidentes)
 - [x] Skills servidas pela SEP-2640 implementada sobre o mecanismo de extensões do SDK (SEP-2133); consumo isolado em `bussola_comum.skills`
 - [x] Governança por skill: skill ativa declarada em `_meta["bussola/skill"]`; fora da skill = bloqueio (contramão)
+- [x] A Ana é respondida pelo apresentador, com opções sugeridas pelo agente
+- [x] Modelo padrão: Claude Opus 5.5 (`claude-opus-5-5`), com *fallbacks* do lado do servidor
+- [x] Provedor `roteiro` para ensaio sem chave e para os testes ponta a ponta

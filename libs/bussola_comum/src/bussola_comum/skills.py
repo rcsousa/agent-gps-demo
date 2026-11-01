@@ -13,6 +13,8 @@ from mcp.client.client import Client
 
 IDENTIFICADOR = "io.modelcontextprotocol/skills"
 CHAVE_SKILL_ATIVA = "bussola/skill"
+# Correlaciona as chamadas de uma execução do agente nos eventos do gateway.
+CHAVE_EXECUCAO = "bussola/execucao"
 
 
 class ParamsListar(types.RequestParams):
@@ -99,3 +101,19 @@ def tools_permitidas(frontmatter: dict[str, Any]) -> set[str]:
 
 def skills_usadas(frontmatter: dict[str, Any]) -> list[str]:
     return (frontmatter.get("metadata", {}).get("usa-skills") or "").split()
+
+
+def tools_da_skill(entradas: dict[str, dict[str, Any]], uri: str) -> set[str] | None:
+    """Tools que a skill permite, somadas às das skills que ela usa. None se a skill não existe.
+
+    `entradas` mapeia a URI do SKILL.md para a entrada de skills/list.
+    """
+    if uri not in entradas:
+        return None
+    frontmatter = entradas[uri]["frontmatter"]
+    permitidas = tools_permitidas(frontmatter)
+    por_nome = {e["frontmatter"]["name"]: e["frontmatter"] for e in entradas.values()}
+    for nome in skills_usadas(frontmatter):
+        if nome in por_nome:
+            permitidas |= tools_permitidas(por_nome[nome])
+    return permitidas

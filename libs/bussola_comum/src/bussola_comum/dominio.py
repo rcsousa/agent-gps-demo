@@ -35,3 +35,9 @@ def agora() -> str:
 
 def novo_id(prefixo: str) -> str:
     return f"{prefixo}-{uuid.uuid4().hex[:8]}"
+
+
+def reais(valor: float, centavos: bool = True) -> str:
+    """Valor em reais no formato brasileiro: reais(1234.5) -> 'R$ 1.234,50'."""
+    texto = f"{valor:,.2f}" if centavos else f"{valor:,.0f}"
+    return "R$ " + texto.replace(",", "_").replace(".", ",").replace("_", ".")

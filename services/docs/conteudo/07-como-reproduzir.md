@@ -8,7 +8,7 @@
 ### Subir a demo
 
 ```bash
-cp .env.example .env        # preencha as chaves se for usar o LLM
+cp .env.example .env        # preencha as chaves se for usar um LLM de verdade
 docker compose up -d --build
 docker compose ps           # todos os serviços devem aparecer como "healthy"
 ```
@@ -159,3 +159,48 @@ Os testes recusam:
 O smoke confere que toda tool permitida existe no gateway.
 
 Para testar a governança: `./scripts/gateway.sh <tool> '{...}' --skill <nome>`.
+
+### Dirigir o agente
+
+`agente.sh` inicia uma execução e mostra a viagem no terminal, evento a evento. Sem chave de API, use o provedor `roteiro`:
+
+```bash
+./scripts/agente.sh executar --modo com_skill --provedor roteiro
+```
+
+Quando o agente pergunta algo à Ana, a execução pausa e o terminal mostra as opções sugeridas. Responda de outro terminal:
+
+```bash
+./scripts/agente.sh responder <id> --sugestao 1               # a primeira opção sugerida
+./scripts/agente.sh responder <id> "Sim, é esse apartamento"  # texto livre
+./scripts/agente.sh estado <id>                               # status, pergunta pendente e métricas
+```
+
+Para ensaiar sem apresentador, `--auto` responde sempre com a primeira opção. Os três modos:
+
+```bash
+./scripts/agente.sh executar --modo sem_contexto --provedor roteiro --auto   # zero tools, resposta inventada
+./scripts/agente.sh executar --modo sem_skill    --provedor roteiro --auto   # tools irrelevantes
+./scripts/agente.sh executar --modo com_skill    --provedor roteiro --auto   # as 9 paradas até a apólice
+```
+
+Com um incidente aplicado antes ou durante a viagem, o agente percebe e recalcula:
+
+```bash
+./scripts/incidente.sh aplicar cotacao-ancora-fora
+./scripts/agente.sh executar --modo com_skill --provedor roteiro --auto
+#   ⚠ incidente: Rua interditada · A API de cotação da Âncora Seguros está fora do ar...
+# ◆ rota recalculada: rota-rapida → rota-economica · ...
+```
+
+Com `ANTHROPIC_API_KEY` (ou as `AZURE_OPENAI_*`) no `.env`, rode sem `--provedor`: vale o `LLM_PROVIDER`. Depois de mudar o `.env`, recrie o agente com `docker compose up -d agent`.
+
+Pela API, o mesmo caminho que o painel do apresentador vai usar:
+
+```bash
+curl -s -X POST localhost:8080/api/execucoes -H 'Content-Type: application/json' \
+  -d '{"modo": "com_skill", "provedor": "roteiro"}'
+curl -N localhost:8080/api/execucoes/<id>/eventos          # SSE
+curl -s -X POST localhost:8080/api/execucoes/<id>/resposta -H 'Content-Type: application/json' \
+  -d '{"texto": "Aceito"}'
+```

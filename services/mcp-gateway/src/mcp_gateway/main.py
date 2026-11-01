@@ -18,9 +18,9 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 from bussola_comum.barramento import checar_barramento
 from bussola_comum.config import ConfigBase
 from bussola_comum.estado_vivo import EstadoVivo
+from bussola_comum.eventos import Publicador, PublicadorRedis
 from bussola_comum.saude import Checagem, rota_saude
 from mcp_gateway.catalogo import Catalogo, Conector, conector_http
-from mcp_gateway.eventos import Publicador, PublicadorRedis
 from mcp_gateway.servidor_mcp import criar_servidor_mcp
 from mcp_gateway.upstreams import Upstream, carregar_upstreams
 
@@ -77,7 +77,9 @@ def criar_app(
     if checagens is None:
         checagens = {"bus": checar_barramento(config.bus_url)}
     catalogo = Catalogo(carregar_upstreams(config.upstreams_arquivo), conectar)
-    publicador = publicador or PublicadorRedis(Redis.from_url(config.bus_url, decode_responses=True))
+    publicador = publicador or PublicadorRedis(
+        Redis.from_url(config.bus_url, decode_responses=True), "mcp-gateway"
+    )
     estado = estado or EstadoVivo.de_url(config.bus_url)
 
     async def saude_servicos(request: Request) -> JSONResponse:

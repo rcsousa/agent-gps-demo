@@ -16,7 +16,9 @@ from mcp.shared.exceptions import MCPError
 from bussola_comum import VERSAO
 from bussola_comum.dominio import agora
 from bussola_comum.estado_vivo import EstadoVivo
+from bussola_comum.eventos import Publicador
 from bussola_comum.skills import (
+    CHAVE_EXECUCAO,
     CHAVE_SKILL_ATIVA,
     IDENTIFICADOR,
     ParamsListar,
@@ -25,7 +27,6 @@ from bussola_comum.skills import (
     ResultadoObter,
 )
 from mcp_gateway.catalogo import Catalogo
-from mcp_gateway.eventos import Publicador
 
 CHAVE_PROVENIENCIA = "bussola/proveniencia"
 PARAMETROS_INVALIDOS = -32602
@@ -35,11 +36,11 @@ def _erro(texto: str) -> types.CallToolResult:
     return types.CallToolResult(content=[types.TextContent(type="text", text=texto)], is_error=True)
 
 
-def _skill_ativa(params: types.CallToolRequestParams) -> str | None:
+def _meta_de(params: types.CallToolRequestParams, chave: str) -> str | None:
     meta: Any = params.meta or {}
     if not isinstance(meta, dict):
         meta = meta.model_dump(by_alias=True)
-    return meta.get(CHAVE_SKILL_ATIVA)
+    return meta.get(chave)
 
 
 def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: EstadoVivo) -> Server:
@@ -69,12 +70,13 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
     async def chamar_tool(ctx, params: types.CallToolRequestParams) -> types.CallToolResult:
         inicio = time.perf_counter()
         roteada = catalogo.tools.get(params.name)
-        skill = _skill_ativa(params)
+        skill = _meta_de(params, CHAVE_SKILL_ATIVA)
         proveniencia = {
             "chamada_id": uuid.uuid4().hex[:12],
             "tool": params.name,
             "servidor": roteada.upstream.nome if roteada else None,
             "skill": skill,
+            "execucao_id": _meta_de(params, CHAVE_EXECUCAO),
             "instante": agora(),
         }
 

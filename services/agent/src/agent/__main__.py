@@ -1,6 +1,7 @@
 import uvicorn
 
-from agent.main import Config, criar_app
+from agent.config import Config
+from agent.main import criar_app
 from bussola_comum.logs import configurar_logs
 
 config = Config()

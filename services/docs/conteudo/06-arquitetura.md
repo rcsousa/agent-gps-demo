@@ -102,6 +102,72 @@ Os `depends_on` usam `condition: service_healthy`, e o `seed` usa `service_compl
 
 `graph` → `seed` (termina) → `contexto-mcp` · (`bus` + os 8 servidores MCP) → `mcp-gateway` → `agent` → `web` (junto com `docs`). O `simulator` sobe depois do `contexto-mcp`.
 
+### O agente: um host MCP que só conhece o gateway
+
+O `agent` recebe um pedido ("Quero contratar um seguro residencial para meu apartamento"), conversa com a Ana e dirige a jornada chamando tools. Ele conhece só dois endereços: `GATEWAY_URL` e `BUS_URL`. Nenhum servidor de domínio aparece no código dele.
+
+A mesma tarefa roda em **três modos**, que são as cenas 2 a 5 da demo:
+
+| Modo | O que o modelo recebe | O que a plateia vê |
+| --- | --- | --- |
+| `sem_contexto` | Só o prompt de assistente e a conversa com a cliente. Nenhuma tool de negócio | Uma resposta confiante e inventada, sem consentimento |
+| `sem_skill` | As 38 tools do gateway, sem skill e sem `_meta` de skill | O agente explora, chama tools irrelevantes e erra a ordem |
+| `com_skill` | O catálogo de skills. Ao carregar uma, ganha só as tools permitidas, e toda chamada leva `_meta["bussola/skill"]` | A navegação guiada, parada a parada |
+
+**Ferramentas do host.** Algumas tools são do próprio agente e não passam pelo gateway:
+
+- `agente.carregar_skill` e `agente.ler_arquivo_skill`: leem o `SKILL.md` e as `references/*.md` sob demanda, conferindo tamanho e digest (*progressive disclosure*);
+- `navegacao.planejar_rota`, `navegacao.iniciar_parada` e `navegacao.recalcular_rota`: o modelo narra a viagem, e cada uma vira um evento do mapa, com a estimativa lida em `contexto.consultar_rota`;
+- `conversa.perguntar_cliente`: a execução pausa (`aguardando_cliente`) até o apresentador responder pela Ana. A pergunta pode trazer opções sugeridas, para a resposta sair em um clique.
+
+Toda chamada ao gateway leva também `_meta["bussola/execucao"]` com o id da execução. O gateway repete esse id na proveniência e no `tool.called`, e o Raio-X filtra o barramento por execução.
+
+### A interface única de LLM
+
+Cada provedor implementa o mesmo contrato (`agent/llm/base.py`): `passo(tools)` devolve o texto, as chamadas de tool, se acabou e o uso de tokens; `adicionar_resultados(...)` devolve os resultados ao modelo. O motor de execução não sabe com quem está falando.
+
+| Provedor | Como funciona |
+| --- | --- |
+| `anthropic` | SDK oficial, Messages API com tools. Modelo padrão `claude-opus-5-5`, esforço `medium`, prompt de sistema em cache e *fallbacks* do lado do servidor ligados por padrão (`ANTHROPIC_FALLBACKS`) |
+| `azure_openai` | SDK `openai`, Chat Completions com tools no seu *deployment* |
+| `roteiro` | **Sem LLM.** Um ensaio determinístico que percorre a jornada chamando as mesmas tools pelo gateway e decide pelo resultado de cada uma. Serve para ensaiar sem chave e sem rede, e para o smoke. Aparece como "roteiro" nos eventos: não finge inteligência |
+
+As APIs não aceitam ponto em nome de tool, então o adaptador troca `cliente.obter_perfil` por `cliente__obter_perfil` na ida e desfaz na volta.
+
 ### Como trocar o provedor de LLM
 
-Mude `LLM_PROVIDER` no `.env` para `anthropic` ou `azure_openai` e preencha as variáveis do provedor escolhido. A interface única do agente chega na Fase 5; na Fase 1 o agente já lê a variável e mostra no painel de status se a chave está configurada.
+Mude `LLM_PROVIDER` no `.env` para `anthropic` ou `azure_openai` e preencha as variáveis do provedor: `ANTHROPIC_API_KEY`, ou `AZURE_OPENAI_ENDPOINT`, `_API_KEY`, `_DEPLOYMENT` e `_API_VERSION`. Cada execução também pode pedir outro provedor, por exemplo `"provedor": "roteiro"`. Sem chave, a execução termina com status `erro` e uma mensagem dizendo qual variável falta.
+
+### Catálogo de eventos
+
+Tudo vai para o stream `bussola:eventos`, no formato `{tipo, origem, instante, dados}`, sempre com `execucao_id`:
+
+| Evento | Quem emite | Quando |
+| --- | --- | --- |
+| `run.started` / `run.finished` | agent | Início e fim, com modo, provedor, modelo, status, apólice e métricas |
+| `skill.loaded` | agent | A skill foi carregada e verificada |
+| `route.planned`, `step.started`, `route.recalculated` | agent | Ferramentas de navegação |
+| `incident.detected` | agent | O resultado de uma tool revela um incidente (API fora, contramão, pedágio...) |
+| `human.required` | agent | Pedido de aprovação a um especialista |
+| `client.asked` / `client.answered` | agent | Conversa com a Ana |
+| `agent.message` | agent | Texto do agente para a cliente |
+| `tool.called` | gateway | Toda chamada de tool, com a skill ativa e o `execucao_id` |
+| `skills.listed`, `resource.read` | gateway | Leituras do catálogo de skills |
+
+O agente não sabe o que o simulador fez. O `incident.detected` vem do que as tools responderam, já com a metáfora do mapa (Rua interditada, Contramão, Pedágio...).
+
+**Métricas no `run.finished`:** chamadas de tool, tools distintas, tools irrelevantes (as que não estão em nenhuma skill), bloqueios do gateway, incidentes, erros, tokens (entrada, saída e cache) e duração. São a base do placar comparativo da Fase 7.
+
+### Fluxo de uma execução
+
+```
+POST /api/execucoes {modo}  ──► run.started
+  └─ laço: passo do modelo ──► tools pedidas
+       ├─ do host (skill, navegação, conversa)            ──► eventos do mapa
+       └─ do gateway (com _meta de skill e de execução)   ──► tool.called
+            └─ incidente no resultado?                    ──► incident.detected
+  └─ fim natural, limite de 40 passos ou erro             ──► run.finished
+GET /api/execucoes/{id}/eventos  ◄── SSE: o stream desde o início, depois ao vivo
+```
+
+O estado de cada execução fica em `bussola:execucoes:<id>`: status, pergunta pendente e métricas.
