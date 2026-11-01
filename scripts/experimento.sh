@@ -9,4 +9,6 @@ set -e
 
 cd "$(dirname "$0")/.."
 mkdir -p experimentos
-docker compose --profile test run --rm --no-deps --build -T -v "$(pwd)/experimentos:/saida" smoke python -m smoke.experimento "$@"
+# No Git Bash (Windows), o caminho do volume precisa ir no formato do Windows e sem conversão automática.
+ORIGEM="$(pwd -W 2>/dev/null || pwd)/experimentos"
+MSYS_NO_PATHCONV=1 docker compose --profile test run --rm --no-deps --build -T -v "$ORIGEM:/saida" smoke python -m smoke.experimento "$@"
