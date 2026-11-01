@@ -17,5 +17,5 @@ Este site explica o que acontece por trás de cada cena da demo do Banco Bússol
 7. [Como reproduzir](07-como-reproduzir.md): subir a demo e rodar cada cena.
 8. [Glossário e perguntas frequentes](08-glossario-e-faq.md).
 
-!!! info "Estado atual: Fase 2 · Camada de contexto"
-    O mapa já existe: ontologia, grafo e as tools de consulta do `contexto-mcp`. Os capítulos 2, 5, 6 e 7 descrevem o que já funciona; os outros ganham conteúdo nas próximas fases.
+!!! info "Estado atual: Fase 3 · Gateway, domínios e simulador"
+    O mapa existe, o gateway reúne 38 tools de 8 servidores MCP e o simulador muda o mundo de verdade. Os capítulos 2, 5, 6 e 7 descrevem o que já funciona; os outros ganham conteúdo nas próximas fases.

@@ -20,7 +20,7 @@ web ──► agent ──► mcp-gateway ──► skills-mcp
  │                   bus (Redis Streams) ◄── agent, simulator
  └─► /bastidores ──► docs
 
-simulator ──► graph e servidores de domínio (fora do alcance do agente)
+simulator ──► contexto-mcp /interno (grafo) e bus (domínios) · fora do alcance do agente
 ```
 
 ### Serviços
@@ -37,7 +37,7 @@ simulator ──► graph e servidores de domínio (fora do alcance do agente)
 | `graph` | Ontologia, instâncias e estado vivo | Neo4j 5 Community |
 | `seed` | Recarrega o grafo com o estado-base da ontologia a cada subida e termina | Python (mesma imagem do `contexto-mcp`) |
 | `bus` | Barramento de eventos | Redis 7 (Streams) |
-| `simulator` | Injeta incidentes e trânsito | Python, FastAPI |
+| `simulator` | Injeta incidentes; decide o pedágio quando ninguém decide; fora do alcance do agente | Python, FastAPI |
 
 ### Decisões da Fase 1
 
@@ -49,11 +49,58 @@ simulator ──► graph e servidores de domínio (fora do alcance do agente)
 
 **Upstreams por configuração.** A lista de servidores atrás do gateway fica em `services/mcp-gateway/config/upstreams.yaml`. Trocar, adicionar ou desligar um servidor não exige mudar o agente.
 
+### O gateway: um endereço, todas as tools
+
+O agente conecta em um único servidor MCP, `http://mcp-gateway:8000/mcp`, com `Authorization: Bearer $GATEWAY_TOKEN`. O gateway monta um **catálogo agregado**:
+
+- Na subida, e depois a cada 30 s, ele lê `tools/list` e `resources/list` de cada servidor de `upstreams.yaml`.
+- Os nomes ganham o prefixo do servidor: `obter_perfil` do `cliente-mcp` vira `cliente.obter_perfil`. São 38 tools ao todo.
+- As tools `ping` dos servidores ficam de fora.
+- Se um servidor cai, as tools dele continuam no catálogo, e a chamada devolve "trecho interditado". A rua continua no mapa; só fica bloqueada.
+- Resources são roteados pelo esquema da URI (`contexto://mapa` → `contexto-mcp`).
+
+Cerca de 15 dessas tools são **de distração**: plausíveis, às vezes perigosas, fora da jornada (`pagamentos.estornar`, `seguradoras.cancelar_apolice`, `consentimento.revogar`...). Elas existem para a cena 3 mostrar o que acontece quando o agente tem o mapa, mas não tem GPS.
+
+**Proveniência em toda resposta.** O gateway acrescenta ao `_meta` de cada resultado:
+
+```json
+"bussola/proveniencia": {
+  "chamada_id": "c380950190d7",
+  "tool": "cliente.obter_perfil",
+  "servidor": "cliente-mcp",
+  "instante": "2026-11-01T14:13:58+00:00",
+  "duracao_ms": 21,
+  "status": "ok"
+}
+```
+
+**Tools desligadas pelo apresentador.** O simulador guarda no barramento (`bussola:tools:fora`) as tools que o apresentador desligou. Antes de rotear cada chamada, o gateway consulta esse conjunto. Uma tool desligada devolve erro sem chegar ao servidor, com `status: erro` e `motivo: desligada` na proveniência e no evento.
+
+**Cada chamada vira um evento.** O gateway publica no Redis Stream `bussola:eventos` uma entrada `tool.called` com os mesmos campos, mais os argumentos e o erro, quando há. É desse stream que o Raio-X (Fase 7) lê: o que aparece na tela é o que de fato trafegou.
+
+### O mundo simulado
+
+Os seis servidores de domínio operam sobre **dados mestres** comuns (`libs/bussola_comum/.../dados/cadastro.yaml`): clientes, imóveis, contas, consentimentos, laudos e áreas de risco. Os ids são os mesmos da ontologia. Os registros que a jornada cria (cotações, propostas, pagamentos, apólices, tickets) ficam no barramento, sob `bussola:dominio:*`.
+
+O **simulador é o único escritor do estado vivo**. Quando o apresentador aplica um incidente, ele grava o efeito em dois lugares:
+
+```
+simulator ──► contexto-mcp /interno/estado ──► graph      (o mapa muda)
+          └─► bus  bussola:estado:<id>     ──► domínios   (os sistemas mudam)
+```
+
+As rotas `/interno/*` do `contexto-mcp` são protegidas por `SIMULADOR_TOKEN`. Elas não são tools: o gateway não as enxerga, e o agente não as alcança. Assim continua valendo que só o `contexto-mcp` toca no Neo4j.
+
+**Remover um incidente** volta tudo ao estado-base e reaplica os outros incidentes ativos, para nunca sobrar estado parcial. Duas reações acontecem sozinhas no relógio do simulador:
+
+- **Pedágio:** se ninguém decidir em 30 s, a especialista Marina aprova.
+- **Renovação de consentimento:** a cliente "confirma no app" depois de 5 s.
+
 ### Ordem de subida
 
 Os `depends_on` usam `condition: service_healthy`, e o `seed` usa `service_completed_successfully`:
 
-`graph` → `seed` (termina) → `contexto-mcp` · (`bus` + os 8 servidores MCP) → `mcp-gateway` → `agent` → `web` (junto com `docs`).
+`graph` → `seed` (termina) → `contexto-mcp` · (`bus` + os 8 servidores MCP) → `mcp-gateway` → `agent` → `web` (junto com `docs`). O `simulator` sobe depois do `contexto-mcp`.
 
 ### Como trocar o provedor de LLM
 

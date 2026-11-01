@@ -1,0 +1,19 @@
+# Parâmetros de risco por produto, usados pelo motor de regras.
+# Espelham as regras da ontologia (bairro Risco) que cada produto EXIGE.
+
+produtos:
+  produto-residencial-ancora:
+    seguradora: seguradora-ancora
+    ufs_atendidas: [SP, RJ, MG, PR, SC, RS]
+    importancia_segurada_maxima: 3000000
+    exige_alvenaria: false
+  produto-residencial-farol:
+    seguradora: seguradora-farol
+    ufs_atendidas: [SP, RJ, ES, BA, PE]
+    importancia_segurada_maxima: 5000000
+    exige_alvenaria: false
+  produto-residencial-horizonte:
+    seguradora: seguradora-horizonte
+    ufs_atendidas: [SP, MG, GO, DF]
+    importancia_segurada_maxima: 2000000
+    exige_alvenaria: true

@@ -13,7 +13,7 @@ export const mensagens = {
   status: {
     titulo: 'Status dos serviços',
     descricao:
-      'Fase 1 · Fundação. O agente consulta o gateway, que verifica cada servidor MCP. Nenhuma outra rota existe entre eles.',
+      'O agente consulta o gateway, que verifica cada servidor MCP. Nenhuma outra rota existe entre eles.',
     atualizar: 'Atualizar',
     carregando: 'Consultando o agente…',
     ultimaAtualizacao: 'Atualizado às',
@@ -35,6 +35,22 @@ export const mensagens = {
         azure_openai: 'Azure OpenAI',
       } as Record<string, string>,
     },
+  },
+  tools: {
+    titulo: 'Tools por servidor',
+    descricao:
+      'O que cada servidor MCP oferece e como o gateway expõe. Desligue uma tool para criar um cenário de falha: ela continua visível para o agente, mas toda chamada falha.',
+    visivelComo: 'Visível no gateway como',
+    oculta: 'Oculta (uso interno)',
+    noAr: 'No ar',
+    foraDoAr: 'Fora do ar',
+    religarTodas: 'Religar todas',
+    contagemFora: (n: number) =>
+      n === 0 ? 'Todas as tools no ar' : n === 1 ? '1 tool fora do ar' : `${n} tools fora do ar`,
+    resumo: (total: number, fora: number) => (fora ? `${total} tools · ${fora} fora do ar` : `${total} tools`),
+    rotuloToggle: (nome: string) => `Ligar ou desligar ${nome}`,
+    erroAcao: 'O simulador não respondeu.',
+    erroAcaoDetalhe: 'Verifique se o serviço simulator está no ar (docker compose ps).',
   },
   servicos: {
     gateway: 'MCP gateway',

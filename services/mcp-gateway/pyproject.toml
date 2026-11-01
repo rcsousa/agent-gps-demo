@@ -6,7 +6,7 @@ requires-python = ">=3.12"
 dependencies = ["bussola-comum", "fastapi>=0.115", "httpx>=0.28", "pyyaml>=6", "redis>=5"]
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.8"]
+dev = ["pytest>=8", "ruff>=0.8", "fakeredis>=2.26"]
 
 [tool.uv.sources]
 bussola-comum = { path = "../../libs/bussola_comum" }

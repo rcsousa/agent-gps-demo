@@ -49,15 +49,22 @@ Cada serviço Python tem um `uv.lock` versionado, e o build usa `uv sync --locke
 
 O script roda o `uv` dentro de um container, então não é preciso instalar nada na máquina.
 
-### Consultar o mapa ao vivo
+### Chamar tools como o agente
 
-Para ver as respostas reais da camada de contexto, com a demo no ar:
+Com a demo no ar, `gateway.sh` chama qualquer tool pelo MCP gateway, com o mesmo caminho e o mesmo token do agente. A resposta mostra o `_meta` com a proveniência:
 
 ```bash
-./scripts/contexto.sh consultar_entidade '{"id": "cliente-ana"}'
-./scripts/contexto.sh consultar_rota
-./scripts/contexto.sh consultar_regras '{"id": "produto-residencial-farol"}'
-./scripts/contexto.sh contexto://mapa
+./scripts/gateway.sh --listar                                  # as 38 tools
+./scripts/gateway.sh cliente.obter_perfil '{"cliente_id": "cliente-ana"}'
+./scripts/gateway.sh seguradoras.cotar_seguro '{"cliente_id": "cliente-ana", "seguradora": "farol"}'
+./scripts/gateway.sh contexto.consultar_rota
+./scripts/gateway.sh contexto://mapa
+```
+
+Para ver as chamadas no barramento:
+
+```bash
+docker compose exec bus redis-cli XREVRANGE bussola:eventos + - COUNT 5
 ```
 
 No Neo4j Browser, a vizinhança da Ana:
@@ -80,9 +87,60 @@ docker compose stop risco-mcp    # o tile "Risco" fica vermelho em até 5 s
 docker compose start risco-mcp   # e volta ao verde
 ```
 
+### Aplicar incidentes
+
+`incidente.sh` é o painel do apresentador por linha de comando:
+
+```bash
+./scripts/incidente.sh listar
+./scripts/incidente.sh aplicar cotacao-ancora-fora     # rua interditada
+./scripts/gateway.sh contexto.consultar_rota            # a rota rápida aparece bloqueada
+./scripts/incidente.sh remover cotacao-ancora-fora
+./scripts/incidente.sh reset                           # tudo volta ao estado-base
+```
+
+No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de `atendimento.solicitar_aprovacao`, decida com `./scripts/incidente.sh aprovar <ticket>` (ou `recusar`). Se ninguém decidir em 30 s, a especialista Marina aprova.
+
+| Incidente | Metáfora |
+| --- | --- |
+| `cotacao-ancora-fora` | Rua interditada |
+| `emissao-lenta` | Congestionamento |
+| `consentimento-ana-expirado` | Contramão |
+| `vistoria-zona-sul` | Desvio por obra |
+| `alcada-ana-excedida` | Pedágio |
+| `proveniencia-fraca-ana` | Ponte interditada |
+
+### Desligar uma tool
+
+Além dos incidentes, dá para criar falhas sob medida, tool a tool. No painel de status (<http://localhost:8080>), a seção **Tools por servidor** mostra:
+
+- o que cada servidor MCP oferece;
+- o nome com que cada tool aparece no gateway;
+- o que fica oculto, como as tools `ping`.
+
+O toggle de cada linha desliga ou religa a tool. **"Religar todas"** volta tudo ao normal.
+
+Uma tool desligada **continua visível** para o agente, mas toda chamada falha com "trecho interditado". É a falha que o agente precisa perceber e contornar. O controle passa pelo simulador, pelo caminho `/simulador` do web; o agente não o alcança.
+
+Pela linha de comando:
+
+```bash
+./scripts/incidente.sh desligar seguradoras.cotar_seguro
+./scripts/incidente.sh tools                       # o que está fora do ar
+./scripts/incidente.sh religar seguradoras.cotar_seguro
+```
+
+`incidente.sh reset` também religa todas as tools.
+
 ### Criar um novo incidente
 
-Este conteúdo chega na Fase 3, com o `simulator`.
+Acrescente uma entrada em `services/simulator/incidentes.yaml`. Cada efeito aponta para uma entidade da ontologia, pelo id, e muda:
+
+- `estado`: `status`, `latencia_ms`, `custo_estimado`, `vigencia_fim`;
+- `atributos` ou `proveniencia`;
+- relações (`relacoes_adicionar`).
+
+Datas podem ser relativas (`$hoje`, `$ontem`). Depois de `docker compose up -d --build simulator`, o incidente aparece em `incidente.sh listar`. O smoke aplica todos os incidentes do catálogo ao mapa real, para garantir que nenhum aponta para entidade inexistente.
 
 ### Escrever uma nova skill
 

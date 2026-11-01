@@ -86,7 +86,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: $spacing-03;
-  min-block-size: 8rem;
+  min-block-size: 9rem;
   margin-block-end: $spacing-05;
 
   &__nome {
@@ -108,5 +108,83 @@ body {
   &__latencia {
     @include type-style('code-01');
     color: theme.$text-helper;
+  }
+
+  &__detalhe {
+    @include type-style('helper-text-01');
+    color: theme.$text-secondary;
+  }
+}
+
+.tools {
+  margin-block-start: $spacing-09;
+
+  .cds--accordion__content {
+    padding-inline-end: $spacing-05;
+  }
+  // Mesmo recuo dos tiles (margem do Grid do Carbon).
+  padding-inline: $spacing-05;
+
+  .status__grupo,
+  .status__cabecalho,
+  .cds--inline-notification {
+    margin-inline: 0;
+  }
+
+  &__titulo {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: $spacing-03 $spacing-05;
+
+    code {
+      @include type-style('code-01');
+      color: theme.$text-secondary;
+    }
+  }
+
+  &__resumo {
+    @include type-style('helper-text-01');
+    color: theme.$text-secondary;
+  }
+
+  &__linha {
+    display: grid;
+    grid-template-columns: minmax(12rem, 1fr) minmax(20rem, 2fr) auto;
+    align-items: center;
+    gap: $spacing-05;
+    padding-block: $spacing-03;
+    border-block-end: 1px solid theme.$border-subtle;
+
+    &:last-child {
+      border-block-end: none;
+    }
+  }
+
+  &__nome {
+    @include type-style('code-02');
+  }
+
+  &__gateway {
+    @include type-style('body-compact-01');
+    color: theme.$text-secondary;
+
+    code {
+      @include type-style('code-01');
+      color: theme.$text-primary;
+    }
+  }
+
+  &__controle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: $spacing-04;
+    min-inline-size: 10rem;
+
+    // O estado já aparece na tag; o texto lateral do Toggle (aria-hidden) sairia duplicado.
+    .cds--toggle__text {
+      display: none;
+    }
   }
 }

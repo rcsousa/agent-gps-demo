@@ -1,0 +1,69 @@
+# Incidentes que o apresentador dispara durante a demo. Todos acontecem com a Ana.
+#
+# Cada efeito muda uma entidade da ontologia (mesmo id) no grafo, pelo
+# contexto-mcp, e no estado vivo lido pelos sistemas de domínio:
+#   estado:       status (ok | degradado | fora), latencia_ms, custo_estimado, vigencia_inicio, vigencia_fim
+#   atributos:    atributos de negócio da entidade
+#   proveniencia: fonte, data, responsavel, confianca
+#   relacoes_adicionar: [[de, TIPO, para], ...] (tipos do esquema)
+# Datas relativas: $hoje, $ontem, $daqui_um_ano.
+
+incidentes:
+  - id: cotacao-ancora-fora
+    nome: API de cotação da Âncora fora do ar
+    metafora: Rua interditada
+    reacao_esperada: Recalcular para outra seguradora e explicar a troca de preço e cobertura.
+    efeitos:
+      - entidade: api-cotacao-ancora
+        estado: { status: fora }
+
+  - id: emissao-lenta
+    nome: Latência alta na emissão de apólices
+    metafora: Congestionamento
+    reacao_esperada: Manter a rota e avisar sobre o atraso, ou oferecer a rota alternativa.
+    efeitos:
+      - entidade: api-emissao-ancora
+        estado: { status: degradado, latencia_ms: 6000 }
+      - entidade: api-emissao-farol
+        estado: { status: degradado, latencia_ms: 6000 }
+
+  - id: consentimento-ana-expirado
+    nome: Consentimento da Ana expirado
+    metafora: Contramão
+    reacao_esperada: Parar, pedir renovação do consentimento e só depois seguir.
+    efeitos:
+      - entidade: consentimento-ana-oferta
+        estado: { status: fora, vigencia_fim: $ontem }
+
+  - id: vistoria-zona-sul
+    nome: "Nova política: imóveis na zona sul exigem vistoria"
+    metafora: Desvio por obra
+    reacao_esperada: Inserir a parada de vistoria na rota e recalcular o prazo.
+    efeitos:
+      - entidade: politica-vistoria-areas-risco
+        atributos: { versao: "2", abrangencia: "Inclui São Paulo, zona sul, após as chuvas de outubro" }
+        proveniencia: { fonte: "Comitê de Riscos, ata 2026-11", data: $hoje, responsavel: Diretoria de Riscos, confianca: alta }
+      - entidade: area-sp-zona-sul
+        atributos: { nivel: alto, fatores: [roubo, alagamento] }
+        proveniencia: { fonte: "Comitê de Riscos, ata 2026-11", data: $hoje, responsavel: Diretoria de Riscos, confianca: alta }
+        relacoes_adicionar:
+          - [area-sp-zona-sul, EXIGE, regra-vistoria-area-risco]
+          - [area-sp-zona-sul, EXIGE, exigencia-vistoria-previa]
+
+  - id: alcada-ana-excedida
+    nome: Ana declara uma coleção de arte
+    metafora: Pedágio
+    reacao_esperada: Rotear por um especialista humano antes de emitir.
+    efeitos:
+      - entidade: imovel-ana
+        atributos: { colecao_arte_declarada: 1020000, importancia_segurada: 1800000 }
+        proveniencia: { fonte: Declaração da cliente no app, data: $hoje, responsavel: Ana Ribeiro, confianca: alta }
+
+  - id: proveniencia-fraca-ana
+    nome: Valor do imóvel da Ana chega de fonte não confiável
+    metafora: Ponte interditada
+    reacao_esperada: Recusar o dado numa decisão de impacto e buscar a fonte autoritativa (laudo).
+    efeitos:
+      - entidade: imovel-ana
+        atributos: { valor_estimado: 1250000, importancia_segurada: 1250000 }
+        proveniencia: { fonte: Planilha importada (cadastro legado), data: 2023-04-11, responsavel: Desconhecido, confianca: baixa }

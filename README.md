@@ -31,6 +31,15 @@ docker compose --profile test run --rm --build smoke  # ponta a ponta, com a dem
 
 Dependências Python ficam travadas num `uv.lock` por serviço. Depois de mudar um `pyproject.toml`, rode `./scripts/travar-dependencias.sh <serviço>`.
 
+## Explorar a demo
+
+```bash
+./scripts/gateway.sh --listar                          # as tools que o agente enxerga
+./scripts/gateway.sh contexto.consultar_rota           # rotas com estimativas do trânsito atual
+./scripts/incidente.sh aplicar cotacao-ancora-fora     # o apresentador derruba uma API
+./scripts/incidente.sh reset                           # tudo volta ao estado-base
+```
+
 ## Estrutura
 
 ```
@@ -51,4 +60,4 @@ docs/                           spec e infográfico
 
 ## Fases
 
-O desenvolvimento segue as fases da spec. Fase atual: **1 · Fundação**.
+O desenvolvimento segue as fases da spec. Fase atual: **3 · Gateway, domínios e simulador**.

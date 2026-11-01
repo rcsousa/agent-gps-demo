@@ -1,0 +1,200 @@
+# Dados mestres do Banco Bússola (fictícios), lidos pelos sistemas de domínio.
+# Os ids são os mesmos da ontologia (services/contexto-mcp/ontologia): o mapa
+# descreve o negócio; estes são os registros que os sistemas operam.
+
+clientes:
+  cliente-ana:
+    nome: Ana Ribeiro
+    idade: 38
+    cpf: "***.482.917-**"
+    cidade: São Paulo
+    uf: SP
+    segmento: Varejo alta renda
+    renda_mensal: 18500
+    anos_de_relacionamento: 6
+    restricao_cadastral: false
+    conta: conta-ana-corrente
+    imovel: imovel-ana
+    produtos:
+      - { id: contratado-ana-auto, nome: Seguro auto Farol, tipo: seguro, ramo: auto, coberturas: [colisão, danos a terceiros] }
+      - { id: contratado-ana-cartao, nome: Cartão Bússola Platinum, tipo: cartao }
+    proveniencia: { fonte: CRM Bússola, data: 2026-10-28, responsavel: Time de Dados de Clientes, confianca: alta }
+  cliente-bruno:
+    nome: Bruno Teixeira
+    idade: 45
+    cpf: "***.315.604-**"
+    cidade: São Paulo
+    uf: SP
+    segmento: Varejo
+    renda_mensal: 12000
+    anos_de_relacionamento: 9
+    restricao_cadastral: false
+    conta: conta-bruno
+    imovel: imovel-bruno
+    produtos: []
+    proveniencia: { fonte: CRM Bússola, data: 2026-10-28, responsavel: Time de Dados de Clientes, confianca: alta }
+  cliente-carla:
+    nome: Carla Nogueira
+    idade: 33
+    cpf: "***.770.248-**"
+    cidade: São Paulo
+    uf: SP
+    segmento: Varejo
+    renda_mensal: 9800
+    anos_de_relacionamento: 4
+    restricao_cadastral: false
+    conta: conta-carla
+    imovel: imovel-carla
+    produtos: []
+    proveniencia: { fonte: CRM Bússola, data: 2026-10-28, responsavel: Time de Dados de Clientes, confianca: alta }
+  cliente-diego:
+    nome: Diego Martins
+    idade: 52
+    cpf: "***.903.115-**"
+    cidade: São Paulo
+    uf: SP
+    segmento: Private
+    renda_mensal: 95000
+    anos_de_relacionamento: 12
+    restricao_cadastral: false
+    conta: conta-diego
+    imovel: imovel-diego
+    produtos: []
+    proveniencia: { fonte: CRM Bússola, data: 2026-10-28, responsavel: Time de Dados de Clientes, confianca: alta }
+  cliente-elisa:
+    nome: Elisa Prado
+    idade: 41
+    cpf: "***.128.659-**"
+    cidade: Campinas
+    uf: SP
+    segmento: Varejo
+    renda_mensal: 11000
+    anos_de_relacionamento: 2
+    restricao_cadastral: false
+    conta: conta-elisa
+    imovel: imovel-elisa
+    produtos: []
+    proveniencia: { fonte: Planilha importada (cadastro legado), data: 2023-04-11, responsavel: Desconhecido, confianca: baixa }
+  cliente-fabio:
+    nome: Fábio Lima
+    idade: 27
+    cpf: "***.664.072-**"
+    cidade: São Paulo
+    uf: SP
+    segmento: Varejo
+    renda_mensal: 5200
+    anos_de_relacionamento: 3
+    restricao_cadastral: false
+    conta: conta-fabio
+    imovel: imovel-fabio
+    produtos:
+      - { id: contratado-fabio-cartao, nome: Cartão Bússola Gold, tipo: cartao }
+    proveniencia: { fonte: CRM Bússola, data: 2026-10-28, responsavel: Time de Dados de Clientes, confianca: alta }
+  cliente-gabriela:
+    nome: Gabriela Souza
+    idade: 58
+    cpf: "***.551.386-**"
+    cidade: Santos
+    uf: SP
+    segmento: Varejo alta renda
+    renda_mensal: 21000
+    anos_de_relacionamento: 15
+    restricao_cadastral: false
+    conta: conta-gabriela
+    imovel: imovel-gabriela
+    produtos:
+      - { id: contratado-gabriela-vida, nome: Vida Horizonte, tipo: seguro, ramo: vida, coberturas: [morte, invalidez por acidente] }
+    proveniencia: { fonte: CRM Bússola, data: 2026-10-28, responsavel: Time de Dados de Clientes, confianca: alta }
+  cliente-helena:
+    nome: Helena Araújo
+    idade: 31
+    cpf: "***.209.743-**"
+    cidade: São Paulo
+    uf: SP
+    segmento: Varejo
+    renda_mensal: 7400
+    anos_de_relacionamento: 1
+    restricao_cadastral: false
+    conta: conta-helena
+    imovel: imovel-helena
+    produtos: []
+    proveniencia: { fonte: CRM Bússola, data: 2026-10-28, responsavel: Time de Dados de Clientes, confianca: alta }
+
+imoveis:
+  imovel-ana:
+    cliente: cliente-ana
+    tipo_imovel: apartamento
+    uso: residencial_habitual
+    construcao: alvenaria
+    endereco: Rua Domingos de Morais, Vila Mariana
+    cidade: São Paulo
+    uf: SP
+    area_risco: area-sp-zona-sul
+    area_m2: 82
+    valor_estimado: 780000
+    proveniencia: { fonte: Cadastro imobiliário do CRM, data: 2026-08-14, responsavel: Time de Dados de Clientes, confianca: alta }
+  imovel-bruno:
+    { cliente: cliente-bruno, tipo_imovel: casa, uso: residencial_habitual, construcao: alvenaria, endereco: Pinheiros, cidade: São Paulo, uf: SP, area_risco: area-sp-zona-oeste, area_m2: 160, valor_estimado: 1150000,
+      proveniencia: { fonte: Cadastro imobiliário do CRM, data: 2026-05-02, responsavel: Time de Dados de Clientes, confianca: alta } }
+  imovel-carla:
+    { cliente: cliente-carla, tipo_imovel: sobrado, uso: residencial_habitual, construcao: alvenaria, endereco: Várzea do Tietê, cidade: São Paulo, uf: SP, area_risco: area-varzea-tiete, area_m2: 120, valor_estimado: 640000,
+      proveniencia: { fonte: Cadastro imobiliário do CRM, data: 2026-03-20, responsavel: Time de Dados de Clientes, confianca: alta } }
+  imovel-diego:
+    { cliente: cliente-diego, tipo_imovel: apartamento_cobertura, uso: residencial_habitual, construcao: alvenaria, endereco: Jardim Europa, cidade: São Paulo, uf: SP, area_risco: area-sp-zona-oeste, area_m2: 410, valor_estimado: 4200000,
+      proveniencia: { fonte: Cadastro imobiliário do CRM, data: 2026-07-09, responsavel: Time de Dados de Clientes, confianca: alta } }
+  imovel-elisa:
+    { cliente: cliente-elisa, tipo_imovel: casa, uso: residencial_habitual, construcao: alvenaria, endereco: Condomínio em Campinas, cidade: Campinas, uf: SP, area_risco: area-campinas, area_m2: 190, valor_estimado: 950000,
+      proveniencia: { fonte: Planilha importada (cadastro legado), data: 2023-04-11, responsavel: Desconhecido, confianca: baixa } }
+  imovel-fabio:
+    { cliente: cliente-fabio, tipo_imovel: apartamento, uso: residencial_habitual, construcao: alvenaria, endereco: Centro, cidade: São Paulo, uf: SP, area_risco: area-sp-centro, area_m2: 32, valor_estimado: 290000, propriedade: alugado,
+      proveniencia: { fonte: Cadastro imobiliário do CRM, data: 2026-02-11, responsavel: Time de Dados de Clientes, confianca: alta } }
+  imovel-gabriela:
+    { cliente: cliente-gabriela, tipo_imovel: casa, uso: veraneio, construcao: alvenaria, endereco: Ubatuba, cidade: Ubatuba, uf: SP, area_risco: area-litoral-norte, area_m2: 140, valor_estimado: 870000,
+      proveniencia: { fonte: Cadastro imobiliário do CRM, data: 2025-12-01, responsavel: Time de Dados de Clientes, confianca: alta } }
+  imovel-helena:
+    { cliente: cliente-helena, tipo_imovel: apartamento, uso: residencial_habitual, construcao: alvenaria, endereco: Mooca, cidade: São Paulo, uf: SP, area_risco: area-sp-zona-leste, area_m2: 64, valor_estimado: 520000,
+      proveniencia: { fonte: Cadastro imobiliário do CRM, data: 2026-09-20, responsavel: Time de Dados de Clientes, confianca: alta } }
+
+# Laudos de avaliação: a fonte autoritativa do valor do imóvel.
+laudos:
+  imovel-ana: { valor_avaliado: 780000, data: 2026-08-10, responsavel: Engenharia de Avaliações Bússola }
+  imovel-diego: { valor_avaliado: 4200000, data: 2026-07-01, responsavel: Engenharia de Avaliações Bússola }
+  imovel-elisa: { valor_avaliado: 910000, data: 2026-10-30, responsavel: Engenharia de Avaliações Bússola }
+  imovel-carla: { valor_avaliado: 640000, data: 2026-03-15, responsavel: Engenharia de Avaliações Bússola }
+
+areas:
+  area-sp-zona-sul: { nome: "São Paulo, zona sul", nivel: baixo, fatores: [roubo] }
+  area-sp-zona-oeste: { nome: "São Paulo, zona oeste", nivel: baixo, fatores: [] }
+  area-sp-centro: { nome: "São Paulo, centro", nivel: medio, fatores: [roubo] }
+  area-sp-zona-leste: { nome: "São Paulo, zona leste", nivel: medio, fatores: [alagamento] }
+  area-varzea-tiete: { nome: Várzea do Tietê, nivel: alto, fatores: [alagamento, enchente] }
+  area-campinas: { nome: Campinas, nivel: baixo, fatores: [] }
+  area-litoral-norte: { nome: Litoral norte, nivel: medio, fatores: [vendaval, desocupacao] }
+
+contas:
+  conta-ana-corrente: { cliente: cliente-ana, modalidade: corrente, agencia: "0412", saldo: 23400, meios: [debito_em_conta, cartao_credito, pix] }
+  conta-bruno: { cliente: cliente-bruno, modalidade: corrente, agencia: "0187", saldo: 8100, meios: [debito_em_conta, pix] }
+  conta-carla: { cliente: cliente-carla, modalidade: corrente, agencia: "0533", saldo: 4300, meios: [debito_em_conta, pix] }
+  conta-diego: { cliente: cliente-diego, modalidade: corrente, agencia: "0001", saldo: 410000, meios: [debito_em_conta, cartao_credito, pix] }
+  conta-elisa: { cliente: cliente-elisa, modalidade: corrente, agencia: "2210", saldo: 2900, meios: [debito_em_conta, pix] }
+  conta-fabio: { cliente: cliente-fabio, modalidade: corrente, agencia: "0900", saldo: 1800, meios: [cartao_credito, pix] }
+  conta-gabriela: { cliente: cliente-gabriela, modalidade: corrente, agencia: "1404", saldo: 56000, meios: [debito_em_conta, cartao_credito] }
+  conta-helena: { cliente: cliente-helena, modalidade: corrente, agencia: "0900", saldo: 3600, meios: [pix] }
+
+# Cofre de consentimentos (LGPD).
+consentimentos:
+  consentimento-ana-oferta: { cliente: cliente-ana, finalidade: finalidade-oferta-personalizada, inicio: 2026-01-10, fim: 2027-01-09, versao_termo: "3.2" }
+  consentimento-ana-compartilhamento: { cliente: cliente-ana, finalidade: finalidade-compartilhamento-seguradoras, inicio: 2026-01-10, fim: 2027-01-09, versao_termo: "3.2" }
+  consentimento-bruno-oferta: { cliente: cliente-bruno, finalidade: finalidade-oferta-personalizada, inicio: 2025-09-01, fim: 2026-08-31, versao_termo: "2.8" }
+  consentimento-carla-oferta: { cliente: cliente-carla, finalidade: finalidade-oferta-personalizada, inicio: 2026-05-02, fim: 2027-05-01, versao_termo: "3.2" }
+  consentimento-diego-oferta: { cliente: cliente-diego, finalidade: finalidade-oferta-personalizada, inicio: 2026-02-20, fim: 2027-02-19, versao_termo: "3.1" }
+  consentimento-elisa-oferta: { cliente: cliente-elisa, finalidade: finalidade-oferta-personalizada, inicio: 2026-06-15, fim: 2027-06-14, versao_termo: "3.2" }
+  consentimento-fabio-oferta: { cliente: cliente-fabio, finalidade: finalidade-oferta-personalizada, inicio: 2026-04-01, fim: 2027-03-31, versao_termo: "3.2" }
+  consentimento-gabriela-oferta: { cliente: cliente-gabriela, finalidade: finalidade-oferta-personalizada, inicio: 2026-03-03, fim: 2027-03-02, versao_termo: "3.0" }
+  consentimento-helena-oferta: { cliente: cliente-helena, finalidade: finalidade-oferta-personalizada, inicio: 2026-09-20, fim: 2027-09-19, versao_termo: "3.2" }
+
+# Limites de alçada (espelham a ontologia, bairro Risco).
+alcadas:
+  alcada-automatica: { nome: Alçada automática, premio_anual_maximo: 3000, importancia_segurada_maxima: 1500000 }
+  alcada-especialista: { nome: Alçada do especialista, premio_anual_maximo: 15000, importancia_segurada_maxima: 5000000 }
+  alcada-comite: { nome: Alçada do comitê }

@@ -3,25 +3,12 @@ import { Button, Column, Grid, InlineLoading, InlineNotification, Tag, Tile } fr
 import { useCallback, useEffect, useState } from 'react';
 
 import { mensagens } from '../mensagens/pt-BR';
+import type { Estado, Status } from '../tipos';
+import { ToolsPorServidor } from './ToolsPorServidor';
 
 const t = mensagens.status;
+const tt = mensagens.tools;
 const INTERVALO_MS = 5000;
-
-type Estado = 'ok' | 'fora';
-
-interface Servico {
-  nome: string;
-  prefixo: string;
-  status: Estado;
-  latencia_ms: number;
-}
-
-interface Status {
-  gateway: Estado;
-  barramento: Estado;
-  llm: { provedor: string; configurado: boolean };
-  servicos: Servico[];
-}
 
 function TagEstado({ estado }: { estado: Estado }) {
   // Cor nunca sozinha: sempre ícone e rótulo.
@@ -36,11 +23,18 @@ function TagEstado({ estado }: { estado: Estado }) {
   );
 }
 
-function TileServico(props: { titulo: string; tecnico: string; estado: Estado; latenciaMs?: number }) {
+function TileServico(props: {
+  titulo: string;
+  tecnico: string;
+  estado: Estado;
+  latenciaMs?: number;
+  detalhe?: string;
+}) {
   return (
     <Tile className="tile-servico">
       <span className="tile-servico__nome">{props.titulo}</span>
       <span className="tile-servico__tecnico">{props.tecnico}</span>
+      {props.detalhe && <span className="tile-servico__detalhe">{props.detalhe}</span>}
       <div className="tile-servico__rodape">
         <TagEstado estado={props.estado} />
         {props.latenciaMs !== undefined && (
@@ -114,7 +108,12 @@ export function StatusServicos() {
           <h2 className="status__grupo">{t.grupos.plataforma}</h2>
           <Grid narrow>
             <Column {...coluna}>
-              <TileServico titulo={mensagens.servicos.gateway} tecnico="mcp-gateway" estado={status.gateway} />
+              <TileServico
+                titulo={mensagens.servicos.gateway}
+                tecnico="mcp-gateway"
+                estado={status.gateway}
+                detalhe={status.gateway === 'ok' ? tt.resumo(status.ferramentas, status.ferramentas_fora) : undefined}
+              />
             </Column>
             <Column {...coluna}>
               <TileServico titulo={mensagens.servicos.barramento} tecnico="bus · redis" estado={status.barramento} />
@@ -147,10 +146,16 @@ export function StatusServicos() {
                   tecnico={`${s.nome} · ${s.prefixo}.*`}
                   estado={s.status}
                   latenciaMs={s.latencia_ms}
+                  detalhe={tt.resumo(
+                    s.ferramentas.filter((f) => f.visivel).length,
+                    s.ferramentas.filter((f) => f.fora).length,
+                  )}
                 />
               </Column>
             ))}
           </Grid>
+
+          <ToolsPorServidor servicos={status.servicos} aoMudar={consultar} />
         </>
       )}
     </section>

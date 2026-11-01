@@ -1,7 +1,7 @@
-"""Checagem ponta a ponta da Fase 1, pela rede interna do compose.
+"""Checagem ponta a ponta, pela rede interna do compose, com a demo no ar.
 
 O smoke é ferramenta de teste: ele pode conhecer todos os serviços.
-O agente, não.
+O agente, não. Por isso as tools são sempre chamadas pelo gateway.
 """
 
 import asyncio
@@ -10,7 +10,9 @@ import os
 
 import httpx
 import pytest
-from mcp.client.client import Client
+from redis import Redis
+
+from bussola_comum.cliente_mcp import conectar
 
 SERVICOS_PYTHON = [
     "agent",
@@ -26,7 +28,38 @@ SERVICOS_PYTHON = [
     "simulator",
 ]
 SERVIDORES_MCP = [s for s in SERVICOS_PYTHON if s.endswith("-mcp")]
-TOKEN = {"Authorization": f"Bearer {os.environ['GATEWAY_TOKEN']}"}
+GATEWAY = "http://mcp-gateway:8000/mcp"
+SIMULADOR = "http://simulator:8000"
+TOKEN = os.environ["GATEWAY_TOKEN"]
+
+
+def gateway(tool: str, argumentos: dict | None = None):
+    """Chama uma tool (ou lê um resource) pelo gateway, como o agente fará."""
+
+    async def chamar():
+        async with conectar(GATEWAY, TOKEN) as cliente:
+            if "://" in tool:
+                return await cliente.read_resource(tool)
+            if tool == "--listar":
+                return await cliente.list_tools()
+            return await cliente.call_tool(tool, argumentos or {})
+
+    return asyncio.run(chamar())
+
+
+def dados(tool: str, argumentos: dict | None = None) -> dict:
+    resultado = gateway(tool, argumentos)
+    assert not resultado.is_error, resultado.content[0].text
+    return resultado.structured_content
+
+
+def simulador(metodo: str, caminho: str) -> dict:
+    resposta = httpx.request(metodo, f"{SIMULADOR}{caminho}", timeout=60)
+    resposta.raise_for_status()
+    return resposta.json()
+
+
+# --- Fase 1: fundação ----------------------------------------------------------
 
 
 @pytest.mark.parametrize("servico", SERVICOS_PYTHON)
@@ -41,15 +74,9 @@ def test_contexto_mcp_enxerga_o_grafo():
     assert corpo["dependencias"]["graph"] == "ok"
 
 
-@pytest.mark.parametrize("servidor", SERVIDORES_MCP)
-def test_ping_mcp_via_gateway(servidor):
-    resposta = httpx.post(f"http://mcp-gateway:8000/ping/{servidor}", headers=TOKEN, timeout=10)
-    assert resposta.status_code == 200, resposta.text
-    assert resposta.json()["resposta"] == f"pong de {servidor}"
-
-
 def test_gateway_recusa_chamada_sem_token():
     assert httpx.get("http://mcp-gateway:8000/saude/servicos", timeout=5).status_code == 401
+    assert httpx.post(GATEWAY, json={}, timeout=5).status_code == 401
 
 
 def test_status_pelo_caminho_web_agent_gateway():
@@ -58,6 +85,7 @@ def test_status_pelo_caminho_web_agent_gateway():
     assert corpo["barramento"] == "ok"
     assert sorted(s["nome"] for s in corpo["servicos"]) == sorted(SERVIDORES_MCP)
     assert all(s["status"] == "ok" for s in corpo["servicos"])
+    assert corpo["ferramentas"] == 38
 
 
 def test_web_serve_a_aplicacao():
@@ -72,32 +100,152 @@ def test_bastidores_servidos_pelo_web():
     assert "Bastidores" in resposta.text
 
 
-# --- Fase 2: camada de contexto ------------------------------------------------
-
-
-def _contexto(tool: str, argumentos: dict | None = None):
-    async def chamar():
-        async with Client("http://contexto-mcp:8000/mcp", read_timeout_seconds=15) as cliente:
-            if tool.startswith("contexto://"):
-                return await cliente.read_resource(tool)
-            return await cliente.call_tool(tool, argumentos or {})
-
-    return asyncio.run(chamar())
+# --- Fase 2: camada de contexto (agora pelo gateway) ---------------------------
 
 
 def test_grafo_semeado_com_a_ana():
-    resultado = _contexto("consultar_entidade", {"id": "cliente-ana"})
-    assert not resultado.is_error
-    assert resultado.structured_content["entidade"]["nome"] == "Ana Ribeiro"
+    assert dados("contexto.consultar_entidade", {"id": "cliente-ana"})["entidade"]["nome"] == "Ana Ribeiro"
 
 
 def test_tres_rotas_com_estimativa():
-    rotas = _contexto("consultar_rota").structured_content["rotas"]
+    rotas = dados("contexto.consultar_rota")["rotas"]
     assert {r["id"] for r in rotas} == {"rota-rapida", "rota-economica", "rota-assistida"}
     assert all(r["estimativa"]["tempo_texto"].startswith("~") for r in rotas)
 
 
 def test_mapa_com_todos_os_nos_posicionados():
-    mapa = json.loads(_contexto("contexto://mapa").contents[0].text)
+    mapa = json.loads(gateway("contexto://mapa").contents[0].text)
     assert 150 <= len(mapa["nos"]) <= 300
     assert all(n["x"] is not None and n["y"] is not None for n in mapa["nos"])
+
+
+# --- Fase 3: gateway, domínios e simulador -------------------------------------
+
+
+@pytest.fixture
+def mundo_limpo():
+    simulador("POST", "/reset")
+    yield
+    simulador("POST", "/reset")
+
+
+def test_gateway_agrega_38_tools_qualificadas():
+    nomes = {t.name for t in gateway("--listar").tools}
+    assert len(nomes) == 38
+    assert all("." in n for n in nomes)
+    assert {"cliente.obter_perfil", "seguradoras.cotar_seguro", "contexto.consultar_rota"} <= nomes
+    assert not any(n.endswith(".ping") for n in nomes)
+
+
+def test_proveniencia_carimbada_pelo_gateway():
+    resultado = gateway("cliente.obter_perfil", {"cliente_id": "cliente-ana"})
+    proveniencia = resultado.meta["bussola/proveniencia"]
+    assert proveniencia["servidor"] == "cliente-mcp" and proveniencia["status"] == "ok"
+
+
+def test_todo_cliente_do_mapa_existe_no_sistema_de_clientes():
+    clientes = dados("contexto.buscar_entidades", {"tipo": "Cliente"})["entidades"]
+    for cliente in clientes:
+        assert dados("cliente.obter_perfil", {"cliente_id": cliente["id"]})["nome"] == cliente["nome"]
+
+
+def test_jornada_feliz_da_ana(mundo_limpo):
+    ana = {"cliente_id": "cliente-ana"}
+    assert dados("consentimento.verificar", {**ana, "finalidade": "finalidade-oferta-personalizada"})[
+        "permitido"
+    ]
+    assert dados("risco.consultar_elegibilidade", {**ana, "produto_id": "produto-residencial-farol"})[
+        "elegivel"
+    ]
+    precos = {
+        s: dados("seguradoras.cotar_seguro", {**ana, "seguradora": s})
+        for s in ("ancora", "farol", "horizonte")
+    }
+    assert {s: round(c["premio_anual"]) for s, c in precos.items()} == {
+        "ancora": 320,
+        "farol": 310,
+        "horizonte": 280,
+    }
+
+    cotacao = precos["farol"]
+    alcada = dados(
+        "risco.verificar_alcada", {"premio_anual": cotacao["premio_anual"], "importancia_segurada": 780000}
+    )
+    assert alcada["exige_aprovacao_humana"] is False
+    proposta = dados("seguradoras.gerar_proposta", {"cotacao_id": cotacao["cotacao_id"]})
+    dados("seguradoras.registrar_aceite", {"proposta_id": proposta["proposta_id"]})
+    pagamento = dados(
+        "pagamentos.processar_pagamento",
+        {**ana, "valor": cotacao["premio_anual"], "referencia": proposta["proposta_id"]},
+    )
+    apolice = dados(
+        "seguradoras.emitir_apolice",
+        {"proposta_id": proposta["proposta_id"], "pagamento_id": pagamento["pagamento_id"]},
+    )
+    assert apolice["status"] == "emitida" and apolice["seguradora"] == "Farol Seguros"
+
+
+def test_rua_interditada_e_recalculo(mundo_limpo):
+    simulador("POST", "/incidentes/cotacao-ancora-fora/aplicar")
+    resultado = gateway("seguradoras.cotar_seguro", {"cliente_id": "cliente-ana", "seguradora": "ancora"})
+    assert resultado.is_error and "fora do ar" in resultado.content[0].text
+    rapida = dados("contexto.consultar_rota", {"rota": "rota-rapida"})["rotas"][0]
+    assert rapida["estimativa"]["bloqueada"] is True
+    assert rapida["alertas"][0]["entidade"]["id"] == "api-cotacao-ancora"
+
+    simulador("POST", "/incidentes/cotacao-ancora-fora/remover")
+    rapida = dados("contexto.consultar_rota", {"rota": "rota-rapida"})["rotas"][0]
+    assert rapida["estimativa"]["bloqueada"] is False
+    assert not gateway(
+        "seguradoras.cotar_seguro", {"cliente_id": "cliente-ana", "seguradora": "ancora"}
+    ).is_error
+
+
+def test_pedagio_com_aprovacao_do_apresentador(mundo_limpo):
+    simulador("POST", "/incidentes/alcada-ana-excedida/aplicar")
+    cotacao = dados("seguradoras.cotar_seguro", {"cliente_id": "cliente-ana", "seguradora": "farol"})
+    assert cotacao["importancia_segurada"] == 1800000
+    proposta = dados("seguradoras.gerar_proposta", {"cotacao_id": cotacao["cotacao_id"]})
+    assert proposta["exige_aprovacao_humana"] is True
+    ticket = dados(
+        "atendimento.solicitar_aprovacao", {"proposta_id": proposta["proposta_id"], "motivo": "IS acima"}
+    )
+    simulador("POST", f"/aprovacoes/{ticket['ticket_id']}/aprovar")
+    assert (
+        dados("atendimento.consultar_aprovacao", {"ticket_id": ticket["ticket_id"]})["status"] == "aprovada"
+    )
+
+
+def test_todos_os_incidentes_se_aplicam_ao_mapa_real(mundo_limpo):
+    """Cada efeito do catálogo aponta para entidades que existem no grafo."""
+    for incidente in simulador("GET", "/incidentes"):
+        assert simulador("POST", f"/incidentes/{incidente['id']}/aplicar")["ativo"] is True
+    assert all(i["ativo"] for i in simulador("GET", "/incidentes"))
+
+
+def test_chamadas_viram_eventos_no_barramento():
+    redis = Redis.from_url("redis://bus:6379/0", decode_responses=True)
+    antes = redis.xlen("bussola:eventos")
+    gateway("cliente.obter_perfil", {"cliente_id": "cliente-ana"})
+    [(_, evento)] = redis.xrevrange("bussola:eventos", count=1)
+    assert redis.xlen("bussola:eventos") > antes
+    assert evento["tipo"] == "tool.called" and json.loads(evento["dados"])["tool"] == "cliente.obter_perfil"
+
+
+def test_desligar_tool_pelo_painel_do_web(mundo_limpo):
+    """O painel desliga pelo caminho do web (/simulador), e o agente sente a falha no gateway."""
+    nome = "seguradoras.cotar_seguro"
+    httpx.post(f"http://web/simulador/tools/{nome}/desligar", timeout=10).raise_for_status()
+
+    resultado = gateway(nome, {"cliente_id": "cliente-ana", "seguradora": "farol"})
+    assert resultado.is_error and "fora do ar" in resultado.content[0].text
+    assert resultado.meta["bussola/proveniencia"]["motivo"] == "desligada"
+
+    status = httpx.get("http://web/api/status", timeout=10).json()
+    assert status["ferramentas_fora"] == 1
+    [seguradoras] = [s for s in status["servicos"] if s["nome"] == "seguradoras-mcp"]
+    assert {f["nome"] for f in seguradoras["ferramentas"] if f["fora"]} == {"cotar_seguro"}
+    assert {f["nome"] for f in seguradoras["ferramentas"] if not f["visivel"]} == {"ping"}
+
+    httpx.post("http://web/simulador/tools/religar-todas", timeout=10).raise_for_status()
+    assert not gateway(nome, {"cliente_id": "cliente-ana", "seguradora": "farol"}).is_error

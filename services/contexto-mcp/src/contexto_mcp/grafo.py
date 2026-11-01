@@ -296,6 +296,52 @@ class RepositorioGrafo:
             alertas=alertas,
         )
 
+    async def aplicar_efeitos(self, efeitos: list[dict], tipos_relacao: set[str]) -> list[str]:
+        """Escreve efeitos do simulador no grafo. Única escrita fora do seed.
+
+        Cada efeito: {"entidade", "estado"?, "atributos"?, "proveniencia"?, "relacoes_adicionar"?}.
+        Devolve os ids alterados; falha sem escrever nada se algo não existir.
+        """
+        ids = {e["entidade"] for e in efeitos} | {
+            ponta for e in efeitos for de, _, para in e.get("relacoes_adicionar", []) for ponta in (de, para)
+        }
+        existentes = await self._consultar(
+            "MATCH (n:Entidade) WHERE n.id IN $ids RETURN collect(n.id) AS ids", ids=sorted(ids)
+        )
+        faltam = ids - set(existentes[0]["ids"])
+        if faltam:
+            raise EntidadeNaoEncontrada(f"Entidades inexistentes no mapa: {', '.join(sorted(faltam))}")
+        desconhecidas = {t for e in efeitos for _, t, _ in e.get("relacoes_adicionar", [])} - tipos_relacao
+        if desconhecidas:
+            raise ValueError(f"Tipos de relação fora do esquema: {', '.join(sorted(desconhecidas))}")
+
+        async def escrever(tx) -> None:
+            for efeito in efeitos:
+                props = {
+                    **efeito.get("estado", {}),
+                    **{f"attr_{k}": v for k, v in efeito.get("atributos", {}).items()},
+                    **{f"prov_{k}": v for k, v in efeito.get("proveniencia", {}).items()},
+                }
+                if props:
+                    await tx.run(
+                        "MATCH (n:Entidade {id: $id}) SET n += $props", id=efeito["entidade"], props=props
+                    )
+                prov_relacao = {f"prov_{k}": v for k, v in efeito.get("proveniencia", {}).items()}
+                for de, tipo, para in efeito.get("relacoes_adicionar", []):
+                    # O tipo foi validado contra o esquema acima.
+                    await tx.run(
+                        "MATCH (a:Entidade {id: $de}) MATCH (b:Entidade {id: $para}) "
+                        f"MERGE (a)-[r:`{tipo}`]->(b) SET r += $props, r.tipo = $tipo",
+                        de=de,
+                        para=para,
+                        tipo=tipo,
+                        props=prov_relacao,
+                    )
+
+        async with self.driver.session() as sessao:
+            await sessao.execute_write(escrever)
+        return sorted(e["entidade"] for e in efeitos)
+
     async def mapa(self) -> dict:
         nos = await self._consultar(
             """

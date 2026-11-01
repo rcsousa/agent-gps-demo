@@ -1,6 +1,6 @@
 # Demo GPS de Contexto — Especificação
 
-Versão de 01/11/2026 · Ricardo Coelho de Sousa
+Versão de 01/11/2026 · Ricardo Coelho de Sousa · atualizada com as decisões das Fases 1 a 3
 
 ## Visão e mensagem central
 
@@ -120,7 +120,7 @@ O grafo é a fonte única do mapa. O layout visual da "cidade" é derivado dele,
 | Parceiros | Seguradora, API de cotação, API de emissão, SLA |
 | Canais e operação | Canal, Especialista humano, Fila, Meio de pagamento |
 
-**Ruas (relações)**, por exemplo: `Cliente —POSSUI→ Conta`, `Produto —OFERECIDO_POR→ Seguradora`, `Produto —EXIGE→ Regra`, `Uso de dado —REQUER→ Consentimento`, `Seguradora —EXPÕE→ API`, `Ação —ACIMA_DE→ Limite de alçada —EXIGE→ Aprovação humana`.
+**Ruas (relações)**, por exemplo: `Cliente —POSSUI→ Conta`, `Produto —OFERECIDO_POR→ Seguradora`, `Produto —EXIGE→ Regra`, `Uso de dado —REQUER→ Consentimento`, `Seguradora —EXPÕE→ API`, `Parada —SUJEITA_A→ Limite de alçada —EXIGE→ Fila de aprovação humana`. O esquema completo das relações fica em `services/contexto-mcp/ontologia/esquema.yaml`.
 
 **Estado vivo (trânsito)** fica em atributos que o simulador altera: `status` (ok, degradado, fora), `latencia_ms`, `custo_estimado`, `vigencia` de políticas.
 
@@ -199,6 +199,21 @@ O painel de incidentes do apresentador dispara mudanças reais no estado do graf
 
 Toda reação precisa mostrar três coisas: o que mudou, qual regra da skill foi usada e qual a nova estimativa de tempo, custo e risco.
 
+**Decisões tomadas sobre incidentes:**
+
+- **Todos os incidentes acontecem com a Ana.** O apresentador muda o mundo em volta da viagem em curso:
+  - o consentimento dela expira;
+  - a zona sul é reclassificada como área de risco por uma nova versão da política;
+  - ela declara uma coleção de arte, que leva a importância segurada para acima da alçada;
+  - o valor do imóvel dela passa a vir de uma fonte pouco confiável.
+
+  Os outros sete clientes da ontologia (clientes-cenário) servem de casos de teste e de placar.
+- **Pedágio:** o apresentador aprova ou recusa a proposta pelo simulador. Se ninguém decidir em 30 s, a especialista Marina aprova sozinha, para a demo nunca travar.
+- **Renovação de consentimento:** a cliente "confirma no app" alguns segundos depois do pedido do agente.
+- **Remover um incidente** volta ao estado-base e reaplica os incidentes que continuam ativos. Assim nunca sobra estado parcial.
+- **Tools fora do ar sob medida.** Além dos incidentes, o apresentador pode desligar qualquer tool exposta pelo gateway. A tool continua visível para o agente, mas toda chamada falha com "trecho interditado", e a falha é registrada com `motivo: desligada`. Uma tool desligada não muda o mapa, porque tool não é um lugar do grafo; a falha aparece nos eventos.
+- **Tools de distração.** O gateway expõe cerca de 15 tools plausíveis, e às vezes perigosas, fora da jornada (estornar pagamento, cancelar apólice, revogar consentimento...). Elas existem para a cena 3 medir tools irrelevantes chamadas e violações de regra.
+
 ## Arquitetura técnica e docker compose
 
 Tudo roda em Docker e sobe com um único `docker compose up`. Todo o backend é em Python. O agente tem **uma única conexão**: o MCP gateway. Todo serviço de negócio é um servidor MCP atrás do gateway e chega ao agente como tools.
@@ -218,8 +233,10 @@ Tudo roda em Docker e sobe com um único `docker compose up`. Todo o backend é 
 | `seguradoras-mcp` | Três seguradoras fictícias: cotação e emissão | `seguradoras.*` | Python, SDK MCP |
 | `pagamentos-mcp` | Débito em conta e cartão | `pagamentos.*` | Python, SDK MCP |
 | `atendimento-mcp` | Fila de especialistas humanos (o pedágio) | `atendimento.*` | Python, SDK MCP |
-| `graph` | Ontologia, instâncias e estado vivo | — (só o `contexto-mcp` acessa) | Neo4j com seed na subida |
-| `simulator` | Injeta incidentes e trânsito nos servidores de domínio e no grafo; acionado pelo painel do apresentador | — (fora do alcance do agente) | Python, FastAPI |
+| `graph` | Ontologia, instâncias e estado vivo | — (só o `contexto-mcp` acessa) | Neo4j |
+| `seed` | Recarrega o grafo com o estado-base da ontologia a cada subida e termina | — | Python (mesma imagem do `contexto-mcp`) |
+| `bus` | Barramento de eventos e estado vivo dos sistemas simulados | — | Redis (Streams) |
+| `simulator` | Injeta incidentes, desliga e religa tools e decide o pedágio quando ninguém decide; acionado pelo painel do apresentador | — (fora do alcance do agente) | Python, FastAPI |
 | `docs` | Site de bastidores | — | MkDocs Material com tema Carbon, embutido no `web` |
 
 Decisões de arquitetura:
@@ -233,6 +250,14 @@ Decisões de arquitetura:
 - **Um barramento de eventos** (`route.planned`, `step.started`, `tool.called`, `incident.detected`, `route.recalculated`, `human.required`) alimenta os dois modos visuais.
 - **Replay offline** de execuções reais, para apresentar sem rede ou sem chave de API.
 - **Segredos** em `.env` (com `.env.example` versionado), nunca no código.
+- **Barramento em Redis Streams.** O serviço `bus` guarda os eventos em ordem (stream `bussola:eventos`), o que sustenta o replay e o Raio-X.
+- **Proveniência carimbada pelo gateway.** Toda resposta de tool traz `_meta["bussola/proveniencia"]` com `chamada_id`, `servidor`, `tool`, `instante`, `duracao_ms` e `status`. Cada chamada também vira um evento `tool.called` no barramento, com os argumentos usados.
+- **Catálogo resiliente.** O gateway relê as tools de cada servidor periodicamente. Se um servidor cai, as tools dele continuam listadas e a chamada devolve "trecho interditado": a rua continua no mapa, só que bloqueada.
+- **O simulador é o único escritor do estado vivo.** Ele grava cada efeito em dois lugares:
+  - no grafo, por rotas internas do `contexto-mcp` protegidas por token (não são tools, e o gateway não as enxerga). Assim continua valendo que só o `contexto-mcp` acessa o Neo4j;
+  - no barramento, com os mesmos ids da ontologia, que os servidores de domínio leem antes de agir.
+- **Seed a cada subida.** O grafo volta ao estado-base em todo `docker compose up`, para todo ensaio começar igual.
+- **Dados mestres compartilhados.** Os servidores de domínio operam sobre um cadastro comum (clientes, imóveis, contas, consentimentos, laudos), com os mesmos ids da ontologia. O mapa descreve o negócio; o cadastro é o que os sistemas operam.
 
 ## Diretrizes de UI: Carbon e visual de mapa
 
@@ -244,6 +269,20 @@ A moldura é IBM Carbon, sóbria e profissional. O mapa é a área lúdica, onde
 - UI Shell com header, painel lateral direito (Navegador e Raio-X) e painel inferior recolhível (log de eventos).
 - Tipografia IBM Plex Sans e Plex Mono (Mono no Raio-X); grid e espaçamento de 8px do Carbon.
 - Componentes Carbon para tudo que é controle: toggle de modo, tiles de métricas, data table do log, tags de status, notificações de incidente.
+
+**Painel de status (bastidores da operação)**
+
+Uma tela de apoio ao apresentador e a quem monta a demo. Ela mostra:
+
+- **Saúde da plataforma:** o gateway, o barramento e o provedor de LLM, com a chave configurada ou ausente.
+- **Os servidores MCP atrás do gateway,** com latência e número de tools de cada um.
+- **A seção "Tools por servidor":**
+  - o que cada servidor oferece, com o nome que cada tool tem no gateway;
+  - o que fica oculto (uso interno);
+  - uma tag "No ar" ou "Fora do ar" em cada tool;
+  - um toggle para desligar ou religar cada tool e o botão "Religar todas".
+
+O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `simulator`, pelo caminho `/simulador` do `web`, e nunca ao `agent`. Os dados de status chegam pelo caminho `web` → `agent` → `mcp-gateway`.
 
 **Mapa (lúdico, mas elegante)**
 
@@ -346,3 +385,10 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Site de bastidores: MkDocs Material com tema Carbon
 - [x] Identidade visual do Banco Bússola (ver Diretrizes de UI)
 - [x] Idioma: somente português do Brasil
+- [x] SDK MCP oficial em Python, versão 2 (`MCPServer`), com transporte streamable HTTP
+- [x] Barramento de eventos: Redis Streams (serviço `bus`)
+- [x] Grafo recarregado com o estado-base a cada subida (serviço `seed`)
+- [x] Personagens: a Ana em todos os incidentes ao vivo; sete clientes-cenário para testes e placar
+- [x] Pedágio: o apresentador aprova pelo simulador, e a especialista aprova sozinha depois de 30 s
+- [x] Cenas de falha sob medida: desligar tools pelo painel de status, via simulador
+- [x] Cerca de 15 tools de distração no gateway para a cena 3 (ver Incidentes)
