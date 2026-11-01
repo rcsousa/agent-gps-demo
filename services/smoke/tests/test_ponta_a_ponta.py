@@ -27,6 +27,7 @@ SERVICOS_PYTHON = [
     "seguradoras-mcp",
     "pagamentos-mcp",
     "atendimento-mcp",
+    "canais-mcp",
     "simulator",
 ]
 SERVIDORES_MCP = [s for s in SERVICOS_PYTHON if s.endswith("-mcp")]
@@ -44,6 +45,8 @@ def gateway(tool: str, argumentos: dict | None = None):
                 return await cliente.read_resource(tool)
             if tool == "--listar":
                 return await cliente.list_tools()
+            if tool == "--prompts":
+                return await cliente.list_prompts()
             return await cliente.call_tool(tool, argumentos or {})
 
     return asyncio.run(chamar())
@@ -88,6 +91,7 @@ def test_status_pelo_caminho_web_agent_gateway():
     assert sorted(s["nome"] for s in corpo["servicos"]) == sorted(SERVIDORES_MCP)
     assert all(s["status"] == "ok" for s in corpo["servicos"])
     assert corpo["ferramentas"] == 38
+    assert corpo["prompts"] == 3
 
 
 def test_web_serve_a_aplicacao():
@@ -315,11 +319,10 @@ def test_status_conta_as_skills():
 API_AGENTE = "http://web/api"
 
 
-def _executar(modo: str, ao_perguntar=None) -> tuple[str, list[dict]]:
+def _executar(modo: str, ao_perguntar=None, canal: str | None = None) -> tuple[str, list[dict]]:
     """Inicia uma execução e lê o SSE até o run.finished, respondendo pela Ana."""
-    ident = httpx.post(
-        f"{API_AGENTE}/execucoes", json={"modo": modo, "provedor": "roteiro"}, timeout=10
-    ).json()["id"]
+    corpo = {"modo": modo, "provedor": "roteiro", **({"canal": canal} if canal else {})}
+    ident = httpx.post(f"{API_AGENTE}/execucoes", json=corpo, timeout=10).json()["id"]
     eventos: list[dict] = []
     with httpx.stream("GET", f"{API_AGENTE}/execucoes/{ident}/eventos", timeout=120) as resposta:
         for linha in resposta.iter_lines():
@@ -394,3 +397,40 @@ def test_provedor_real_sem_chave_falha_com_mensagem_clara():
             break
         time.sleep(0.2)
     assert estado["status"] == "erro" and "ANTHROPIC_API_KEY" in estado["erro"]
+
+
+# --- Fase 5.1: persona por canal (prompts MCP) ------------------------------------
+
+
+def test_gateway_serve_a_persona_de_cada_canal_da_ontologia():
+    prompts = {p.name: p for p in gateway("--prompts").prompts}
+    assert set(prompts) == {
+        "canais.atendimento_app",
+        "canais.atendimento_agencia",
+        "canais.atendimento_central",
+    }
+    for prompt in prompts.values():
+        canal = prompt.description.split("Canal: ")[1].split(".")[0]
+        assert dados("contexto.consultar_entidade", {"id": canal})["entidade"]["tipo"] == "Canal"
+
+
+def test_com_skill_na_agencia_fala_com_o_gerente(mundo_limpo):
+    ident, eventos = _executar("com_skill", canal="agencia")
+    assert _do_tipo(eventos, "run.started")[0]["canal"] == "agencia"
+    [carregado] = _do_tipo(eventos, "prompt.loaded")
+    assert carregado["nome"] == "canais.atendimento_agencia" and carregado["origem"] == "gateway"
+    [lido] = _do_tipo(eventos, "prompt.read")
+    assert lido["servidor"] == "canais-mcp" and lido["execucao_id"] == ident
+    assert _do_tipo(eventos, "client.asked")[0]["pergunta"].startswith("Confirme com a Ana")
+    assert _do_tipo(eventos, "run.finished")[0]["status"] == "concluida"
+
+
+def test_sem_contexto_nao_le_a_persona_do_banco(mundo_limpo):
+    _, eventos = _executar("sem_contexto", canal="central")
+    assert _do_tipo(eventos, "prompt.read") == []
+    assert _do_tipo(eventos, "prompt.loaded")[0]["origem"] == "embutido"
+
+
+def test_canal_desconhecido_e_recusado():
+    resposta = httpx.post(f"{API_AGENTE}/execucoes", json={"modo": "com_skill", "canal": "loja"}, timeout=10)
+    assert resposta.status_code == 400 and "agencia, app, central" in resposta.json()["detail"]

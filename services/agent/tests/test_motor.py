@@ -14,6 +14,7 @@ from mcp.server.mcpserver.exceptions import ToolError
 from mcp.server.mcpserver.resources import TextResource
 from mcp.server.mcpserver.server import Context
 
+from agent import prompts
 from agent.config import Config
 from agent.execucao import Motor
 from agent.llm.base import ChamadaTool, Passo, ResultadoTool, Uso
@@ -71,9 +72,20 @@ class SkillsFalsas(Extension):
         return [ResourceBinding(TextResource(uri=SKILL, name="contratacao", text=SKILL_MD))]
 
 
+PERSONAS_LIDAS: list[tuple[str, dict]] = []
+
+
 def _gateway(metas: list[dict]) -> MCPServer:
-    """Imita o gateway: tools com nome qualificado e a extensão de skills."""
+    """Imita o gateway: tools e prompts com nome qualificado e a extensão de skills."""
     s = MCPServer(name="mcp-gateway", extensions=[SkillsFalsas()])
+
+    @s.prompt(name="canais.atendimento_agencia")
+    def persona_agencia(cliente_id: str, ctx: Context) -> str:
+        meta = ctx.request_context.meta
+        PERSONAS_LIDAS.append(
+            (cliente_id, dict(meta) if isinstance(meta, dict) else meta.model_dump(by_alias=True))
+        )
+        return f"PERSONA DA AGÊNCIA para {cliente_id}"
 
     def guardar(ctx: Context) -> None:
         meta = ctx.request_context.meta
@@ -150,15 +162,23 @@ def _passo(*chamadas: tuple[str, dict]) -> Passo:
     )
 
 
-def _motor(sessao: SessaoFalsa, metas: list[dict]) -> tuple[Motor, PublicadorFalso]:
+def _motor(
+    sessao: SessaoFalsa, metas: list[dict], sistemas: list[str] | None = None
+) -> tuple[Motor, PublicadorFalso]:
     publicador = PublicadorFalso()
     servidor = _gateway(metas)
+
+    def fabrica(provedor, modo, sistema, pedido, config, canal="app"):
+        if sistemas is not None:
+            sistemas.append(sistema)
+        return sessao
+
     motor = Motor(
         Config(max_passos=10),
         FakeAsyncRedis(decode_responses=True),
         publicador,
         lambda: Client(servidor),
-        fabrica_sessao=lambda *a, **k: sessao,
+        fabrica_sessao=fabrica,
     )
     return motor, publicador
 
@@ -290,3 +310,57 @@ def test_resultado_textual_em_json():
         content = []
 
     assert json.loads(_texto_do_resultado(R())) == {"a": 1}
+
+
+# --- Persona do canal: prompts MCP pelo gateway --------------------------------------
+
+
+def _eventos(publicador: PublicadorFalso, tipo: str) -> list[dict]:
+    return [d for t, d in publicador.eventos if t == tipo]
+
+
+async def test_persona_do_canal_vem_do_gateway_antes_das_instrucoes_do_host():
+    PERSONAS_LIDAS.clear()
+    sistemas: list[str] = []
+    motor, publicador = _motor(SessaoFalsa([Passo(texto="Ok.", fim=True)]), [], sistemas)
+    execucao = await motor.iniciar("com_skill", "falso", canal="agencia")
+    await motor.aguardar(execucao.id)
+
+    assert sistemas[0].startswith("PERSONA DA AGÊNCIA para cliente-ana")
+    assert sistemas[0].index("PERSONA") < sistemas[0].index("conversa.perguntar_cliente")
+    assert PERSONAS_LIDAS[0][1][CHAVE_EXECUCAO] == execucao.id
+    [evento] = _eventos(publicador, "prompt.loaded")
+    assert evento["nome"] == "canais.atendimento_agencia" and evento["origem"] == "gateway"
+    assert _tipos(publicador)[:2] == ["run.started", "prompt.loaded"]
+    assert _eventos(publicador, "run.started")[0]["canal"] == "agencia"
+    assert await motor.canais() == ["agencia"]
+
+
+async def test_sem_contexto_nao_consulta_a_persona_do_banco():
+    PERSONAS_LIDAS.clear()
+    sistemas: list[str] = []
+    motor, publicador = _motor(SessaoFalsa([Passo(texto="Ok.", fim=True)]), [], sistemas)
+    execucao = await motor.iniciar("sem_contexto", "falso", canal="agencia")
+    await motor.aguardar(execucao.id)
+    assert PERSONAS_LIDAS == []
+    assert sistemas[0].startswith(prompts.PERSONA_EMBUTIDA)
+    assert _eventos(publicador, "prompt.loaded")[0]["origem"] == "embutido"
+
+
+async def test_persona_indisponivel_cai_na_embutida_com_aviso():
+    sistemas: list[str] = []
+    motor, publicador = _motor(SessaoFalsa([Passo(texto="Ok.", fim=True)]), [], sistemas)
+    execucao = await motor.iniciar("sem_skill", "falso", canal="central")  # não existe no gateway falso
+    await motor.aguardar(execucao.id)
+    assert (await motor.obter(execucao.id))["status"] == "concluida"
+    assert sistemas[0].startswith(prompts.PERSONA_EMBUTIDA)
+    evento = _eventos(publicador, "prompt.loaded")[0]
+    assert evento["origem"] == "embutido" and "indisponível" in evento["motivo"]
+
+
+def test_roteiro_fala_com_quem_esta_do_outro_lado():
+    from agent.llm.roteiro import SessaoRoteiro
+
+    assert SessaoRoteiro("com_skill", canal="agencia")._fala("imovel").startswith("Confirme com a Ana")
+    assert SessaoRoteiro("com_skill", canal="central")._fala("imovel").startswith("Pergunte à Ana")
+    assert SessaoRoteiro("com_skill", canal="loja")._fala("imovel").startswith("Para confirmar")

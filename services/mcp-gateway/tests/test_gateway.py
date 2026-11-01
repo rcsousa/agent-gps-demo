@@ -173,9 +173,9 @@ def test_mcp_e_servicos_exigem_token(tmp_path):
     assert resposta.json()["servicos"][0]["status"] == "fora"
 
 
-def test_config_versionada_lista_os_oito_servidores_mcp():
+def test_config_versionada_lista_os_nove_servidores_mcp():
     nomes = [u.nome for u in carregar_upstreams(Config().upstreams_arquivo)]
-    assert len(nomes) == 8
+    assert len(nomes) == 9 and "canais-mcp" in nomes
 
 
 async def test_tool_desligada_pelo_simulador_falha_sem_chamar_o_servidor(gateway):
