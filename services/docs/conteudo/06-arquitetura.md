@@ -180,6 +180,12 @@ O Foundry é a mesma API do Claude, com outro cliente do SDK (`AsyncAnthropicFou
 - o Foundry não oferece *fallback* do lado do servidor, então ele fica desligado lá, mesmo com `ANTHROPIC_FALLBACKS=true`;
 - deployments costumam ter limite de tokens por minuto. O provedor usa cache automático, que cobre também o histórico da conversa, e, se ainda assim receber um 429, espera o tempo pedido pela API e tenta de novo. Cada execução também pode pedir outro provedor, por exemplo `"provedor": "roteiro"`. Sem chave, a execução termina com status `erro` e uma mensagem dizendo qual variável falta.
 
+### Modelo por execução
+
+`ANTHROPIC_MODEL` é o padrão. `ANTHROPIC_MODELOS` lista outros deployments que uma execução pode pedir (`"modelo"` na API, `--modelo` nos scripts), por exemplo `claude-haiku-5-5`. O `run.started` registra o modelo usado, e o experimento compara os modelos nas mesmas condições.
+
+**A lista de tools não muda durante a conversa.** Os modelos atuais vinculam o raciocínio já feito ao prefixo exato da conversa (pensamento preservado), e acrescentar tools no meio invalida esse vínculo: a API recusa a chamada seguinte. Por isso, no modo com skill, o modelo vê desde o primeiro passo as tools de alguma skill, e o host as recusa até a skill ser carregada. Depois, o gateway aplica a skill e a ordem.
+
 ### O dashboard: o código vem do próprio servidor
 
 O dashboard de status (`/status`) mostra o código de cada tool e a fonte de cada prompt. Esse código não é copiado para o web nem para o agente: cada servidor MCP o serve, pela fábrica comum (`bussola_comum.mcp_servidor`), num **resource template**:
