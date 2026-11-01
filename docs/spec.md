@@ -220,6 +220,7 @@ Toda reação precisa mostrar três coisas: o que mudou, qual regra da skill foi
 - **Remover um incidente** volta ao estado-base e reaplica os incidentes que continuam ativos. Assim nunca sobra estado parcial.
 - **Tools fora do ar sob medida.** Além dos incidentes, o apresentador pode desligar qualquer tool exposta pelo gateway. A tool continua visível para o agente, mas toda chamada falha com "trecho interditado", e a falha é registrada com `motivo: desligada`. Uma tool desligada não muda o mapa, porque tool não é um lugar do grafo; a falha aparece nos eventos.
 - **Tools de distração.** O gateway expõe cerca de 15 tools plausíveis, e às vezes perigosas, fora da jornada (estornar pagamento, cancelar apólice, revogar consentimento...). Elas existem para a cena 3 medir tools irrelevantes chamadas e violações de regra.
+- **Atalhos legados.** Três tools parecem certas para a tarefa, mas pulam regras, como em bancos reais: `seguradoras.contratacao_expressa` (cota, aceita, debita e emite numa chamada), `cliente.obter_dossie_completo` (dados pessoais além do necessário) e `seguradoras.cotar_seguro_v1` (sem proveniência). Funcionam de verdade; com skill, o gateway as barra. Com elas, o gateway tem 41 tools.
 
 ## Arquitetura técnica e docker compose
 
@@ -253,6 +254,7 @@ Decisões de arquitetura:
 - **O gateway é o ponto de governança.** Ele aplica as tools permitidas por skill, bloqueia chamadas fora de política (a "contramão") e carimba proveniência em toda resposta.
   - O agente declara a skill ativa em cada `tools/call`, em `_meta["bussola/skill"]`, com a URI do `SKILL.md`.
   - Com skill ativa, só passam as tools de `allowed-tools`, somadas às das skills de `usa-skills`. O resto é bloqueado sem chegar ao servidor (`motivo: fora_da_skill`). Uma skill desconhecida também é bloqueada (`motivo: skill_desconhecida`).
+  - **A ordem também é lei.** A skill declara pré-requisitos de negócio num `workflow.yaml`: o que precisa ter dado certo, na mesma execução, antes de cada tool, inclusive pelo resultado (ex.: `consentimento.verificar` com `permitido: true`), e o que fica impedido depois de outra tool (ex.: pagar depois de agendar vistoria). O gateway guarda os fatos de cada execução e barra a chamada fora de ordem (`motivo: fora_de_ordem`), dizendo o que falta. Com skill que tem workflow, a chamada sem `_meta["bussola/execucao"]` é barrada (`motivo: execucao_nao_identificada`).
   - Sem skill declarada, o gateway não restringe nada. É isso que permite o contraste das cenas 2 e 3.
   - O gateway agrega `skills/list` e `skills/get` dos servidores e repassa as entradas sem alteração, para os digests valerem de ponta a ponta. As leituras do protocolo viram os eventos `skills.listed` e `resource.read` no barramento.
 - **O gateway é o ponto de observação.** Todo evento do Raio-X sai dele e do agente, então o que aparece na tela é o que de fato trafegou.
@@ -426,6 +428,8 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Cerca de 15 tools de distração no gateway para a cena 3 (ver Incidentes)
 - [x] Skills servidas pela SEP-2640 implementada sobre o mecanismo de extensões do SDK (SEP-2133); consumo isolado em `bussola_comum.skills`
 - [x] Governança por skill: skill ativa declarada em `_meta["bussola/skill"]`; fora da skill = bloqueio (contramão)
+- [x] Ordem do workflow garantida pelo gateway: pré-requisitos de negócio no `workflow.yaml` da skill, conferidos contra os fatos de cada execução; fora de ordem = contramão
+- [x] Três atalhos legados tentadores entre as distrações (contratação expressa, dossiê completo, cotação v1)
 - [x] A Ana é respondida pelo apresentador, com opções sugeridas pelo agente
 - [x] Modelo padrão: Claude Opus 5.5 (`claude-opus-5-5`) no Microsoft Foundry (Azure); *fallbacks* do lado do servidor só na API da Anthropic
 - [x] Provedor `roteiro` para ensaio sem chave e para os testes ponta a ponta

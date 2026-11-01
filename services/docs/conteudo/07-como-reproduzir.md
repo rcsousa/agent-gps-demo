@@ -54,7 +54,7 @@ O script roda o `uv` dentro de um container, então não é preciso instalar nad
 Com a demo no ar, `gateway.sh` chama qualquer tool pelo MCP gateway, com o mesmo caminho e o mesmo token do agente. A resposta mostra o `_meta` com a proveniência:
 
 ```bash
-./scripts/gateway.sh --listar                                  # as 38 tools
+./scripts/gateway.sh --listar                                  # as 41 tools
 ./scripts/gateway.sh cliente.obter_perfil '{"cliente_id": "cliente-ana"}'
 ./scripts/gateway.sh seguradoras.cotar_seguro '{"cliente_id": "cliente-ana", "seguradora": "farol"}'
 ./scripts/gateway.sh contexto.consultar_rota
@@ -176,7 +176,16 @@ Os testes recusam:
 
 O smoke confere que toda tool permitida existe no gateway.
 
-Para testar a governança: `./scripts/gateway.sh <tool> '{...}' --skill <nome>`.
+Para testar a governança: `./scripts/gateway.sh <tool> '{...}' --skill <nome>`. Com skill, a ordem vale por execução: o script gera um id e mostra como repeti-lo com `--execucao <id>`, para encadear chamadas.
+
+### Declarar a ordem de uma skill
+
+Crie `workflow.yaml` na pasta da skill e cite-o no `SKILL.md` (`skill://<nome>/workflow.yaml`). Duas seções:
+
+- `pre-requisitos`: para cada tool, a lista do que precisa ter dado certo antes, na mesma execução. Cada item é uma tool (`risco.consultar_elegibilidade`), uma tool com campos do resultado (`consentimento.verificar: { permitido: true }`) ou `qualquer:` com alternativas;
+- `impedimentos`: tools que ficam bloqueadas depois que outra aconteceu.
+
+Os testes do `skills-mcp` recusam um workflow mal formado ou que cite tools que a skill não permite.
 
 ### Dirigir o agente
 

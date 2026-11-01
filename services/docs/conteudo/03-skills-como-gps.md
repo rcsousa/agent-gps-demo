@@ -1,7 +1,7 @@
 # 3. Skills como GPS
 
 !!! abstract "Resumo executivo"
-    Pelo gateway, o agente enxerga 38 tools de 8 sistemas. Sem orientação, ele precisa adivinhar quais usar e em que ordem, e é aí que gasta mais, erra mais e quebra regras.
+    Pelo gateway, o agente enxerga 41 tools de 8 sistemas. Sem orientação, ele precisa adivinhar quais usar e em que ordem, e é aí que gasta mais, erra mais e quebra regras.
 
     A **skill** é o GPS: um roteiro escrito pelo banco que diz quais tools usar, em que ordem, o que conferir entre uma e outra e o que fazer quando o caminho muda.
 
@@ -77,6 +77,36 @@ O agente declara a skill ativa em cada chamada, no `_meta` (`"bussola/skill": "s
 2. **barra skill desconhecida** (`motivo: skill_desconhecida`);
 3. **só deixa passar** as tools de `allowed-tools`, somadas às das skills de `usa-skills`. O resto é **contramão** (`motivo: fora_da_skill`), recusada sem chegar ao servidor e com a lista do que é permitido.
 
-Nenhuma das 15 tools de distração está em skill alguma. **Sem skill declarada, o gateway não restringe nada**: é assim que as cenas 2 e 3 mostram o agente sem GPS.
+Nenhuma das 15 tools de distração está em skill alguma, nem os três atalhos legados (veja abaixo). **Sem skill declarada, o gateway não restringe nada**: é assim que as cenas 2 e 3 mostram o agente sem GPS.
+
+### A ordem também é lei
+
+Uma skill é um workflow, e workflow tem ordem. Até aqui o gateway sabia *quais* tools a skill permite, mas não *quando*. Agora a skill declara, num `workflow.yaml`, o que precisa ter acontecido antes de cada tool:
+
+```yaml
+--8<-- "contratacao-seguro-residencial/workflow.yaml"
+```
+
+Com essa skill ativa, o gateway:
+
+1. **exige a execução** em `_meta["bussola/execucao"]`, porque a ordem só existe dentro de uma execução (`motivo: execucao_nao_identificada`);
+2. **guarda os fatos da execução:** cada tool que deu certo, com o resultado, em `bussola:fatos:<execução>`;
+3. **barra a tool fora de ordem** (`motivo: fora_de_ordem`) e diz o que falta: *"Contramão: seguradoras.cotar_seguro exige antes: risco.consultar_elegibilidade; consentimento.verificar com finalidade = finalidade-compartilhamento-seguradoras, permitido = true."*
+
+Um pré-requisito pode olhar o resultado. Ler o imóvel exige um `consentimento.verificar` que **deu** `permitido: true` para a finalidade de oferta; não basta ter chamado. E impedimentos fecham portas: depois de agendar uma vistoria, pagar e emitir ficam bloqueados.
+
+Os pré-requisitos são **de negócio, não uma fila rígida**. O agente ainda pode cotar antes de avaliar a adequação, porque isso não fere nenhuma regra. O que ele não pode é gerar a proposta sem a adequação.
+
+### Atalhos legados: o perigo de quem não tem GPS
+
+Bancos reais têm atalhos que parecem certos para a tarefa, mas pulam regras. A demo tem três:
+
+| Tool | O que promete | O que pula |
+| --- | --- | --- |
+| `seguradoras.contratacao_expressa` | Cota, aceita, debita e emite numa chamada | Consentimento, adequação, alçada, vistoria e o sim da cliente |
+| `cliente.obter_dossie_completo` | Tudo sobre a cliente numa chamada | Minimização de dados (LGPD) |
+| `seguradoras.cotar_seguro_v1` | Cotação mais rápida | Proveniência e laudo |
+
+Eles funcionam: a contratação expressa emite uma apólice de verdade (`EXP-…`). Com skill, o gateway os barra (`fora_da_skill`). Sem skill, nada os impede. É a diferença entre bom comportamento e garantia.
 
 Cada chamada registra a skill na proveniência e no evento `tool.called`. As leituras do protocolo também viram eventos: `skills.listed` e `resource.read`.

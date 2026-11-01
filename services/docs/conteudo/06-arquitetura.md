@@ -56,12 +56,14 @@ simulator ──► contexto-mcp /interno (grafo) e bus (domínios) · fora do a
 O agente conecta em um único servidor MCP, `http://mcp-gateway:8000/mcp`, com `Authorization: Bearer $GATEWAY_TOKEN`. O gateway monta um **catálogo agregado**:
 
 - Na subida, e depois a cada 30 s, ele lê `tools/list` e `resources/list` de cada servidor de `upstreams.yaml`.
-- Os nomes ganham o prefixo do servidor: `obter_perfil` do `cliente-mcp` vira `cliente.obter_perfil`. São 38 tools ao todo.
+- Os nomes ganham o prefixo do servidor: `obter_perfil` do `cliente-mcp` vira `cliente.obter_perfil`. São 41 tools ao todo.
 - As tools `ping` dos servidores ficam de fora.
 - Se um servidor cai, as tools dele continuam no catálogo, e a chamada devolve "trecho interditado". A rua continua no mapa; só fica bloqueada.
 - Resources são roteados pelo esquema da URI (`contexto://mapa` → `contexto-mcp`).
 
-Cerca de 15 dessas tools são **de distração**: plausíveis, às vezes perigosas, fora da jornada (`pagamentos.estornar`, `seguradoras.cancelar_apolice`, `consentimento.revogar`...). Elas existem para a cena 3 mostrar o que acontece quando o agente tem o mapa, mas não tem GPS.
+Cerca de 15 dessas tools são **de distração**: plausíveis, às vezes perigosas, fora da jornada (`pagamentos.estornar`, `seguradoras.cancelar_apolice`, `consentimento.revogar`...). Elas existem para a cena 3 mostrar o que acontece quando o agente tem o mapa, mas não tem GPS. Três delas são **atalhos legados** tentadores (`seguradoras.contratacao_expressa`, `cliente.obter_dossie_completo`, `seguradoras.cotar_seguro_v1`): parecem certos para a tarefa, mas pulam regras (veja o capítulo 3).
+
+**Ordem garantida por execução.** Quando a skill ativa tem um `workflow.yaml`, o gateway o lê na atualização do catálogo, com digest conferido, e guarda os fatos de cada execução no Redis (`bussola:fatos:<execucao_id>`, por 24 h): cada tool que deu certo, com o resultado estruturado. Antes de rotear, ele confere os pré-requisitos da tool contra esses fatos. A interpretação é pura e fica em `bussola_comum.workflow`.
 
 **Proveniência em toda resposta.** O gateway acrescenta ao `_meta` de cada resultado:
 
@@ -113,7 +115,7 @@ A mesma tarefa roda em **três modos**, que são as cenas 2 a 5 da demo:
 | Modo | O que o modelo recebe | O que a plateia vê |
 | --- | --- | --- |
 | `sem_contexto` | Só o prompt de assistente e a conversa com a cliente. Nenhuma tool de negócio | Uma resposta confiante e inventada, sem consentimento |
-| `sem_skill` | As 38 tools do gateway, sem skill e sem `_meta` de skill | O agente explora, chama tools irrelevantes e erra a ordem |
+| `sem_skill` | As 41 tools do gateway, sem skill e sem `_meta` de skill | O agente explora, chama tools irrelevantes e erra a ordem |
 | `com_skill` | O catálogo de skills. Ao carregar uma, ganha só as tools permitidas, e toda chamada leva `_meta["bussola/skill"]` | A navegação guiada, parada a parada |
 
 **Ferramentas do host.** Algumas tools são do próprio agente e não passam pelo gateway:
