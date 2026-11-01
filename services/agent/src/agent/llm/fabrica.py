@@ -29,6 +29,9 @@ def criar_sessao(
             esforco=config.anthropic_effort,
             fallbacks=config.anthropic_fallbacks,
             api_key=config.anthropic_api_key,
+            plataforma=config.anthropic_plataforma,
+            foundry_base_url=config.anthropic_foundry_base_url,
+            foundry_api_key=config.anthropic_foundry_api_key,
         )
     if provedor == "azure_openai":
         return SessaoAzureOpenAI(

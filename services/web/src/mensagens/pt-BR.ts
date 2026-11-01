@@ -45,6 +45,7 @@ export const mensagens = {
     llmConfigurado: 'Chave configurada',
     llmAusente: 'Chave ausente · só o roteiro roda',
     provedores: { anthropic: 'Anthropic', azure_openai: 'Azure OpenAI' } as Record<string, string>,
+    plataformas: { api: 'API da Anthropic', foundry: 'Microsoft Foundry' } as Record<string, string>,
     barramento: 'Barramento',
     barramentoDetalhe: 'bus · Redis Streams',
   },

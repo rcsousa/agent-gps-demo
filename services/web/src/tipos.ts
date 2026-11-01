@@ -23,7 +23,7 @@ export interface Servico {
 export interface Status {
   gateway: Estado;
   barramento: Estado;
-  llm: { provedor: string; configurado: boolean };
+  llm: { provedor: string; plataforma: string | null; modelo: string; configurado: boolean };
   servicos: Servico[];
   ferramentas: number;
   ferramentas_fora: number;

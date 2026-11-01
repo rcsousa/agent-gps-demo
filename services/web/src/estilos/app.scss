@@ -133,6 +133,7 @@ $largura-painel: 40rem;
 
   &__tecnico {
     @include type-style('code-01');
+    color: theme.$text-secondary;
   }
 }
 

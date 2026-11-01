@@ -9,11 +9,12 @@ import type { Status } from '../tipos';
 
 const t = mensagens.indicadores;
 
-function Indicador(props: { titulo: string; valor: ReactNode; rodape: ReactNode }) {
+function Indicador(props: { titulo: string; valor: ReactNode; tecnico?: string; rodape: ReactNode }) {
   return (
     <Tile className="indicador">
       <span className="indicador__titulo">{props.titulo}</span>
       <span className="indicador__valor">{props.valor}</span>
+      {props.tecnico && <span className="indicador__tecnico">{props.tecnico}</span>}
       <span className="indicador__rodape">{props.rodape}</span>
     </Tile>
   );
@@ -56,6 +57,9 @@ export function Indicadores({ status }: { status: Status }) {
       <Indicador
         titulo={t.llm}
         valor={t.provedores[status.llm.provedor] ?? status.llm.provedor}
+        tecnico={[status.llm.modelo, status.llm.plataforma && t.plataformas[status.llm.plataforma]]
+          .filter(Boolean)
+          .join(' · ')}
         rodape={
           status.llm.configurado ? (
             <Situacao ok texto={t.llmConfigurado} />

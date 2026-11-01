@@ -92,7 +92,14 @@ def criar_app(
         return {
             "gateway": gateway,
             "barramento": barramento,
-            "llm": {"provedor": config.llm_provider, "configurado": config.llm_configurado},
+            "llm": {
+                "provedor": config.llm_provider,
+                "plataforma": config.anthropic_plataforma if config.llm_provider == "anthropic" else None,
+                "modelo": config.anthropic_model
+                if config.llm_provider == "anthropic"
+                else config.azure_openai_deployment,
+                "configurado": config.llm_configurado,
+            },
             "servicos": servicos,
             "ferramentas": ferramentas,
             "ferramentas_fora": ferramentas_fora,
