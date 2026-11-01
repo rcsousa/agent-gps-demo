@@ -9,11 +9,12 @@ import logging
 from typing import Any
 
 import httpx
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 from redis.asyncio import Redis
 from sse_starlette.sse import EventSourceResponse
 
+from agent.catalogo import Catalogo, NaoEncontrado
 from agent.config import Config
 from agent.execucao import MODOS, Motor
 from agent.llm.fabrica import PROVEDORES
@@ -55,6 +56,19 @@ def criar_app(
         lambda: conectar(f"{config.gateway_url}/mcp", config.gateway_token),
     )
 
+    async def saude_do_gateway() -> dict[str, Any]:
+        async with httpx.AsyncClient(timeout=4) as cliente:
+            resposta = await cliente.get(
+                f"{config.gateway_url}/saude/servicos",
+                headers={"Authorization": f"Bearer {config.gateway_token}"},
+            )
+        resposta.raise_for_status()
+        return resposta.json()
+
+    catalogo = Catalogo(
+        lambda: conectar(f"{config.gateway_url}/mcp", config.gateway_token), redis, saude_do_gateway
+    )
+
     app = FastAPI(title="agent")
     app.add_api_route("/saude", rota_saude(config.servico_nome, checagens), methods=["GET"])
 
@@ -63,16 +77,10 @@ def criar_app(
         """Estado da plataforma visto pelo agente: só pelo gateway."""
         gateway, servicos, ferramentas, ferramentas_fora, skills, prompts = "fora", [], 0, 0, 0, 0
         try:
-            async with httpx.AsyncClient(timeout=4) as cliente:
-                resposta = await cliente.get(
-                    f"{config.gateway_url}/saude/servicos",
-                    headers={"Authorization": f"Bearer {config.gateway_token}"},
-                )
-            if resposta.status_code == 200:
-                corpo = resposta.json()
-                gateway, servicos = "ok", corpo["servicos"]
-                ferramentas, ferramentas_fora = corpo.get("ferramentas", 0), corpo.get("ferramentas_fora", 0)
-                skills, prompts = corpo.get("skills", 0), corpo.get("prompts", 0)
+            corpo = await saude_do_gateway()
+            gateway, servicos = "ok", corpo["servicos"]
+            ferramentas, ferramentas_fora = corpo.get("ferramentas", 0), corpo.get("ferramentas_fora", 0)
+            skills, prompts = corpo.get("skills", 0), corpo.get("prompts", 0)
         except httpx.HTTPError:
             pass
 
@@ -91,6 +99,51 @@ def criar_app(
             "skills": skills,
             "prompts": prompts,
         }
+
+    # --- Catálogo (dashboard de status) ---------------------------------------------
+
+    @app.get("/api/catalogo")
+    async def ver_catalogo() -> dict:
+        """Tools, skills e prompts do gateway, com contrato e quem usa o quê."""
+        try:
+            return await catalogo.montar()
+        except (httpx.HTTPError, OSError) as erro:
+            raise HTTPException(503, "O gateway não respondeu.") from erro
+
+    @app.get("/api/catalogo/fonte")
+    async def ver_fonte(uri: str = Query(...)) -> dict:
+        """O código de uma tool ou prompt, servido pelo próprio servidor MCP."""
+        try:
+            return await catalogo.fonte(uri)
+        except ValueError as erro:
+            raise HTTPException(400, str(erro)) from erro
+        except NaoEncontrado as erro:
+            raise HTTPException(404, str(erro)) from erro
+
+    @app.get("/api/catalogo/skill")
+    async def ver_arquivo_de_skill(uri: str = Query(...)) -> dict:
+        """Um arquivo da skill, com tamanho e digest verificados."""
+        try:
+            return await catalogo.arquivo_de_skill(uri)
+        except ValueError as erro:
+            raise HTTPException(400, str(erro)) from erro
+        except NaoEncontrado as erro:
+            raise HTTPException(404, str(erro)) from erro
+
+    @app.get("/api/catalogo/prompt/{nome}/previa")
+    async def ver_previa(nome: str) -> dict:
+        try:
+            return await catalogo.previa_de_prompt(nome)
+        except NaoEncontrado as erro:
+            raise HTTPException(404, str(erro)) from erro
+
+    @app.get("/api/catalogo/chamadas")
+    async def ver_chamadas(
+        tool: str | None = None, prompt: str | None = None, skill: str | None = None
+    ) -> list:
+        if not (tool or prompt or skill):
+            raise HTTPException(400, "Informe tool, prompt ou skill.")
+        return await catalogo.chamadas(tool=tool, prompt=prompt, skill=skill)
 
     # --- Execuções ------------------------------------------------------------------
 
