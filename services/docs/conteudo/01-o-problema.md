@@ -91,6 +91,19 @@ Mais chamadas que o modo sem skill, e todas necessárias. Cada uma leva a skill 
   outra seguradora disponível e explicar a troca.
 ```
 
+### E com um modelo de verdade?
+
+Os exemplos acima são do roteiro. Com o Claude Opus 5.5 real, testado em 01/11/2026 nos cinco incidentes da demo, o quadro é mais fino, e mais interessante:
+
+- **Sem contexto, o modelo não inventa.** Diz que não tem acesso aos sistemas e orienta a cliente. O problema deixa de ser a mentira e passa a ser a inutilidade: sem o mapa, ele não chega lá.
+- **Sem skill, o modelo já é cuidadoso.** As regras chegam a ele pelo próprio mundo: alertas da rota, pendências da elegibilidade e o pedido de aprovação na proposta. Ele cumpriu 13 de 15 regras. É a camada de contexto mostrando seu valor.
+- **Com skill, ele cumpriu 14 de 15.** A diferença ficou em três pontos:
+  - **a ordem que protege dados pessoais:** consentimento antes de ler o imóvel;
+  - **a explicação das trocas** à cliente;
+  - **a narração verificável da viagem:** cada recálculo cita a regra que seguiu.
+  - A skill também tem falhas de autoria que o teste revelou, como cobrar antes da vistoria. Skill é software: precisa de teste.
+- **O que o banco ganha não é só acerto, é garantia.** Sem skill, nada impede o agente de chamar `pagamentos.estornar`: ele só não chamou. Com skill, o gateway bloqueia (a contramão do capítulo 3).
+
 ### Para reproduzir
 
 ```bash
@@ -99,4 +112,4 @@ Mais chamadas que o modo sem skill, e todas necessárias. Cada uma leva a skill 
 ./scripts/agente.sh executar --modo com_skill    --provedor roteiro --auto
 ```
 
-Com uma chave de API no `.env`, tire o `--provedor roteiro` e compare com um modelo de verdade.
+Com o modelo configurado no `.env`, tire o `--provedor roteiro` e compare com um modelo de verdade. Para repetir o experimento dos incidentes (gasta tokens): `./scripts/experimento.sh rodar`.

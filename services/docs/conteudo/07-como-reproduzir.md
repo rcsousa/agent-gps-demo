@@ -231,6 +231,18 @@ curl -s -X POST localhost:8080/api/execucoes/<id>/resposta -H 'Content-Type: app
   -d '{"texto": "Aceito"}'
 ```
 
+### Medir com o modelo real
+
+`experimento.sh` roda cada incidente nos modos `sem_skill` e `com_skill`, com o modelo do `.env`, e confere pelo barramento se o agente seguiu a regra do banco. **Gasta tokens de verdade.**
+
+```bash
+./scripts/experimento.sh rodar                       # 5 incidentes x 2 modos (~15 min)
+./scripts/experimento.sh rodar vistoria-zona-sul     # só um incidente
+./scripts/experimento.sh analisar 2026-11-01         # a tabela de regras cumpridas
+```
+
+Os eventos completos ficam em `experimentos/<data>/`, fora do git. O relatório da primeira rodada está em `docs/experimentos/`.
+
 ### Escrever a persona de um canal novo
 
 As personas são prompts MCP servidos pelo `canais-mcp`, um arquivo por canal:
