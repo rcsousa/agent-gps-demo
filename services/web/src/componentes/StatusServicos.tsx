@@ -21,6 +21,7 @@ interface Status {
   barramento: Estado;
   llm: { provedor: string; configurado: boolean };
   servicos: Servico[];
+  ferramentas: number;
 }
 
 function TagEstado({ estado }: { estado: Estado }) {
@@ -36,7 +37,13 @@ function TagEstado({ estado }: { estado: Estado }) {
   );
 }
 
-function TileServico(props: { titulo: string; tecnico: string; estado: Estado; latenciaMs?: number }) {
+function TileServico(props: {
+  titulo: string;
+  tecnico: string;
+  estado: Estado;
+  latenciaMs?: number;
+  detalhe?: string;
+}) {
   return (
     <Tile className="tile-servico">
       <span className="tile-servico__nome">{props.titulo}</span>
@@ -46,6 +53,7 @@ function TileServico(props: { titulo: string; tecnico: string; estado: Estado; l
         {props.latenciaMs !== undefined && (
           <span className="tile-servico__latencia">{t.latencia(props.latenciaMs)}</span>
         )}
+        {props.detalhe && <span className="tile-servico__latencia">{props.detalhe}</span>}
       </div>
     </Tile>
   );
@@ -114,7 +122,12 @@ export function StatusServicos() {
           <h2 className="status__grupo">{t.grupos.plataforma}</h2>
           <Grid narrow>
             <Column {...coluna}>
-              <TileServico titulo={mensagens.servicos.gateway} tecnico="mcp-gateway" estado={status.gateway} />
+              <TileServico
+                titulo={mensagens.servicos.gateway}
+                tecnico="mcp-gateway"
+                estado={status.gateway}
+                detalhe={status.gateway === 'ok' ? t.ferramentas(status.ferramentas) : undefined}
+              />
             </Column>
             <Column {...coluna}>
               <TileServico titulo={mensagens.servicos.barramento} tecnico="bus · redis" estado={status.barramento} />

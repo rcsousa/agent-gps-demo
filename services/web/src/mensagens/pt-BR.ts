@@ -13,7 +13,7 @@ export const mensagens = {
   status: {
     titulo: 'Status dos serviços',
     descricao:
-      'Fase 1 · Fundação. O agente consulta o gateway, que verifica cada servidor MCP. Nenhuma outra rota existe entre eles.',
+      'O agente consulta o gateway, que verifica cada servidor MCP. Nenhuma outra rota existe entre eles.',
     atualizar: 'Atualizar',
     carregando: 'Consultando o agente…',
     ultimaAtualizacao: 'Atualizado às',
@@ -22,6 +22,7 @@ export const mensagens = {
     noAr: 'No ar',
     foraDoAr: 'Fora do ar',
     latencia: (ms: number) => `${ms} ms`,
+    ferramentas: (n: number) => `${n} tools`,
     grupos: {
       plataforma: 'Plataforma',
       servidores: 'Servidores MCP atrás do gateway',

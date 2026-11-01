@@ -45,7 +45,7 @@ def criar_app(config: Config | None = None, checagens: dict[str, Checagem] | Non
     @app.get("/api/status")
     async def status() -> dict:
         """Estado da plataforma visto pelo agente: só pelo gateway."""
-        gateway, servicos = "fora", []
+        gateway, servicos, ferramentas = "fora", [], 0
         try:
             async with httpx.AsyncClient(timeout=4) as cliente:
                 resposta = await cliente.get(
@@ -53,7 +53,8 @@ def criar_app(config: Config | None = None, checagens: dict[str, Checagem] | Non
                     headers={"Authorization": f"Bearer {config.gateway_token}"},
                 )
             if resposta.status_code == 200:
-                gateway, servicos = "ok", resposta.json()["servicos"]
+                corpo = resposta.json()
+                gateway, servicos, ferramentas = "ok", corpo["servicos"], corpo.get("ferramentas", 0)
         except httpx.HTTPError:
             pass
 
@@ -67,6 +68,7 @@ def criar_app(config: Config | None = None, checagens: dict[str, Checagem] | Non
             "barramento": barramento,
             "llm": {"provedor": config.llm_provider, "configurado": config.llm_configurado},
             "servicos": servicos,
+            "ferramentas": ferramentas,
         }
 
     return app
