@@ -1,4 +1,4 @@
-"""O gateway como servidor MCP: um só endereço, todas as tools, resources e skills.
+"""O gateway como servidor MCP: um só endereço, todas as tools, prompts, resources e skills.
 
 Cada chamada é roteada ao servidor de origem, recebe proveniência em `_meta`
 e vira um evento `tool.called` no barramento. Com uma skill ativa
@@ -30,13 +30,14 @@ from mcp_gateway.catalogo import Catalogo
 
 CHAVE_PROVENIENCIA = "bussola/proveniencia"
 PARAMETROS_INVALIDOS = -32602
+ERRO_INTERNO = -32603
 
 
 def _erro(texto: str) -> types.CallToolResult:
     return types.CallToolResult(content=[types.TextContent(type="text", text=texto)], is_error=True)
 
 
-def _meta_de(params: types.CallToolRequestParams, chave: str) -> str | None:
+def _meta_de(params: types.RequestParams, chave: str) -> str | None:
     meta: Any = params.meta or {}
     if not isinstance(meta, dict):
         meta = meta.model_dump(by_alias=True)
@@ -113,6 +114,42 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
         )
         return resultado
 
+    async def listar_prompts(ctx, params) -> types.ListPromptsResult:
+        return types.ListPromptsResult(prompts=[p.prompt for _, p in sorted(catalogo.prompts.items())])
+
+    async def obter_prompt(ctx, params: types.GetPromptRequestParams) -> types.GetPromptResult:
+        """Roteia o prompt ao servidor de origem, com proveniência e o evento prompt.read."""
+        inicio = time.perf_counter()
+        roteado = catalogo.prompts.get(params.name)
+        if roteado is None:
+            raise MCPError(
+                code=PARAMETROS_INVALIDOS, message=f"Prompt desconhecido no gateway: '{params.name}'."
+            )
+        proveniencia = {
+            "chamada_id": uuid.uuid4().hex[:12],
+            "prompt": params.name,
+            "servidor": roteado.upstream.nome,
+            "execucao_id": _meta_de(params, CHAVE_EXECUCAO),
+            "instante": agora(),
+        }
+        erro = None
+        try:
+            async with catalogo.conectar(roteado.upstream) as cliente:
+                resultado = await cliente.get_prompt(roteado.nome_original, params.arguments or {})
+        except Exception:  # noqa: BLE001
+            erro = f"O servidor {roteado.upstream.nome} não respondeu: trecho interditado."
+        proveniencia |= {
+            "duracao_ms": round((time.perf_counter() - inicio) * 1000),
+            "status": "erro" if erro else "ok",
+        }
+        await publicador.publicar(
+            "prompt.read", {**proveniencia, "argumentos": params.arguments or {}, "erro": erro}
+        )
+        if erro:
+            raise MCPError(code=ERRO_INTERNO, message=erro)
+        resultado.meta = {**(resultado.meta or {}), CHAVE_PROVENIENCIA: proveniencia}
+        return resultado
+
     async def listar_resources(ctx, params) -> types.ListResourcesResult:
         return types.ListResourcesResult(resources=[r for _, (_, r) in sorted(catalogo.resources.items())])
 
@@ -144,9 +181,11 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
     servidor = Server(
         "mcp-gateway",
         version=VERSAO,
-        description="Banco Bússola: ponto único de acesso às tools, resources e skills da demo.",
+        description="Banco Bússola: ponto único de acesso às tools, prompts, resources e skills da demo.",
         on_list_tools=listar_tools,
         on_call_tool=chamar_tool,
+        on_list_prompts=listar_prompts,
+        on_get_prompt=obter_prompt,
         on_list_resources=listar_resources,
         on_read_resource=ler_resource,
     )

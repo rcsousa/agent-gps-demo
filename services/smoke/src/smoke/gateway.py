@@ -5,6 +5,8 @@ Uso (pelo script):
   ./scripts/gateway.sh pagamentos.estornar '{"pagamento_id": "x"}' --skill contratacao-seguro-residencial
   ./scripts/gateway.sh --listar                         # tools
   ./scripts/gateway.sh --skills                         # skills (skills/list)
+  ./scripts/gateway.sh --prompts                        # prompts (persona por canal)
+  ./scripts/gateway.sh --prompt canais.atendimento_agencia '{"cliente_id": "cliente-ana"}'
   ./scripts/gateway.sh skill://<nome>/SKILL.md          # arquivo de skill, com digest verificado
   ./scripts/gateway.sh contexto://mapa                  # outro resource
 """
@@ -38,6 +40,11 @@ async def executar(alvo: str, argumentos: dict, skill: str | None) -> int:
                 for arquivo in entrada["resources"]:
                     print(f"  · {arquivo['uri']}  {arquivo['size']} bytes  {arquivo['digest'][:19]}…")
             return 0
+        if alvo == "--prompts":
+            for prompt in (await cliente.list_prompts()).prompts:
+                print(f"\n{prompt.name}\n  {prompt.description}")
+                print(f"  argumentos: {', '.join(a.name for a in prompt.arguments or [])}")
+            return 0
         if alvo.startswith("skill://"):
             raiz = alvo.split("/", 3)[2]
             entrada = await obter_skill(cliente, f"skill://{raiz}/SKILL.md")
@@ -60,6 +67,15 @@ async def executar(alvo: str, argumentos: dict, skill: str | None) -> int:
     return 0
 
 
+async def ler_prompt(nome: str, argumentos: dict) -> int:
+    async with conectar(URL, os.environ["GATEWAY_TOKEN"]) as cliente:
+        resultado = await cliente.get_prompt(nome, argumentos)
+    for mensagem in resultado.messages:
+        print(getattr(mensagem.content, "text", mensagem.content))
+    _imprimir({"_meta": resultado.meta})
+    return 0
+
+
 def main() -> int:
     args = sys.argv[1:]
     skill = None
@@ -70,6 +86,9 @@ def main() -> int:
     if not args:
         print(__doc__, file=sys.stderr)
         return 2
+    if args[0] == "--prompt" and len(args) > 1:
+        argumentos = json.loads(args[2]) if len(args) > 2 else {}
+        return asyncio.run(ler_prompt(args[1], argumentos))
     argumentos = json.loads(args[1]) if len(args) > 1 else {}
     return asyncio.run(executar(args[0], argumentos, skill))
 

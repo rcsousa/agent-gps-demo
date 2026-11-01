@@ -1,4 +1,4 @@
-"""Catálogo agregado: tools e resources de todos os servidores atrás do gateway."""
+"""Catálogo agregado: tools, prompts, resources e skills de todos os servidores atrás do gateway."""
 
 import logging
 from collections.abc import Callable
@@ -30,11 +30,20 @@ class ToolRoteada:
 
 
 @dataclass
+class PromptRoteado:
+    upstream: Upstream
+    nome_original: str
+    prompt: types.Prompt
+
+
+@dataclass
 class Catalogo:
     upstreams: list[Upstream]
     conectar: Conector = conector_http
     tools: dict[str, ToolRoteada] = field(default_factory=dict)
     resources: dict[str, tuple[Upstream, types.Resource]] = field(default_factory=dict)
+    # Prompts (persona por canal, por exemplo), com nome qualificado como as tools.
+    prompts: dict[str, PromptRoteado] = field(default_factory=dict)
     disponiveis: dict[str, bool] = field(default_factory=dict)
     # Tudo o que cada servidor oferece, inclusive o que o gateway não expõe (ex.: ping).
     brutas: dict[str, list[str]] = field(default_factory=dict)
@@ -63,6 +72,9 @@ class Catalogo:
             )
         return itens
 
+    def prompts_de(self, upstream: Upstream) -> list[str]:
+        return sorted(n for n, p in self.prompts.items() if p.upstream.nome == upstream.nome)
+
     async def atualizar(self) -> None:
         """Relê tools e resources. Upstream fora mantém o que já se sabia dele:
         a rua continua no mapa, interditada, em vez de sumir."""
@@ -71,6 +83,10 @@ class Catalogo:
                 async with self.conectar(upstream) as cliente:
                     tools = (await cliente.list_tools()).tools
                     resources = (await cliente.list_resources()).resources
+                    capacidades = cliente.server_capabilities
+                    prompts = (
+                        (await cliente.list_prompts()).prompts if capacidades and capacidades.prompts else []
+                    )
                     skills = await listar_skills(cliente) if anuncia_skills(cliente) else []
             except Exception as erro:  # noqa: BLE001
                 if self.disponiveis.get(upstream.nome, True):
@@ -97,6 +113,14 @@ class Catalogo:
             self.resources = {u: r for u, r in self.resources.items() if r[0].nome != upstream.nome}
             for resource in resources:
                 self.resources[str(resource.uri)] = (upstream, resource)
+            self.prompts = {n: p for n, p in self.prompts.items() if p.upstream.nome != upstream.nome}
+            for prompt in prompts:
+                qualificado = f"{upstream.prefixo}.{prompt.name}"
+                self.prompts[qualificado] = PromptRoteado(
+                    upstream=upstream,
+                    nome_original=prompt.name,
+                    prompt=prompt.model_copy(update={"name": qualificado}),
+                )
             self.skills = {u: s for u, s in self.skills.items() if s[0].nome != upstream.nome}
             for entrada in skills:
                 self.skills[entrada["uri"]] = (upstream, entrada)
