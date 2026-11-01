@@ -51,5 +51,21 @@ async def imovel_atual(estado: EstadoVivo, imovel_id: str) -> dict[str, Any]:
     return imovel
 
 
+def laudo(imovel_id: str) -> dict[str, Any] | None:
+    """O laudo de avaliação da engenharia do banco: a fonte autoritativa do valor do imóvel."""
+    item = dados()["laudos"].get(imovel_id)
+    if item is None:
+        return None
+    return {
+        "valor_avaliado": item["valor_avaliado"],
+        "proveniencia": {
+            "fonte": "Laudo de avaliação (Engenharia Bússola)",
+            "data": item["data"],
+            "responsavel": item["responsavel"],
+            "confianca": "alta",
+        },
+    }
+
+
 def imovel_do_cliente(cliente_id: str) -> str:
     return registro("clientes", cliente_id, "Cliente")["imovel"]

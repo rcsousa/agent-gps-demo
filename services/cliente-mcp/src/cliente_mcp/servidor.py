@@ -68,23 +68,14 @@ def criar_servidor(
         )
     )
     async def consultar_laudo_avaliacao(imovel_id: str) -> dict[str, Any]:
-        laudo = cadastro.dados()["laudos"].get(imovel_id)
+        laudo = cadastro.laudo(imovel_id)
         if laudo is None:
             return {
                 "imovel_id": imovel_id,
                 "laudo": None,
                 "mensagem": "Não há laudo de avaliação para este imóvel.",
             }
-        return {
-            "imovel_id": imovel_id,
-            "valor_avaliado": laudo["valor_avaliado"],
-            "proveniencia": {
-                "fonte": "Laudo de avaliação (Engenharia Bússola)",
-                "data": laudo["data"],
-                "responsavel": laudo["responsavel"],
-                "confianca": "alta",
-            },
-        }
+        return {"imovel_id": imovel_id, **laudo}
 
     # --- Distração: plausíveis, mas fora da jornada -----------------------------
 

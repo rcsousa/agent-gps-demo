@@ -11,7 +11,7 @@ metadata:
 # Cotação multisseguradora
 
 1. `contexto.consultar_estado` com `tipo: ApiCotacao` mostra quais seguradoras estão no ar. Não cote em quem está `fora`.
-2. `seguradoras.cotar_seguro` para cada seguradora disponível: `ancora`, `farol`, `horizonte`. Use a mesma `importancia_segurada` em todas, e só de fonte confiável.
+2. `seguradoras.cotar_seguro` para cada seguradora disponível: `ancora`, `farol`, `horizonte`. Use a mesma base em todas, só de fonte confiável: `usar_laudo: true` quando o valor veio do laudo. Cada seguradora uma vez.
 3. Se uma cotação falhar, registre o motivo e siga com as outras. Duas cotações já permitem comparar.
 4. Monte a comparação para a cliente:
 

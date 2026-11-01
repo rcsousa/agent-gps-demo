@@ -59,7 +59,7 @@ Leia `skill://contratacao-seguro-residencial/references/cotacao.md` e siga.
 Se a proposta vier com `exige_aprovacao_humana: true`, siga `skill://escalonamento-humano/SKILL.md` antes do pagamento.
 
 ### 8. Pagamento
-`pagamentos.processar_pagamento` com o valor do prêmio e a proposta como `referencia`. Prefira débito em conta. A cobrança se apoia na execução do contrato que a cliente pediu.
+Só com a vistoria concluída, quando ela for exigida (veja `desvios.md`). `pagamentos.processar_pagamento` com o valor do prêmio e a proposta como `referencia`. Prefira débito em conta. A cobrança se apoia na execução do contrato que a cliente pediu.
 
 ### 9. Emissão
 Leia `skill://contratacao-seguro-residencial/references/emissao.md` e siga. Confirme à cliente o número da apólice, a seguradora e a vigência.

@@ -67,19 +67,31 @@ def criar_servidor(
     @mcp.tool(
         description=(
             "Cota o seguro residencial da cliente numa seguradora parceira (ancora, farol ou horizonte). "
-            "Por padrão usa a importância segurada do cadastro; informe `importancia_segurada` para usar "
-            "um valor de fonte mais confiável, como o laudo de avaliação."
+            "Por padrão usa a importância segurada do cadastro. Com `usar_laudo: true`, usa o laudo de "
+            "avaliação do imóvel e herda a proveniência dele (confiança alta). `importancia_segurada` "
+            "informa outro valor, que fica registrado com confiança média."
         )
     )
     async def cotar_seguro(
-        cliente_id: str, seguradora: str, importancia_segurada: float | None = None
+        cliente_id: str,
+        seguradora: str,
+        importancia_segurada: float | None = None,
+        usar_laudo: bool = False,
     ) -> dict[str, Any]:
         chave = chave_seguradora(seguradora)
         s = catalogo()["seguradoras"][chave]
         aviso = await estado.garantir_disponivel(s["api_cotacao"], f"A API de cotação da {s['nome']}")
         imovel = await cadastro.imovel_atual(estado, cadastro.imovel_do_cliente(cliente_id))
         area = await cadastro.atual(estado, "areas", imovel["area_risco"], "Área de risco")
-        if importancia_segurada is None:
+        if usar_laudo and importancia_segurada is not None:
+            raise ToolError("Use `usar_laudo` ou `importancia_segurada`, não os dois.")
+        if usar_laudo:
+            laudo = cadastro.laudo(imovel["id"])
+            if laudo is None:
+                raise ToolError(f"Não há laudo de avaliação para o imóvel {imovel['id']}.")
+            # O valor vem com a proveniência do laudo: a fonte autoritativa, sem precisar provar nada.
+            valor, origem = laudo["valor_avaliado"], laudo["proveniencia"]
+        elif importancia_segurada is None:
             valor, origem = imovel["importancia_segurada"], imovel["proveniencia"]
         else:
             valor = importancia_segurada

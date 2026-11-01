@@ -115,3 +115,37 @@ async def test_area_de_risco_exige_vistoria_para_emitir(estado):
             c, "emitir_apolice", {"proposta_id": proposta["proposta_id"], "pagamento_id": "pag-1"}
         )
     assert resultado.is_error and "vistoria" in resultado.content[0].text
+
+
+async def test_cotacao_com_laudo_herda_a_proveniencia_do_laudo(estado):
+    async with Client(criar_servidor(estado, checagens={})) as c:
+        pelo_laudo = await chamar(
+            c, "cotar_seguro", {"cliente_id": "cliente-ana", "seguradora": "farol", "usar_laudo": True}
+        )
+        informado = await chamar(
+            c,
+            "cotar_seguro",
+            {"cliente_id": "cliente-ana", "seguradora": "farol", "importancia_segurada": 780000},
+        )
+        os_dois = await chamar(
+            c,
+            "cotar_seguro",
+            {
+                "cliente_id": "cliente-ana",
+                "seguradora": "farol",
+                "importancia_segurada": 1,
+                "usar_laudo": True,
+            },
+        )
+        sem_laudo = await chamar(
+            c, "cotar_seguro", {"cliente_id": "cliente-bruno", "seguradora": "farol", "usar_laudo": True}
+        )
+
+    base = pelo_laudo.structured_content["base_calculo"]
+    assert pelo_laudo.structured_content["importancia_segurada"] == 780000
+    assert base["origem_valor"]["confianca"] == "alta"
+    assert base["origem_valor"]["fonte"] == "Laudo de avaliação (Engenharia Bússola)"
+    # O mesmo valor, informado à mão, não prova a origem: confiança média.
+    assert informado.structured_content["base_calculo"]["origem_valor"]["confianca"] == "media"
+    assert os_dois.is_error and "não os dois" in os_dois.content[0].text
+    assert sem_laudo.is_error and "Não há laudo" in sem_laudo.content[0].text

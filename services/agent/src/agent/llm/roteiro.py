@@ -289,7 +289,7 @@ class SessaoRoteiro:
         yield from self._uma(
             "agente.ler_arquivo_skill", uri="skill://contratacao-seguro-residencial/references/cotacao.md"
         )
-        extra = {"importancia_segurada": importancia} if importancia else {}
+        extra = {"usar_laudo": True} if importancia else {}
         cotacoes = []
         for seguradora in seguradoras:
             resultado = yield from self._uma(

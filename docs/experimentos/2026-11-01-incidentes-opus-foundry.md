@@ -21,7 +21,7 @@ Ela também trouxe **regressões que são falhas nossas de autoria**, não do mo
 
 ## Como foi feito
 
-- **Montagem.** Cinco incidentes, cada um nos dois modos. Cada execução começa do estado-base com o incidente aplicado. Tudo roda pelo `./scripts/experimento.sh`, e os eventos completos ficam em `experimentos/2026-11-01/`, fora do git.
+- **Montagem.** Cinco incidentes, cada um nos dois modos. Cada execução começa do estado-base com o incidente aplicado. Tudo roda pelo `./scripts/experimento.sh`, e os eventos completos ficam em `experimentos/2026-11-01-rodada-1/`, fora do git.
 - **A Ana responde a primeira opção sugerida pelo agente,** para as execuções serem comparáveis. Na alçada, a exceção: ela escolhe proteger também a coleção de arte que declarou.
   - **Limitação:** a primeira rodada da alçada usou a primeira opção, "Só o apartamento". Com isso, o agente nunca chegou ao pedágio, e o defeito era do experimento. Essa rodada foi descartada e refeita.
 - **Como as regras são conferidas:** pelo que de fato trafegou no barramento (`tool.called`, `incident.detected`, perguntas e mensagens), não pelo que o agente disse.
@@ -85,6 +85,23 @@ Quase toda a entrada vem do cache (ver o PR #8).
 2. **Cobrança antes da vistoria.** Falta em `desvios.md` a instrução de parar depois do aceite quando há vistoria pendente.
 3. **Narração em inglês entre tools.** Corrigido no PR #8 com a instrução do host.
 4. **Limite de tokens do deployment.** Corrigido no PR #8 com o cache do histórico e a espera no 429.
+
+## Rodada 2: depois das correções (PR #10)
+
+As duas falhas de autoria foram corrigidas:
+- `seguradoras.cotar_seguro` ganhou `usar_laudo`, que cota pelo laudo e herda a proveniência dele, com confiança alta;
+- `desvios.md` e a parada 8 passaram a mandar parar depois do aceite quando há vistoria pendente.
+
+Vistoria e consentimento foram refeitos nos dois modos (eventos em `experimentos/2026-11-01-rodada-2/`):
+
+| Incidente | Modo | Regras | Cotações | Cobrou antes da vistoria? | Tempo |
+| --- | --- | --- | --- | --- | --- |
+| Vistoria na zona sul | sem skill | 3/3 | 3 | não | 49 s |
+| | com skill | **3/3** (antes 2/3) | **3** (antes 6) | **não** (antes sim) | 68 s |
+| Consentimento vencido | sem skill | 3/4 | 3 | — | 52 s |
+| | com skill | 4/4 | **3** (antes 6) | — | 83 s |
+
+A cotação em dobro sumiu nos dois incidentes refeitos. Sem skill, o agente passou a cotar com `usar_laudo` por conta própria, guiado pela descrição da tool.
 
 ## O que isso muda na demo
 
