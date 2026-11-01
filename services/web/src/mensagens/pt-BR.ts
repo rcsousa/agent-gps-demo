@@ -22,7 +22,6 @@ export const mensagens = {
     noAr: 'No ar',
     foraDoAr: 'Fora do ar',
     latencia: (ms: number) => `${ms} ms`,
-    ferramentas: (n: number) => `${n} tools`,
     grupos: {
       plataforma: 'Plataforma',
       servidores: 'Servidores MCP atrás do gateway',
@@ -36,6 +35,22 @@ export const mensagens = {
         azure_openai: 'Azure OpenAI',
       } as Record<string, string>,
     },
+  },
+  tools: {
+    titulo: 'Tools por servidor',
+    descricao:
+      'O que cada servidor MCP oferece e como o gateway expõe. Desligue uma tool para criar um cenário de falha: ela continua visível para o agente, mas toda chamada falha.',
+    visivelComo: 'Visível no gateway como',
+    oculta: 'Oculta (uso interno)',
+    noAr: 'No ar',
+    foraDoAr: 'Fora do ar',
+    religarTodas: 'Religar todas',
+    contagemFora: (n: number) =>
+      n === 0 ? 'Todas as tools no ar' : n === 1 ? '1 tool fora do ar' : `${n} tools fora do ar`,
+    resumo: (total: number, fora: number) => (fora ? `${total} tools · ${fora} fora do ar` : `${total} tools`),
+    rotuloToggle: (nome: string) => `Ligar ou desligar ${nome}`,
+    erroAcao: 'O simulador não respondeu.',
+    erroAcaoDetalhe: 'Verifique se o serviço simulator está no ar (docker compose ps).',
   },
   servicos: {
     gateway: 'MCP gateway',
