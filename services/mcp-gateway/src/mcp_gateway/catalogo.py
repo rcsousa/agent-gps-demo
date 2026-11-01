@@ -35,9 +35,26 @@ class Catalogo:
     tools: dict[str, ToolRoteada] = field(default_factory=dict)
     resources: dict[str, tuple[Upstream, types.Resource]] = field(default_factory=dict)
     disponiveis: dict[str, bool] = field(default_factory=dict)
+    # Tudo o que cada servidor oferece, inclusive o que o gateway não expõe (ex.: ping).
+    brutas: dict[str, list[str]] = field(default_factory=dict)
 
     def upstream(self, nome: str) -> Upstream | None:
         return next((u for u in self.upstreams if u.nome == nome), None)
+
+    def ferramentas_de(self, upstream: Upstream, fora: set[str]) -> list[dict]:
+        """Tools do servidor e como aparecem no gateway: qualificadas, ocultas ou fora do ar."""
+        itens = []
+        for nome in self.brutas.get(upstream.nome, []):
+            qualificado = f"{upstream.prefixo}.{nome}" if nome not in TOOLS_OCULTAS else None
+            itens.append(
+                {
+                    "nome": nome,
+                    "qualificado": qualificado,
+                    "visivel": qualificado is not None,
+                    "fora": qualificado in fora,
+                }
+            )
+        return itens
 
     async def atualizar(self) -> None:
         """Relê tools e resources. Upstream fora mantém o que já se sabia dele:
@@ -53,6 +70,7 @@ class Catalogo:
                 self.disponiveis[upstream.nome] = False
                 continue
             self.disponiveis[upstream.nome] = True
+            self.brutas[upstream.nome] = sorted(t.name for t in tools)
             self.tools = {n: t for n, t in self.tools.items() if t.upstream.nome != upstream.nome}
             for tool in tools:
                 if tool.name in TOOLS_OCULTAS:

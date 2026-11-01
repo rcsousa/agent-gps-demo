@@ -17,6 +17,7 @@ from starlette.types import ASGIApp, Receive, Scope, Send
 
 from bussola_comum.barramento import checar_barramento
 from bussola_comum.config import ConfigBase
+from bussola_comum.estado_vivo import EstadoVivo
 from bussola_comum.saude import Checagem, rota_saude
 from mcp_gateway.catalogo import Catalogo, Conector, conector_http
 from mcp_gateway.eventos import Publicador, PublicadorRedis
@@ -70,19 +71,30 @@ def criar_app(
     checagens: dict[str, Checagem] | None = None,
     conectar: Conector = conector_http,
     publicador: Publicador | None = None,
+    estado: EstadoVivo | None = None,
 ) -> Starlette:
     config = config or Config()
     if checagens is None:
         checagens = {"bus": checar_barramento(config.bus_url)}
     catalogo = Catalogo(carregar_upstreams(config.upstreams_arquivo), conectar)
     publicador = publicador or PublicadorRedis(Redis.from_url(config.bus_url, decode_responses=True))
+    estado = estado or EstadoVivo.de_url(config.bus_url)
 
     async def saude_servicos(request: Request) -> JSONResponse:
         async with httpx.AsyncClient(timeout=2) as cliente:
             servicos = await asyncio.gather(*(_saude_upstream(cliente, u) for u in catalogo.upstreams))
-        return JSONResponse({"servicos": list(servicos), "ferramentas": len(catalogo.tools)})
+        fora = await estado.tools_fora()
+        for servico, upstream in zip(servicos, catalogo.upstreams, strict=True):
+            servico["ferramentas"] = catalogo.ferramentas_de(upstream, fora)
+        return JSONResponse(
+            {
+                "servicos": list(servicos),
+                "ferramentas": len(catalogo.tools),
+                "ferramentas_fora": len(fora & set(catalogo.tools)),
+            }
+        )
 
-    app = criar_servidor_mcp(catalogo, publicador).streamable_http_app(
+    app = criar_servidor_mcp(catalogo, publicador, estado).streamable_http_app(
         stateless_http=True,
         json_response=True,
         transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False),

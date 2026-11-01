@@ -15,6 +15,8 @@ from redis.asyncio import Redis
 
 PREFIXO_ESTADO = "bussola:estado:"
 PREFIXO_DOMINIO = "bussola:dominio:"
+# Tools que o apresentador desligou: o gateway as mantém visíveis, mas barra a chamada.
+CHAVE_TOOLS_FORA = "bussola:tools:fora"
 ATRASO_MAXIMO_S = 3.0
 
 
@@ -72,6 +74,23 @@ class EstadoVivo:
 
     async def limpar_dominio(self) -> None:
         await self._apagar(PREFIXO_DOMINIO + "*")
+
+    # --- Tools fora do ar (cenários de falha do apresentador) --------------------
+
+    async def tools_fora(self) -> set[str]:
+        return set(await self.redis.smembers(CHAVE_TOOLS_FORA))
+
+    async def tool_fora(self, nome: str) -> bool:
+        return bool(await self.redis.sismember(CHAVE_TOOLS_FORA, nome))
+
+    async def desligar_tool(self, nome: str) -> None:
+        await self.redis.sadd(CHAVE_TOOLS_FORA, nome)
+
+    async def religar_tool(self, nome: str) -> None:
+        await self.redis.srem(CHAVE_TOOLS_FORA, nome)
+
+    async def religar_todas(self) -> None:
+        await self.redis.delete(CHAVE_TOOLS_FORA)
 
     async def _apagar(self, padrao: str) -> None:
         chaves = [c async for c in self.redis.scan_iter(padrao)]

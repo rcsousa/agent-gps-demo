@@ -12,6 +12,7 @@ from mcp.server.lowlevel import Server
 
 from bussola_comum import VERSAO
 from bussola_comum.dominio import agora
+from bussola_comum.estado_vivo import EstadoVivo
 from mcp_gateway.catalogo import Catalogo
 from mcp_gateway.eventos import Publicador
 
@@ -24,7 +25,7 @@ def _erro(texto: str, meta: dict) -> types.CallToolResult:
     )
 
 
-def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador) -> Server:
+def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: EstadoVivo) -> Server:
     async def listar_tools(ctx, params) -> types.ListToolsResult:
         return types.ListToolsResult(tools=[t.tool for _, t in sorted(catalogo.tools.items())])
 
@@ -39,8 +40,15 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador) -> Server:
             "instante": agora(),
         }
 
+        motivo = None
         if roteada is None:
             resultado = _erro(f"Tool desconhecida no gateway: '{params.name}'.", {})
+        elif await estado.tool_fora(params.name):
+            # O apresentador desligou a tool: a rua continua no mapa, interditada.
+            motivo = "desligada"
+            resultado = _erro(
+                f"A tool {params.name} está fora do ar no momento: trecho interditado. Tente outra rota.", {}
+            )
         else:
             try:
                 async with catalogo.conectar(roteada.upstream) as cliente:
@@ -55,6 +63,7 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador) -> Server:
         proveniencia |= {
             "duracao_ms": round((time.perf_counter() - inicio) * 1000),
             "status": "erro" if resultado.is_error else "ok",
+            **({"motivo": motivo} if motivo else {}),
         }
         resultado.meta = {**(resultado.meta or {}), CHAVE_PROVENIENCIA: proveniencia}
         await publicador.publicar(
