@@ -1,6 +1,6 @@
 # Demo GPS de Contexto — Especificação
 
-Versão de 01/11/2026 · Ricardo Coelho de Sousa · atualizada com as decisões das Fases 1 a 3
+Versão de 01/11/2026 · Ricardo Coelho de Sousa · atualizada com as decisões das Fases 1 a 4
 
 ## Visão e mensagem central
 
@@ -143,7 +143,7 @@ A extensão usada é a oficial do MCP. A SEP-2640 chegou a status Final e foi me
 - `SKILL.md`: objetivo, pré-condições, a sequência de paradas e, para cada uma, as tools a chamar pelo nome qualificado no gateway (por exemplo `cliente.obter_perfil`, `consentimento.verificar`, `seguradoras.cotar`).
 - `references/`: um arquivo por trecho (elegibilidade, cotação, emissão), carregado só quando o agente chega lá.
 - `references/desvios.md`: regras de recálculo para cada tipo de incidente.
-- Metadados de governança: tools permitidas, limites de alçada e pontos que exigem aprovação humana.
+- Metadados de governança: tools permitidas, limites de alçada e pontos que exigem aprovação humana. Ficam no frontmatter do `SKILL.md`: `allowed-tools` (campo padrão do formato Agent Skills) e, em `metadata`, `usa-skills`, `alcada` e `aprovacao-humana`. Como o frontmatter vai literal no `skills/list`, o gateway lê a governança dali.
 
 Fluxo de navegação, que o Modo Raio-X mostra passo a passo:
 
@@ -243,6 +243,10 @@ Decisões de arquitetura:
 
 - **O agente só conhece o gateway.** Nenhuma URL de servidor de domínio fica no agente. Trocar, adicionar ou desligar um serviço é configuração do gateway.
 - **O gateway é o ponto de governança.** Ele aplica as tools permitidas por skill, bloqueia chamadas fora de política (a "contramão") e carimba proveniência em toda resposta.
+  - O agente declara a skill ativa em cada `tools/call`, em `_meta["bussola/skill"]`, com a URI do `SKILL.md`.
+  - Com skill ativa, só passam as tools de `allowed-tools`, somadas às das skills de `usa-skills`. O resto é bloqueado sem chegar ao servidor (`motivo: fora_da_skill`). Uma skill desconhecida também é bloqueada (`motivo: skill_desconhecida`).
+  - Sem skill declarada, o gateway não restringe nada. É isso que permite o contraste das cenas 2 e 3.
+  - O gateway agrega `skills/list` e `skills/get` dos servidores e repassa as entradas sem alteração, para os digests valerem de ponta a ponta. As leituras do protocolo viram os eventos `skills.listed` e `resource.read` no barramento.
 - **O gateway é o ponto de observação.** Todo evento do Raio-X sai dele e do agente, então o que aparece na tela é o que de fato trafegou.
 - **Gateway próprio em Python.** O suporte à extensão de skills em gateways prontos ainda varia, e assim agregamos skills e tools do nosso jeito.
 - **Provedor de LLM por variável de ambiente:** `LLM_PROVIDER=anthropic|azure_openai`, com uma interface única no `agent`.
@@ -392,3 +396,5 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Pedágio: o apresentador aprova pelo simulador, e a especialista aprova sozinha depois de 30 s
 - [x] Cenas de falha sob medida: desligar tools pelo painel de status, via simulador
 - [x] Cerca de 15 tools de distração no gateway para a cena 3 (ver Incidentes)
+- [x] Skills servidas pela SEP-2640 implementada sobre o mecanismo de extensões do SDK (SEP-2133); consumo isolado em `bussola_comum.skills`
+- [x] Governança por skill: skill ativa declarada em `_meta["bussola/skill"]`; fora da skill = bloqueio (contramão)

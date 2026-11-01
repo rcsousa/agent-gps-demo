@@ -85,6 +85,16 @@ O uso de dados pessoais precisa de base legal (LGPD):
 --8<-- "instancias/regulatorio.yaml:finalidades"
 ```
 
-### As skills
+### As skills que percorrem a jornada
 
-As skills-workflow que percorrem essas paradas chegam na Fase 4, e este capítulo ganha os trechos reais dos `SKILL.md`.
+A skill `contratacao-seguro-residencial` conduz as 9 paradas. Ela chama as outras três nos trechos certos: consentimento na parada 3, cotação multisseguradora na rota econômica e escalonamento humano no pedágio. Trecho real do `SKILL.md`:
+
+```markdown
+--8<-- "contratacao-seguro-residencial/SKILL.md:36:65"
+```
+
+Quando o caminho muda, a skill manda ler `references/desvios.md`, que traz uma regra de recálculo para cada incidente:
+
+```markdown
+--8<-- "contratacao-seguro-residencial/references/desvios.md"
+```

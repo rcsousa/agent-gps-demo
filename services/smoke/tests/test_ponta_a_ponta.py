@@ -13,6 +13,7 @@ import pytest
 from redis import Redis
 
 from bussola_comum.cliente_mcp import conectar
+from bussola_comum.skills import CHAVE_SKILL_ATIVA, ler_arquivo, listar_skills, tools_permitidas
 
 SERVICOS_PYTHON = [
     "agent",
@@ -249,3 +250,60 @@ def test_desligar_tool_pelo_painel_do_web(mundo_limpo):
 
     httpx.post("http://web/simulador/tools/religar-todas", timeout=10).raise_for_status()
     assert not gateway(nome, {"cliente_id": "cliente-ana", "seguradora": "farol"}).is_error
+
+
+# --- Fase 4: skills-workflow ---------------------------------------------------
+
+PRINCIPAL = "skill://contratacao-seguro-residencial/SKILL.md"
+
+
+def _com_cliente(acao):
+    async def executar():
+        async with conectar(GATEWAY, TOKEN) as cliente:
+            return await acao(cliente)
+
+    return asyncio.run(executar())
+
+
+def test_quatro_skills_pelo_gateway_com_digest_verificado():
+    async def verificar(cliente):
+        entradas = await listar_skills(cliente)
+        for entrada in entradas:
+            for arquivo in entrada["resources"]:
+                await ler_arquivo(cliente, arquivo["uri"], entrada)  # falha se digest ou tamanho divergirem
+        return entradas
+
+    entradas = _com_cliente(verificar)
+    assert {e["frontmatter"]["name"] for e in entradas} == {
+        "contratacao-seguro-residencial",
+        "verificacao-consentimento",
+        "cotacao-multisseguradora",
+        "escalonamento-humano",
+    }
+
+
+def test_toda_tool_permitida_existe_no_gateway():
+    entradas = _com_cliente(listar_skills)
+    catalogo = {t.name for t in gateway("--listar").tools}
+    for entrada in entradas:
+        assert tools_permitidas(entrada["frontmatter"]) <= catalogo, entrada["uri"]
+
+
+def test_contramao_com_skill_ativa():
+    async def chamar(cliente):
+        meta = {CHAVE_SKILL_ATIVA: PRINCIPAL}
+        permitida = await cliente.call_tool("cliente.obter_perfil", {"cliente_id": "cliente-ana"}, meta=meta)
+        bloqueada = await cliente.call_tool("pagamentos.estornar", {"pagamento_id": "x"}, meta=meta)
+        sem_skill = await cliente.call_tool("pagamentos.estornar", {"pagamento_id": "x"})
+        return permitida, bloqueada, sem_skill
+
+    permitida, bloqueada, sem_skill = _com_cliente(chamar)
+    assert not permitida.is_error
+    assert bloqueada.is_error and bloqueada.meta["bussola/proveniencia"]["motivo"] == "fora_da_skill"
+    # Sem skill, a chamada chega ao servidor (e falha lá, porque o pagamento não existe).
+    assert "motivo" not in sem_skill.meta["bussola/proveniencia"]
+    assert "não encontrado" in sem_skill.content[0].text
+
+
+def test_status_conta_as_skills():
+    assert httpx.get("http://web/api/status", timeout=10).json()["skills"] == 4

@@ -4,9 +4,10 @@ Todos usam o SDK oficial (MCPServer), transporte streamable HTTP em /mcp,
 e expõem /saude para o healthcheck.
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 
 import uvicorn
+from mcp.server.extension import Extension
 from mcp.server.mcpserver import MCPServer
 from mcp.server.transport_security import TransportSecuritySettings
 from starlette.applications import Starlette
@@ -21,9 +22,10 @@ def criar_servidor_mcp(
     nome: str,
     descricao: str,
     checagens: dict[str, Checagem] | None = None,
+    extensoes: Sequence[Extension] = (),
 ) -> MCPServer:
     """Servidor MCP com a tool `ping` e a rota /saude."""
-    mcp = MCPServer(name=nome, description=descricao, version=VERSAO)
+    mcp = MCPServer(name=nome, description=descricao, version=VERSAO, extensions=list(extensoes))
 
     @mcp.tool(description="Confirma que o servidor responde. Esqueleto da Fase 1.")
     def ping() -> str:

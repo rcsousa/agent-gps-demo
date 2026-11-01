@@ -24,4 +24,5 @@ export interface Status {
   servicos: Servico[];
   ferramentas: number;
   ferramentas_fora: number;
+  skills: number;
 }

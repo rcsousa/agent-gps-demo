@@ -91,6 +91,7 @@ def criar_app(
                 "servicos": list(servicos),
                 "ferramentas": len(catalogo.tools),
                 "ferramentas_fora": len(fora & set(catalogo.tools)),
+                "skills": len(catalogo.skills),
             }
         )
 

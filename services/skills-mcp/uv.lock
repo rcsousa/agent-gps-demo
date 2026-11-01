@@ -939,6 +939,7 @@ version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "bussola-comum" },
+    { name = "pyyaml" },
 ]
 
 [package.dev-dependencies]
@@ -949,7 +950,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "bussola-comum", directory = "../../libs/bussola_comum" }]
+requires-dist = [
+    { name = "bussola-comum", directory = "../../libs/bussola_comum" },
+    { name = "pyyaml", specifier = ">=6" },
+]
 
 [package.metadata.requires-dev]
 dev = [
