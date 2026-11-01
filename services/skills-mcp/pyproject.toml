@@ -3,7 +3,7 @@ name = "skills-mcp"
 version = "0.1.0"
 description = "Catálogo de skills-workflow (extensão io.modelcontextprotocol/skills)"
 requires-python = ">=3.12"
-dependencies = ["bussola-comum"]
+dependencies = ["bussola-comum", "pyyaml>=6"]
 
 [dependency-groups]
 dev = ["pytest>=8", "ruff>=0.8", "httpx>=0.28"]
