@@ -1,0 +1,28 @@
+# Servidores MCP atrás do gateway.
+# Trocar, adicionar ou desligar um serviço é só editar esta lista.
+# prefixo: como as tools do servidor aparecem para o agente (ex.: cliente.obter_perfil).
+servidores:
+  - nome: skills-mcp
+    prefixo: skills
+    url: http://skills-mcp:8000
+  - nome: contexto-mcp
+    prefixo: contexto
+    url: http://contexto-mcp:8000
+  - nome: cliente-mcp
+    prefixo: cliente
+    url: http://cliente-mcp:8000
+  - nome: consentimento-mcp
+    prefixo: consentimento
+    url: http://consentimento-mcp:8000
+  - nome: risco-mcp
+    prefixo: risco
+    url: http://risco-mcp:8000
+  - nome: seguradoras-mcp
+    prefixo: seguradoras
+    url: http://seguradoras-mcp:8000
+  - nome: pagamentos-mcp
+    prefixo: pagamentos
+    url: http://pagamentos-mcp:8000
+  - nome: atendimento-mcp
+    prefixo: atendimento
+    url: http://atendimento-mcp:8000
