@@ -99,6 +99,7 @@ services:
       seguradoras-mcp: { condition: service_healthy }
       pagamentos-mcp: { condition: service_healthy }
       atendimento-mcp: { condition: service_healthy }
+      canais-mcp: { condition: service_healthy }
 
   # ---------------------------------------------------------------- servidores MCP
   skills-mcp:
@@ -164,6 +165,12 @@ services:
   atendimento-mcp:
     <<: *python-servico
     build: { <<: *build-python, args: { SERVICE: atendimento-mcp, MODULE: atendimento_mcp } }
+    environment: *dominio-env
+    depends_on: *dominio-deps
+
+  canais-mcp:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: canais-mcp, MODULE: canais_mcp } }
     environment: *dominio-env
     depends_on: *dominio-deps
 

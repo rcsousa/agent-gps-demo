@@ -26,3 +26,6 @@ servidores:
   - nome: atendimento-mcp
     prefixo: atendimento
     url: http://atendimento-mcp:8000
+  - nome: canais-mcp
+    prefixo: canais
+    url: http://canais-mcp:8000
