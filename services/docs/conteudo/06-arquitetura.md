@@ -167,6 +167,25 @@ As APIs não aceitam ponto em nome de tool, então o adaptador troca `cliente.ob
 
 Mude `LLM_PROVIDER` no `.env` para `anthropic` ou `azure_openai` e preencha as variáveis do provedor: `ANTHROPIC_API_KEY`, ou `AZURE_OPENAI_ENDPOINT`, `_API_KEY`, `_DEPLOYMENT` e `_API_VERSION`. Cada execução também pode pedir outro provedor, por exemplo `"provedor": "roteiro"`. Sem chave, a execução termina com status `erro` e uma mensagem dizendo qual variável falta.
 
+### O dashboard: o código vem do próprio servidor
+
+O dashboard de status (`/status`) mostra o código de cada tool e a fonte de cada prompt. Esse código não é copiado para o web nem para o agente: cada servidor MCP o serve, pela fábrica comum (`bussola_comum.mcp_servidor`), num **resource template**:
+
+```
+fonte://<servidor>/tool/<nome>     a função Python registrada (inspect.getsource), com arquivo e linha
+fonte://<servidor>/prompt/<nome>   a fonte do prompt (no canais-mcp, o .md do canal)
+```
+
+Por ser um template, e não um resource listado, ele não aparece no `resources/list` e não entra no catálogo que o agente recebe. **O modelo nunca vê código.** O gateway roteia `fonte://` pelo nome do servidor.
+
+Os dados do dashboard seguem o mesmo caminho de sempre:
+
+```
+web ──► agent /api/catalogo ──► mcp-gateway (tools/list, prompts/list, skills/list, fonte://, skill://)
+                            └─► bus (últimas chamadas de cada tool, prompt ou skill)
+web ──► /simulador ──► simulator   (só o liga/desliga das tools)
+```
+
 ### Catálogo de eventos
 
 Tudo vai para o stream `bussola:eventos`, no formato `{tipo, origem, instante, dados}`, sempre com `execucao_id`:

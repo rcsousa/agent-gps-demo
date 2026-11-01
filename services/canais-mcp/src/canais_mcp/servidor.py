@@ -13,6 +13,7 @@ from mcp.server.mcpserver import MCPServer
 from bussola_comum import cadastro
 from bussola_comum.dominio import ConfigDominio, preparar_dominio
 from bussola_comum.estado_vivo import EstadoVivo
+from bussola_comum.mcp_servidor import registrar_fonte
 from bussola_comum.saude import Checagem
 from bussola_comum.skills import ler_frontmatter
 
@@ -37,6 +38,8 @@ class PromptDeCanal:
     descricao: str
     interlocutor: str
     corpo: str
+    arquivo: str = ""
+    fonte: str = ""
 
     def renderizar(self, cliente_id: str) -> str:
         # Cliente fora do cadastro: a persona segue sem nome, em vez de inventar um.
@@ -60,6 +63,8 @@ def carregar_prompt(arquivo: Path) -> PromptDeCanal:
         descricao=frontmatter["description"],
         interlocutor=frontmatter["interlocutor"],
         corpo=corpo,
+        arquivo=str(arquivo),
+        fonte=texto,
     )
 
 
@@ -85,6 +90,8 @@ def criar_servidor(
             title=prompt.titulo,
             description=f"{prompt.descricao} Canal: {prompt.canal}. Interlocutor: {prompt.interlocutor}.",
         )(renderizar)
+        # A implementação do prompt é o .md do canal, não a função que o renderiza.
+        registrar_fonte(mcp, "prompt", prompt.nome, prompt.fonte, prompt.arquivo)
 
     for prompt in carregar_prompts(pasta).values():
         registrar(prompt)

@@ -82,109 +82,351 @@ body {
   }
 }
 
-.tile-servico {
+$largura-painel: 40rem;
+
+.status {
+  &--com-painel {
+    // Em telas largas, o painel não cobre a tabela: o conteúdo abre espaço à direita.
+    @media (min-width: 82rem) {
+      padding-inline-end: $largura-painel;
+    }
+  }
+
+  &__abas {
+    margin-inline: $spacing-05;
+    margin-block-start: $spacing-07;
+  }
+
+  .cds--tab-content {
+    padding-inline: $spacing-05;
+  }
+}
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: $spacing-03;
+  margin-inline: $spacing-05;
+}
+
+.indicador {
   display: flex;
   flex-direction: column;
   gap: $spacing-03;
-  min-block-size: 9rem;
-  margin-block-end: $spacing-05;
+  min-block-size: 8rem;
+  block-size: 100%;
 
-  &__nome {
-    @include type-style('heading-03');
+  &__titulo {
+    @include type-style('label-01');
+    color: theme.$text-secondary;
+  }
+
+  &__valor {
+    @include type-style('heading-05');
+  }
+
+  &__rodape {
+    @include type-style('helper-text-01');
+    color: theme.$text-secondary;
+    margin-block-start: auto;
   }
 
   &__tecnico {
     @include type-style('code-01');
-    color: theme.$text-secondary;
-  }
-
-  &__rodape {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-block-start: auto;
-  }
-
-  &__latencia {
-    @include type-style('code-01');
-    color: theme.$text-helper;
-  }
-
-  &__detalhe {
-    @include type-style('helper-text-01');
-    color: theme.$text-secondary;
   }
 }
 
-.tools {
-  margin-block-start: $spacing-09;
-
-  .cds--accordion__content {
-    padding-inline-end: $spacing-05;
-  }
-  // Mesmo recuo dos tiles (margem do Grid do Carbon).
-  padding-inline: $spacing-05;
-
-  .status__grupo,
-  .status__cabecalho,
-  .cds--inline-notification {
-    margin-inline: 0;
+.catalogo {
+  &__linha {
+    cursor: pointer;
   }
 
-  &__titulo {
-    display: flex;
+  &__abrir {
+    all: unset;
+    cursor: pointer;
+    display: inline-flex;
     flex-wrap: wrap;
     align-items: baseline;
-    gap: $spacing-03 $spacing-05;
+    gap: $spacing-02 $spacing-03;
 
     code {
+      @include type-style('code-02');
+      color: theme.$link-primary;
+    }
+
+    strong + code {
       @include type-style('code-01');
       color: theme.$text-secondary;
     }
+
+    &:focus-visible {
+      outline: 2px solid theme.$focus;
+      outline-offset: 2px;
+    }
   }
 
-  &__resumo {
+  &__descricao {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    max-inline-size: 36rem;
+    color: theme.$text-secondary;
+  }
+
+  &__tags {
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: $spacing-02 $spacing-03;
+  }
+
+  &__contagem {
     @include type-style('helper-text-01');
     color: theme.$text-secondary;
+    align-self: center;
+    padding-inline: $spacing-05;
+    white-space: nowrap;
   }
 
-  &__linha {
-    display: grid;
-    grid-template-columns: minmax(12rem, 1fr) minmax(20rem, 2fr) auto;
-    align-items: center;
-    gap: $spacing-05;
-    padding-block: $spacing-03;
-    border-block-end: 1px solid theme.$border-subtle;
-
-    &:last-child {
-      border-block-end: none;
-    }
+  &__filtro {
+    min-inline-size: 14rem;
   }
 
-  &__nome {
-    @include type-style('code-02');
-  }
-
-  &__gateway {
-    @include type-style('body-compact-01');
-    color: theme.$text-secondary;
-
-    code {
-      @include type-style('code-01');
-      color: theme.$text-primary;
-    }
+  &__tabela td code.apagado {
+    white-space: nowrap;
   }
 
   &__controle {
-    display: flex;
-    align-items: center;
-    justify-content: flex-end;
-    gap: $spacing-04;
-    min-inline-size: 10rem;
-
-    // O estado já aparece na tag; o texto lateral do Toggle (aria-hidden) sairia duplicado.
+    // O estado já aparece na tag de status; o texto lateral do Toggle sairia duplicado.
     .cds--toggle__text {
       display: none;
     }
+  }
+}
+
+.numerico {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.apagado {
+  color: theme.$text-helper;
+}
+
+.painel {
+  position: fixed;
+  inset-block: 3rem 0;
+  inset-inline-end: 0;
+  z-index: 7000;
+  inline-size: min(#{$largura-painel}, 100vw);
+  overflow-y: auto;
+  background: theme.$layer-01;
+  border-inline-start: 1px solid theme.$border-subtle-01;
+  box-shadow: -0.5rem 0 1.5rem rgb(0 0 0 / 35%);
+
+  &__cabecalho {
+    position: sticky;
+    inset-block-start: 0;
+    z-index: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: $spacing-05;
+    padding: $spacing-05 $spacing-05 $spacing-04 $spacing-06;
+    background: theme.$layer-01;
+    border-block-end: 1px solid theme.$border-subtle-01;
+  }
+
+  &__tipo {
+    @include type-style('label-01');
+    color: $laranja-bussola;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  &__titulo {
+    @include type-style('heading-03');
+    font-family: 'IBM Plex Mono', monospace;
+    word-break: break-word;
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  &__corpo {
+    padding: $spacing-04 $spacing-06 $spacing-09;
+  }
+
+  &__aba {
+    padding-inline: 0;
+    padding-block: $spacing-05;
+  }
+
+  &__descricao {
+    @include type-style('body-02');
+    margin-block-end: $spacing-05;
+  }
+
+  &__secao {
+    @include type-style('heading-compact-01');
+    margin-block: $spacing-06 $spacing-04;
+  }
+
+  &__explicacao {
+    @include type-style('helper-text-01');
+    color: theme.$text-secondary;
+    margin-block: $spacing-04;
+  }
+
+  &__origem {
+    @include type-style('code-01');
+    color: theme.$text-secondary;
+    margin-block-end: $spacing-04;
+  }
+
+  &__lista {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-03;
+
+    &--colunas {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    }
+  }
+
+  &__arquivos {
+    display: flex;
+    flex-wrap: wrap;
+    gap: $spacing-03;
+    margin-block-end: $spacing-05;
+  }
+
+  &__arquivo {
+    all: unset;
+    cursor: pointer;
+    display: flex;
+    gap: $spacing-03;
+    padding: $spacing-03 $spacing-04;
+    border: 1px solid theme.$border-subtle-01;
+    @include type-style('body-compact-01');
+
+    &--aberto {
+      border-color: $laranja-bussola;
+    }
+
+    &:focus-visible {
+      outline: 2px solid theme.$focus;
+    }
+  }
+
+  &__previa {
+    padding: $spacing-05;
+    background: theme.$layer-02;
+    border-inline-start: 3px solid $laranja-bussola;
+  }
+}
+
+.campos {
+  display: grid;
+  gap: $spacing-04;
+
+  &__linha {
+    display: grid;
+    grid-template-columns: 11rem 1fr;
+    gap: $spacing-05;
+    padding-block-end: $spacing-04;
+    border-block-end: 1px solid theme.$border-subtle-01;
+  }
+
+  dt {
+    @include type-style('label-01');
+    color: theme.$text-secondary;
+  }
+
+  dd {
+    @include type-style('body-compact-01');
+    word-break: break-word;
+  }
+}
+
+.codigo {
+  margin-block: $spacing-04;
+  max-inline-size: 100%;
+}
+
+.historico {
+  &__acoes {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__tabela {
+    overflow-x: auto;
+
+    td {
+      white-space: nowrap;
+    }
+  }
+
+  &__skill {
+    max-inline-size: 8.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.markdown {
+  @include type-style('body-01');
+
+  h1 {
+    @include type-style('heading-04');
+    margin-block: $spacing-05 $spacing-04;
+  }
+
+  h2 {
+    @include type-style('heading-03');
+    margin-block: $spacing-06 $spacing-04;
+  }
+
+  h3 {
+    @include type-style('heading-02');
+    margin-block: $spacing-05 $spacing-03;
+  }
+
+  p,
+  ul,
+  ol,
+  table {
+    margin-block-end: $spacing-04;
+  }
+
+  ul,
+  ol {
+    padding-inline-start: $spacing-06;
+  }
+
+  ul {
+    list-style: disc;
+  }
+
+  ol {
+    list-style: decimal;
+  }
+
+  li {
+    margin-block-end: $spacing-02;
+  }
+
+  code {
+    @include type-style('code-01');
+    background: theme.$layer-02;
+    padding: 0 $spacing-02;
+  }
+
+  strong {
+    font-weight: 600;
   }
 }

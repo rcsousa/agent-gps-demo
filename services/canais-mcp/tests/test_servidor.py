@@ -67,3 +67,13 @@ def test_frontmatter_incompleto_e_nome_errado_sao_recusados(tmp_path: Path):
     )
     with pytest.raises(PromptInvalido, match="atendimento_loja"):
         carregar_prompt(errado)
+
+
+def test_fonte_do_prompt_e_o_arquivo_do_canal():
+    import json
+
+    resultado = _chamar(lambda c: c.read_resource("fonte://canais-mcp/prompt/atendimento_central"))
+    fonte = json.loads(resultado.contents[0].text)
+    assert fonte["arquivo"] == "services/canais-mcp/prompts/central.md"
+    assert fonte["linguagem"] == "markdown"
+    assert fonte["texto"].startswith("---\nname: atendimento_central\n")

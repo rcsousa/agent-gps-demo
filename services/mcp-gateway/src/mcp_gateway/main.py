@@ -89,6 +89,7 @@ def criar_app(
         for servico, upstream in zip(servicos, catalogo.upstreams, strict=True):
             servico["ferramentas"] = catalogo.ferramentas_de(upstream, fora)
             servico["prompts"] = catalogo.prompts_de(upstream)
+            servico["skills"] = catalogo.skills_de(upstream)
         return JSONResponse(
             {
                 "servicos": list(servicos),
