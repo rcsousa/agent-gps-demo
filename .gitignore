@@ -27,3 +27,5 @@ Thumbs.db
 
 # Resultados do experimento com o modelo real (eventos completos)
 /experimentos/
+
+agent-gps-demo.code-workspace
