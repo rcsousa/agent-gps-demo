@@ -9,7 +9,18 @@ from agent.llm.roteiro import SessaoRoteiro
 PROVEDORES = ("anthropic", "azure_openai", "roteiro")
 
 
-def criar_sessao(provedor: str, modo: str, sistema: str, pedido: str, config: Config) -> SessaoLLM:
+def modelo_de(provedor: str, config: Config) -> str:
+    """O modelo que a execução vai usar, conhecido antes de abrir a sessão (para o run.started)."""
+    return {
+        "anthropic": config.anthropic_model,
+        "azure_openai": config.azure_openai_deployment,
+        "roteiro": SessaoRoteiro.modelo,
+    }.get(provedor, provedor)
+
+
+def criar_sessao(
+    provedor: str, modo: str, sistema: str, pedido: str, config: Config, canal: str = "app"
+) -> SessaoLLM:
     if provedor == "anthropic":
         return SessaoAnthropic(
             sistema,
@@ -29,5 +40,5 @@ def criar_sessao(provedor: str, modo: str, sistema: str, pedido: str, config: Co
             api_version=config.azure_openai_api_version,
         )
     if provedor == "roteiro":
-        return SessaoRoteiro(modo)
+        return SessaoRoteiro(modo, canal=canal)
     raise ErroProvedor(f"Provedor desconhecido: {provedor}. Use um de: {', '.join(PROVEDORES)}.")

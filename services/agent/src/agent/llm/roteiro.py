@@ -25,6 +25,49 @@ SEGURADORAS_DA_ROTA = {
 PRODUTO = {s: f"produto-residencial-{s}" for s in ("ancora", "farol", "horizonte")}
 NOMES = {"ancora": "Âncora", "farol": "Farol", "horizonte": "Horizonte"}
 
+# O mesmo roteiro, dito a quem está do outro lado em cada canal (as personas `canais.*` do gateway):
+# no app, à própria Ana; na agência, ao gerente ao lado dela; na central, ao atendente ao telefone.
+FALAS = {
+    "imovel": {
+        "app": "Para confirmar: o seguro é para o seu apartamento na Vila Mariana, em São Paulo?",
+        "agencia": "Confirme com a Ana: o seguro é para o apartamento dela na Vila Mariana, em São Paulo?",
+        "central": "Pergunte à Ana: o seguro é para o apartamento dela na Vila Mariana, em São Paulo?",
+    },
+    "renovacao": {
+        "app": "Seu consentimento para ofertas venceu. Posso pedir a renovação pelo app?",
+        "agencia": (
+            "O consentimento da Ana para ofertas venceu. Confirme com ela se posso pedir a "
+            "renovação pelo app."
+        ),
+        "central": (
+            "Diga à Ana que o consentimento dela para ofertas venceu e pergunte se o banco pode "
+            "pedir a renovação pelo app."
+        ),
+    },
+    "aceite": {
+        "app": "{resumo} Você aceita esta proposta?",
+        "agencia": "Apresente a proposta à Ana: {resumo} Confirme com ela se aceita.",
+        "central": (
+            "Leia para a Ana: {resumo} Pergunte se ela aceita e confirme a resposta dela, palavra "
+            "por palavra."
+        ),
+    },
+    "emitida": {
+        "app": (
+            "Pronto, Ana! Sua apólice {numero} da {seguradora} está emitida, com prêmio de "
+            "{premio} por ano e vigência a partir de hoje."
+        ),
+        "agencia": (
+            "Pronto: a apólice {numero} da Ana, na {seguradora}, está emitida, com prêmio de "
+            "{premio} por ano e vigência a partir de hoje. Entregue a ela o resumo da cobertura."
+        ),
+        "central": (
+            "Pode avisar a Ana: a apólice dela, da {seguradora}, está emitida e vale a partir de "
+            "hoje. O número é {numero} e o prêmio é de {premio} por ano."
+        ),
+    },
+}
+
 
 class Esperar:
     """Pausa do roteiro (ex.: aguardar a cliente confirmar no app)."""
@@ -46,8 +89,9 @@ class SessaoRoteiro:
     provedor = "roteiro"
     modelo = "roteiro-de-ensaio"
 
-    def __init__(self, modo: str, espera_s: float = 2.0) -> None:
+    def __init__(self, modo: str, canal: str = "app", espera_s: float = 2.0) -> None:
         self._ids = itertools.count(1)
+        self.canal = canal if canal in FALAS["imovel"] else "app"
         self.espera_s = espera_s
         self._roteiro = {"sem_contexto": self._sem_contexto, "sem_skill": self._sem_skill}.get(
             modo, self._com_skill
@@ -84,6 +128,9 @@ class SessaoRoteiro:
         chamada = self._chamada(nome, **argumentos)
         resultados = yield [chamada]
         return resultados[chamada.id]
+
+    def _fala(self, chave: str, **valores: str) -> str:
+        return FALAS[chave][self.canal].format(**valores)
 
     @staticmethod
     def _dados(resultado: ResultadoTool) -> dict[str, Any]:
@@ -153,7 +200,7 @@ class SessaoRoteiro:
         yield from self._uma("navegacao.iniciar_parada", parada=1)
         confirmacao = yield from self._uma(
             "conversa.perguntar_cliente",
-            pergunta="Para confirmar: o seguro é para o seu apartamento na Vila Mariana, em São Paulo?",
+            pergunta=self._fala("imovel"),
             opcoes=["Sim, é esse apartamento", "Não, é outro imóvel"],
         )
         if "não" in confirmacao.texto.lower():
@@ -176,7 +223,7 @@ class SessaoRoteiro:
             if not verificacao.get("permitido"):
                 resposta = yield from self._uma(
                     "conversa.perguntar_cliente",
-                    pergunta="Seu consentimento para ofertas venceu. Posso pedir a renovação pelo app?",
+                    pergunta=self._fala("renovacao"),
                     opcoes=["Pode pedir", "Não quero renovar"],
                 )
                 if "não" in resposta.texto.lower():
@@ -279,7 +326,7 @@ class SessaoRoteiro:
         )
         aceite = yield from self._uma(
             "conversa.perguntar_cliente",
-            pergunta=f"{proposta.get('resumo', '')} Você aceita esta proposta?",
+            pergunta=self._fala("aceite", resumo=proposta.get("resumo", "")),
             opcoes=["Aceito", "Não aceito"],
         )
         if "não" in aceite.texto.lower():
@@ -350,7 +397,10 @@ class SessaoRoteiro:
             )
             return
         yield Fim(
-            f"Pronto, Ana! Sua apólice {apolice['numero']} da {apolice['seguradora']} está "
-            f"emitida, com prêmio de "
-            f"{reais(apolice['premio_anual'])} por ano e vigência a partir de hoje."
+            self._fala(
+                "emitida",
+                numero=apolice["numero"],
+                seguradora=apolice["seguradora"],
+                premio=reais(apolice["premio_anual"]),
+            )
         )

@@ -27,7 +27,7 @@ from agent.config import Config
 from agent.ferramentas import PERGUNTAR_CLIENTE, TOOLS_DA_VIAGEM, TOOLS_DE_SKILL
 from agent.incidentes import detectar
 from agent.llm.base import ChamadaTool, DefinicaoTool, ErroProvedor, ResultadoTool, SessaoLLM, Uso
-from agent.llm.fabrica import criar_sessao
+from agent.llm.fabrica import criar_sessao, modelo_de
 from bussola_comum.dominio import agora
 from bussola_comum.eventos import STREAM, Publicador
 from bussola_comum.skills import (
@@ -68,6 +68,7 @@ class Execucao:
     modo: str
     provedor: str
     pedido: str
+    canal: str = prompts.CANAL_PADRAO
     status: str = "criada"  # criada, rodando, aguardando_cliente, concluida, interrompida, erro
     modelo: str = ""
     criada_em: str = field(default_factory=agora)
@@ -106,7 +107,9 @@ class Motor:
 
     # --- Ciclo de vida -------------------------------------------------------------
 
-    async def iniciar(self, modo: str, provedor: str | None = None, pedido: str | None = None) -> Execucao:
+    async def iniciar(
+        self, modo: str, provedor: str | None = None, pedido: str | None = None, canal: str | None = None
+    ) -> Execucao:
         if modo not in MODOS:
             raise ValueError(f"Modo desconhecido: {modo}. Use um de: {', '.join(MODOS)}.")
         ultimo = await self.redis.xrevrange(STREAM, count=1)
@@ -115,6 +118,7 @@ class Motor:
             modo=modo,
             provedor=provedor or self.config.llm_provider,
             pedido=pedido or prompts.PEDIDO_PADRAO,
+            canal=canal or prompts.CANAL_PADRAO,
             cursor_eventos=ultimo[0][0] if ultimo else "0-0",
         )
         await self.salvar(execucao)
@@ -122,6 +126,13 @@ class Motor:
         await self.redis.ltrim(LISTA, 0, 49)
         self.tarefas[execucao.id] = asyncio.create_task(self._rodar(execucao))
         return execucao
+
+    async def canais(self) -> list[str]:
+        """Canais com persona no gateway (prompts `canais.atendimento_*`): o agente não os traz embutidos."""
+        async with self.conectar_gateway() as gateway:
+            nomes = [p.name for p in (await gateway.list_prompts()).prompts]
+        prefixo = prompts.PREFIXO_PROMPT_DE_CANAL
+        return sorted(n.removeprefix(prefixo) for n in nomes if n.startswith(prefixo))
 
     async def salvar(self, execucao: Execucao) -> None:
         await self.redis.set(CHAVE + execucao.id, json.dumps(asdict(execucao), ensure_ascii=False))
@@ -196,6 +207,19 @@ class _Viagem:
 
     async def dirigir(self) -> None:
         execucao, config = self.execucao, self.motor.config
+        # run.started é sempre o primeiro evento da execução, antes de qualquer conversa com o gateway.
+        execucao.modelo, execucao.status = modelo_de(execucao.provedor, config), "rodando"
+        await self.motor.salvar(execucao)
+        await self.publicar(
+            "run.started",
+            {
+                "modo": execucao.modo,
+                "canal": execucao.canal,
+                "provedor": execucao.provedor,
+                "modelo": execucao.modelo,
+                "pedido": execucao.pedido,
+            },
+        )
         async with self.motor.conectar_gateway() as gateway:
             self.gateway = gateway
             self.tools_gateway = {
@@ -206,25 +230,14 @@ class _Viagem:
             # Tools de alguma skill; as demais são "irrelevantes" para a jornada (métrica do placar).
             self.relevantes = set().union(*(tools_permitidas(e["frontmatter"]) for e in self.skills.values()))
 
-            sistema = {
-                "sem_contexto": prompts.SEM_CONTEXTO,
-                "sem_skill": prompts.SEM_SKILL,
-                "com_skill": prompts.prompt_com_skill(list(self.skills.values())),
-            }[execucao.modo]
+            persona, evento_persona = await self._carregar_persona()
+            await self.publicar("prompt.loaded", evento_persona)
+            sistema = prompts.montar_sistema(execucao.modo, persona, list(self.skills.values()))
             sessao = self.motor.fabrica_sessao(
-                execucao.provedor, execucao.modo, sistema, execucao.pedido, config
+                execucao.provedor, execucao.modo, sistema, execucao.pedido, config, canal=execucao.canal
             )
-            execucao.modelo, execucao.status = sessao.modelo, "rodando"
+            execucao.modelo = sessao.modelo
             await self.motor.salvar(execucao)
-            await self.publicar(
-                "run.started",
-                {
-                    "modo": execucao.modo,
-                    "provedor": execucao.provedor,
-                    "modelo": sessao.modelo,
-                    "pedido": execucao.pedido,
-                },
-            )
 
             for _ in range(config.max_passos):
                 passo = await sessao.passo(self._tools_disponiveis())
@@ -249,6 +262,27 @@ class _Viagem:
                     sessao.adicionar_resultados(resultados)
                 await self.motor.salvar(execucao)
             execucao.status, execucao.erro = "interrompida", f"Limite de {config.max_passos} passos atingido."
+
+    async def _carregar_persona(self) -> tuple[str, dict[str, Any]]:
+        """A persona do canal vem do banco, pelo gateway. Sem ela, a persona embutida, com aviso."""
+        execucao = self.execucao
+        nome = prompts.nome_do_prompt(execucao.canal)
+        evento: dict[str, Any] = {"nome": nome, "canal": execucao.canal}
+        if execucao.modo == "sem_contexto":
+            persona = prompts.PERSONA_EMBUTIDA
+            evento |= {"origem": "embutido", "motivo": "O modo sem contexto não consulta o banco."}
+        else:
+            try:
+                resultado = await self.gateway.get_prompt(
+                    nome, {"cliente_id": prompts.CLIENTE_PADRAO}, meta={CHAVE_EXECUCAO: execucao.id}
+                )
+                persona = "\n\n".join(getattr(m.content, "text", "") for m in resultado.messages)
+                evento["origem"] = "gateway"
+            except Exception as erro:  # noqa: BLE001
+                persona = prompts.PERSONA_EMBUTIDA
+                motivo = getattr(erro, "message", None) or str(erro)
+                evento |= {"origem": "embutido", "motivo": f"Persona do canal indisponível: {motivo}"}
+        return persona, {**evento, "tamanho": len(persona)}
 
     def _tools_disponiveis(self) -> list[DefinicaoTool]:
         modo = self.execucao.modo
