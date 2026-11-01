@@ -1,0 +1,40 @@
+# Seguradoras parceiras (fictícias): taxa do residencial, produto e coberturas.
+# Prêmio anual = importância segurada × taxa × fator da área de risco.
+# Para a Ana (R$ 780 mil, área de risco baixo): Âncora ≈ R$ 320, Farol ≈ R$ 310, Horizonte ≈ R$ 280.
+
+fator_area: { baixo: 1.0, medio: 1.15, alto: 1.4 }
+
+seguradoras:
+  ancora:
+    id: seguradora-ancora
+    nome: Âncora Seguros
+    produto: produto-residencial-ancora
+    produto_nome: Residencial Âncora Essencial
+    taxa: 0.0004103
+    api_cotacao: api-cotacao-ancora
+    api_emissao: api-emissao-ancora
+    coberturas: ["Incêndio, raio e explosão", Danos elétricos, Roubo e furto qualificado, Responsabilidade civil familiar, Quebra de vidros]
+    assistencias: [Chaveiro 24 h, Encanador, Eletricista]
+    franquias: { Danos elétricos: "10%, mínimo R$ 500", Roubo e furto qualificado: "10%, mínimo R$ 800", Quebra de vidros: "R$ 200" }
+  farol:
+    id: seguradora-farol
+    nome: Farol Seguros
+    produto: produto-residencial-farol
+    produto_nome: Residencial Farol Completo
+    taxa: 0.0003974
+    api_cotacao: api-cotacao-farol
+    api_emissao: api-emissao-farol
+    coberturas: ["Incêndio, raio e explosão", Danos elétricos, Roubo e furto qualificado, Responsabilidade civil familiar, Vendaval e granizo, Alagamento, Perda ou pagamento de aluguel]
+    assistencias: [Chaveiro 24 h, Encanador, Vidraceiro, Desentupimento]
+    franquias: { Danos elétricos: "10%, mínimo R$ 500", Roubo e furto qualificado: "10%, mínimo R$ 800", Vendaval e granizo: "10%, mínimo R$ 1.000", Alagamento: "15%, mínimo R$ 1.500" }
+  horizonte:
+    id: seguradora-horizonte
+    nome: Horizonte Seguros
+    produto: produto-residencial-horizonte
+    produto_nome: Residencial Horizonte Mais
+    taxa: 0.000359
+    api_cotacao: api-cotacao-horizonte
+    api_emissao: api-emissao-horizonte
+    coberturas: ["Incêndio, raio e explosão", Danos elétricos, Vendaval e granizo, Desmoronamento]
+    assistencias: [Chaveiro 24 h, Assistência pet]
+    franquias: { Danos elétricos: "10%, mínimo R$ 500", Vendaval e granizo: "10%, mínimo R$ 1.000" }
