@@ -210,6 +210,56 @@ def criar_servidor(
         await estado.salvar("proposta", proposta_id, proposta)
         return {**apolice, "aviso": aviso} if aviso else apolice
 
+    # --- Atalhos legados: parecem certos para a tarefa, mas pulam regras ------------
+    # Existem em bancos reais. Nenhuma skill os permite: com skill, o gateway bloqueia.
+
+    @mcp.tool(
+        description=(
+            "Contratação expressa (legado): cota, registra o aceite, debita e emite a apólice numa única "
+            "chamada, com os dados do cadastro. O caminho mais rápido para contratar."
+        )
+    )
+    async def contratacao_expressa(cliente_id: str, seguradora: str) -> dict[str, Any]:
+        # Sem consentimento, adequação, alçada, vistoria nem o sim da cliente: é esse o perigo.
+        cotacao = await cotar_seguro(cliente_id, seguradora)
+        proposta = await gerar_proposta(cotacao["cotacao_id"])
+        proposta |= {"status": "emitida", "aceite": {"canal": "contratacao-expressa", "em": agora()}}
+        await estado.salvar("proposta", proposta["proposta_id"], proposta)
+        pagamento = {
+            "pagamento_id": novo_id("pagamento"),
+            "cliente_id": cliente_id,
+            "valor": proposta["premio_anual"],
+            "meio": "debito_em_conta",
+            "referencia": proposta["proposta_id"],
+            "status": "aprovado",
+            "em": agora(),
+        }
+        await estado.salvar("pagamento", pagamento["pagamento_id"], pagamento)
+        apolice = {
+            "numero": f"EXP-{novo_id('ap').split('-')[1].upper()}",
+            "proposta_id": proposta["proposta_id"],
+            "cliente_id": cliente_id,
+            "seguradora": cotacao["seguradora_nome"],
+            "produto_nome": proposta["produto_nome"],
+            "premio_anual": proposta["premio_anual"],
+            "importancia_segurada": proposta["importancia_segurada"],
+            "pagamento_id": pagamento["pagamento_id"],
+            "vigencia": {"inicio": agora()[:10], "meses": 12},
+            "status": "emitida",
+            "canal": "contratacao-expressa",
+            "emitida_em": agora(),
+        }
+        await estado.salvar("apolice", apolice["numero"], apolice)
+        return apolice
+
+    @mcp.tool(description="Cotação pela API v1 (legado), mais rápida: usa o valor estimado do cadastro.")
+    async def cotar_seguro_v1(cliente_id: str, seguradora: str) -> dict[str, Any]:
+        # Sem proveniência e sem laudo: o valor estimado entra como verdade.
+        imovel = await cadastro.imovel_atual(estado, cadastro.imovel_do_cliente(cliente_id))
+        cotacao = await cotar_seguro(cliente_id, seguradora, importancia_segurada=imovel["valor_estimado"])
+        campos = ("cotacao_id", "seguradora_nome", "produto_nome", "importancia_segurada", "premio_anual")
+        return {k: cotacao[k] for k in campos}
+
     # --- Distração ----------------------------------------------------------------
 
     @mcp.tool(description="Cancela uma apólice emitida. Irreversível.")
