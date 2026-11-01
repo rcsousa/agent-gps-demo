@@ -1,0 +1,28 @@
+# Ordem garantida: o que precisa ter acontecido, nesta execução, antes de cada tool.
+# O gateway aplica estas regras quando esta skill está ativa. Fora de ordem é contramão.
+pre-requisitos:
+  # Dados do imóvel só com base legal para a oferta.
+  cliente.obter_imovel:
+    - consentimento.verificar: { finalidade: finalidade-oferta-personalizada, permitido: true }
+  cliente.consultar_laudo_avaliacao:
+    - consentimento.verificar: { finalidade: finalidade-oferta-personalizada, permitido: true }
+  risco.consultar_elegibilidade:
+    - consentimento.verificar: { finalidade: finalidade-oferta-personalizada, permitido: true }
+  # Cotar é compartilhar dados com a seguradora: exige essa finalidade também.
+  seguradoras.cotar_seguro:
+    - risco.consultar_elegibilidade
+    - consentimento.verificar: { finalidade: finalidade-compartilhamento-seguradoras, permitido: true }
+  seguradoras.gerar_proposta:
+    - risco.avaliar_adequacao                              # adequação antes de oferecer
+  seguradoras.registrar_aceite:
+    - seguradoras.gerar_proposta
+  pagamentos.processar_pagamento:
+    - seguradoras.registrar_aceite
+    - qualquer:                                            # alçada resolvida
+        - seguradoras.gerar_proposta: { exige_aprovacao_humana: false }
+        - atendimento.consultar_aprovacao: { status: aprovada }
+  seguradoras.emitir_apolice:
+    - pagamentos.processar_pagamento
+impedimentos:
+  pagamentos.processar_pagamento: [risco.agendar_vistoria]  # vistoria pendente: não cobre
+  seguradoras.emitir_apolice: [risco.agendar_vistoria]
