@@ -1,28 +1,24 @@
 import json
 from typing import Annotated
 
+import anyio
 from mcp.server.mcpserver import MCPServer
 from mcp.server.mcpserver.exceptions import ToolError
-from neo4j import AsyncGraphDatabase
+from neo4j import AsyncGraphDatabase, GraphDatabase
 from pydantic import Field
+from starlette.requests import Request
+from starlette.responses import JSONResponse
 
-from bussola_comum.config import ConfigBase
 from bussola_comum.mcp_servidor import criar_servidor_mcp
 from bussola_comum.saude import Checagem
 from contexto_mcp import modelos as m
+from contexto_mcp.config import NOME, Config
 from contexto_mcp.grafo import EntidadeNaoEncontrada, RepositorioGrafo
 from contexto_mcp.layout import carregar_layout
 from contexto_mcp.ontologia import carregar_ontologia
+from contexto_mcp.seed import aplicar_seed
 
-NOME = "contexto-mcp"
 JORNADA_PADRAO = "contratacao-seguro-residencial"
-
-
-class Config(ConfigBase):
-    servico_nome: str = NOME
-    neo4j_uri: str = "bolt://graph:7687"
-    neo4j_user: str = "neo4j"
-    neo4j_password: str = ""
 
 
 def checar_grafo(config: Config) -> Checagem:
@@ -129,4 +125,48 @@ def criar_servidor(checagens: dict[str, Checagem] | None = None, config: Config 
             ensure_ascii=False,
         )
 
+    registrar_rotas_internas(mcp, repo, config, set(ontologia.tipos_relacao))
     return mcp
+
+
+def registrar_rotas_internas(mcp: MCPServer, repo: RepositorioGrafo, config: Config, tipos: set[str]) -> None:
+    """Rotas HTTP usadas só pelo simulador para mudar o estado vivo do grafo.
+
+    Não são tools MCP: o gateway não as enxerga e o agente não as alcança.
+    """
+
+    def autorizado(request: Request) -> JSONResponse | None:
+        if not config.simulador_token:
+            return JSONResponse(
+                {"erro": "Rotas internas desligadas (SIMULADOR_TOKEN vazio)."}, status_code=503
+            )
+        if request.headers.get("authorization") != f"Bearer {config.simulador_token}":
+            return JSONResponse({"erro": "Token do simulador inválido ou ausente."}, status_code=401)
+        return None
+
+    @mcp.custom_route("/interno/estado", methods=["POST"], include_in_schema=False)
+    async def aplicar_estado(request: Request) -> JSONResponse:
+        if negado := autorizado(request):
+            return negado
+        corpo = await request.json()
+        try:
+            alterados = await repo.aplicar_efeitos(corpo.get("efeitos", []), tipos)
+        except EntidadeNaoEncontrada as erro:
+            return JSONResponse({"erro": str(erro)}, status_code=404)
+        except ValueError as erro:
+            return JSONResponse({"erro": str(erro)}, status_code=400)
+        return JSONResponse({"alterados": alterados})
+
+    @mcp.custom_route("/interno/reset", methods=["POST"], include_in_schema=False)
+    async def reset(request: Request) -> JSONResponse:
+        if negado := autorizado(request):
+            return negado
+
+        def reaplicar_seed() -> tuple[int, int]:
+            with GraphDatabase.driver(
+                config.neo4j_uri, auth=(config.neo4j_user, config.neo4j_password)
+            ) as driver:
+                return aplicar_seed(driver, carregar_ontologia(), carregar_layout())
+
+        nos, arestas = await anyio.to_thread.run_sync(reaplicar_seed)
+        return JSONResponse({"nos": nos, "relacoes": arestas})

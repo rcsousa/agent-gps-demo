@@ -11,9 +11,9 @@ from itertools import groupby
 from neo4j import Driver, GraphDatabase
 
 from bussola_comum.logs import configurar_logs
+from contexto_mcp.config import Config
 from contexto_mcp.layout import carregar_layout
 from contexto_mcp.ontologia import Entidade, Ontologia, Proveniencia, Relacao, carregar_ontologia
-from contexto_mcp.servidor import Config
 
 log = logging.getLogger("seed")
 

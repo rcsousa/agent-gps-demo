@@ -3,10 +3,10 @@ name = "simulator"
 version = "0.1.0"
 description = "Injeta incidentes e trânsito, fora do alcance do agente"
 requires-python = ">=3.12"
-dependencies = ["bussola-comum", "fastapi>=0.115", "redis>=5"]
+dependencies = ["bussola-comum", "fastapi>=0.115", "redis>=5", "httpx>=0.28", "pyyaml>=6"]
 
 [dependency-groups]
-dev = ["pytest>=8", "ruff>=0.8", "httpx>=0.28"]
+dev = ["pytest>=8", "ruff>=0.8", "fakeredis>=2.26"]
 
 [tool.uv.sources]
 bussola-comum = { path = "../../libs/bussola_comum" }
