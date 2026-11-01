@@ -1,0 +1,23 @@
+# Segredos
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+*.egg-info/
+
+# Node
+node_modules/
+dist/
+
+# MkDocs
+site/
+
+# Editores e SO
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

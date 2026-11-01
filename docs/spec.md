@@ -1,0 +1,348 @@
+# Demo GPS de Contexto — Especificação
+
+Versão de 01/11/2026 · Ricardo Coelho de Sousa
+
+## Visão e mensagem central
+
+Agentes de IA só são confiáveis quando navegam sobre uma camada de contexto: um mapa semântico do negócio, com estado vivo e regras de governança. As skills são o GPS que ensina o agente a ler esse mapa.
+
+A demo mostra isso numa jornada de contratação de seguro, com uma visualização que lembra Google Maps e Waze. O público entende a ideia sem precisar de jargão e depois vê o que acontece por baixo.
+
+Três mensagens precisam sair da sala:
+
+1. **Sem mapa, o agente adivinha.** Ele gasta mais, erra mais e não explica o que fez.
+2. **Com mapa e GPS, o agente escolhe rotas, respeita regras e recalcula** quando o percurso muda.
+3. **A skill é a porta de entrada.** É por ela que o agente descobre como usar a camada de contexto, em vez de explorar tudo por tentativa e erro.
+
+## Mapa da demo: a tela de abertura
+
+O infográfico abaixo é o grande navegador da demo. Ele abre o site na rota `/` e cada área da imagem leva à cena ou ao capítulo de bastidores correspondente.
+
+![Mapa da demo GPS de Contexto](assets/mapa-da-demo.png)
+
+**Como funciona**
+
+- **Imagem com pan e zoom**, em deep zoom (OpenSeadragon). O original em 4096×6144 px é versionado no repositório, e os tiles são gerados no build do Docker (`vips dzsave`), o que mantém o zoom nítido no telão.
+- **Áreas clicáveis em SVG por cima da imagem**, com coordenadas em porcentagem num `hotspots.json`. Ao passar o mouse, a área acende com um tooltip Carbon.
+- **Botão "Iniciar demo"** fixo e atalhos de teclado para o apresentador.
+- **Acessibilidade:** cada área tem rótulo, ordem de foco e navegação por teclado.
+
+**Mapa de áreas clicáveis**
+
+| Área do infográfico | Leva a |
+| --- | --- |
+| 1. Sem mapa, o agente adivinha | Cena 2 |
+| 2. Com mapa e GPS, o agente escolhe rotas | Cena 3 seguida da cena 5 (o contraste) |
+| 3. A skill é a porta de entrada | Cena 4 |
+| Placa (Skills, Contexto, Regras, Resultados) | Capítulos de bastidores correspondentes |
+| Seletor Modo Mapa / Modo Raio-X | Demo aberta no modo escolhido |
+| Paradas 1 a 9 no mapa e na faixa "As 9 paradas" | Demo posicionada naquela parada |
+| Ana e o celular | Início da jornada (cena 1) |
+| Rotas disponíveis | Cena 4, na escolha de rota |
+| Âncora, Farol, Horizonte | Cena 6, incidente na seguradora |
+| Por trás da navegação: a camada de contexto | Bastidores, capítulo 2 |
+| A skill é o GPS | Bastidores, capítulo 3 |
+| Modo Raio-X: transparência total | Cena 8 |
+| A proveniência governa a consequência | Cena 7 (pedágio) e bastidores |
+
+O infográfico é ilustrativo. Os nomes de tools e as métricas reais vêm da execução, no Raio-X.
+
+## A metáfora: mapa, trânsito, regras e GPS
+
+Cada elemento da navegação tem um equivalente técnico. A demo sempre mostra os dois lados juntos.
+
+| Navegação | Camada de contexto | Onde aparece na demo |
+| --- | --- | --- |
+| Mapa (bairros, ruas, pontos de interesse) | Ontologia e grafo de conhecimento: entidades, sistemas, produtos e relações | O "mapa da cidade" desenhado a partir do grafo |
+| Trânsito em tempo real | Estado vivo: disponibilidade de APIs, latência, filas, eventos | Ruas mudando de cor (verde, amarelo, vermelho) |
+| Regras de trânsito (contramão, rodízio, pedágio) | Governança: permissões, políticas, consentimento, limites de risco | Vias bloqueadas, pedágios de aprovação humana |
+| GPS | Skill: o procedimento que diz como ir de A a B usando o mapa | Painel "Navegador" com a skill ativa |
+| Zoom do mapa | Progressive disclosure: a skill carrega detalhe só quando precisa | Zoom automático no trecho em execução |
+| Rotas alternativas | Planos alternativos com custo, tempo e risco | 2 ou 3 rotas sugeridas, no estilo Waze |
+| Recálculo de rota | Replanejamento diante de incidente | Animação de recálculo com motivo explicado |
+| Alertas da comunidade (Waze) | Telemetria e feedback de outros agentes | Alertas que enriquecem o mapa durante a execução |
+| Destino | Objetivo do cliente | Pino de chegada: apólice emitida |
+| Histórico da viagem | Proveniência: de onde veio cada decisão | Trilha da rota percorrida, clicável |
+
+O princípio que costura tudo: **a proveniência governa a consequência.** Quanto maior o impacto de uma ação, mais clara precisa ser a origem do dado e da regra que a autorizou.
+
+## Públicos e modos de visualização
+
+Uma demo, dois públicos. A mesma execução é mostrada em dois modos, e um seletor no topo alterna entre eles sem reiniciar o percurso.
+
+| Modo | Público | O que mostra | O que esconde |
+| --- | --- | --- | --- |
+| Mapa | Executivo | Cidade estilizada, robô do agente, rotas, trânsito, pedágios, tempo e custo estimados | Chamadas de protocolo, IDs, payloads |
+| Raio-X | Técnico | Mesmo mapa com camada de grafo visível, log de chamadas MCP (`skills/list`, `resources/read`, ferramentas), consultas ao grafo, tokens, latência e proveniência | Nada; tudo é inspecionável |
+
+Regras de ouro:
+
+- O Modo Mapa precisa ser compreensível em 10 segundos, sem narração.
+- O Modo Raio-X precisa resistir à pergunta "isso é real ou é animação?". Toda animação corresponde a um evento real do agente.
+- Os dois modos compartilham o mesmo fluxo de eventos. O front só muda a camada de apresentação.
+
+## Jornada de contratação de seguro
+
+O cliente pede, pelo app do Banco Bússola: "quero contratar um seguro residencial para meu apartamento". O agente leva o pedido do início à apólice emitida. Banco, seguradoras e dados são fictícios. O Banco Bússola é o banco da demo: o nome reforça a metáfora de navegação, e a bússola vira o ícone do app. As seguradoras parceiras são Âncora Seguros, Farol Seguros e Horizonte Seguros.
+
+**Personagem padrão:** Ana, 38 anos, correntista há 6 anos, apartamento próprio em São Paulo, já tem seguro auto pelo banco.
+
+Paradas da rota principal:
+
+1. **Entender a intenção:** classificar o pedido e escolher a skill de contratação de seguro.
+2. **Identificar a cliente:** perfil, relacionamento e produtos já contratados.
+3. **Consentimento e LGPD:** verificar se há base legal para usar os dados nessa oferta.
+4. **Elegibilidade:** regras do produto, imóvel, região e restrições cadastrais.
+5. **Adequação da oferta:** o produto faz sentido para o perfil e a necessidade declarada.
+6. **Cotação:** consultar uma ou mais seguradoras parceiras e comparar coberturas e preço.
+7. **Proposta e aceite:** apresentar a oferta, explicar coberturas e registrar o aceite da cliente.
+8. **Pagamento:** débito em conta ou cartão.
+9. **Emissão:** gerar a apólice com a seguradora e confirmar para a cliente.
+
+Rotas alternativas que a demo exibe:
+
+- **Rota rápida:** cliente com dados completos e consentimento válido; cotação com a seguradora preferencial.
+- **Rota econômica:** cotação com várias seguradoras para buscar o menor prêmio, levando mais tempo.
+- **Rota assistida:** passa por um especialista humano (pedágio) quando o valor ou o risco ultrapassam o limite.
+
+## Camada de contexto: ontologia e modelo do grafo
+
+O grafo é a fonte única do mapa. O layout visual da "cidade" é derivado dele, nunca desenhado à mão.
+
+**Bairros (domínios)**, cada um com cor e posição fixas no mapa:
+
+| Bairro | Entidades principais |
+| --- | --- |
+| Cliente | Cliente, Conta, Relacionamento, Produto contratado, Consentimento |
+| Produtos | Produto de seguro, Cobertura, Assistência, Franquia |
+| Risco | Regra de elegibilidade, Regra de adequação, Score, Limite de alçada |
+| Regulatório | Política, Norma, Base legal (LGPD), Exigência de registro |
+| Parceiros | Seguradora, API de cotação, API de emissão, SLA |
+| Canais e operação | Canal, Especialista humano, Fila, Meio de pagamento |
+
+**Ruas (relações)**, por exemplo: `Cliente —POSSUI→ Conta`, `Produto —OFERECIDO_POR→ Seguradora`, `Produto —EXIGE→ Regra`, `Uso de dado —REQUER→ Consentimento`, `Seguradora —EXPÕE→ API`, `Ação —ACIMA_DE→ Limite de alçada —EXIGE→ Aprovação humana`.
+
+**Estado vivo (trânsito)** fica em atributos que o simulador altera: `status` (ok, degradado, fora), `latencia_ms`, `custo_estimado`, `vigencia` de políticas.
+
+**Proveniência** em toda aresta e todo nó: fonte, data, responsável e nível de confiança. O Modo Raio-X mostra isso ao clicar em qualquer elemento.
+
+Tamanho-alvo: de 150 a 300 nós. É o bastante para parecer uma cidade de verdade, e ainda legível.
+
+**Layout do mapa (decidido): cidade fixa com bairros curados.** Cada bairro tem posição e formato definidos na ontologia, como um mapa que não muda entre ensaios. Dentro de cada bairro, os nós são distribuídos por layout de forças com restrição e depois alinhados em quadras e ruas. As relações entre bairros viram avenidas. O layout é calculado uma vez, no seed, e salvo. A plateia passa a reconhecer os lugares ("o bairro do Risco fica ali") ao longo da apresentação, que é o que faz a metáfora de mapa funcionar. Um layout recalculado a cada execução quebraria isso.
+
+## Skills via MCP (SEP-2640) como navegador
+
+Na demo, skills são **workflows**: procedimentos que articulam chamadas a tools de vários servidores MCP. O agente não conhece nenhum servidor diretamente. Ele fala apenas com o **MCP gateway**, como falaria com qualquer servidor MCP, e a skill diz quais tools consumir, em que ordem e com quais regras.
+
+A extensão usada é a oficial do MCP. A SEP-2640 chegou a status Final e foi mergeada em 13/09/2026. Ela serve Agent Skills pelo primitivo Resources, sob o identificador `io.modelcontextprotocol/skills`, com os métodos `skills/list` e `skills/get`; os arquivos são lidos com `resources/read`.
+
+**Por que a skill é a porta de entrada:** pelo gateway, o agente enxerga dezenas de tools de vários domínios. Sem skill, ele precisa adivinhar quais usar e em que ordem. Com a skill, recebe o roteiro: quais tools, em qual sequência, o que validar entre uma chamada e outra e o que fazer quando algo falha.
+
+**Anatomia de uma skill-workflow** (`contratacao-seguro-residencial`):
+
+- `SKILL.md`: objetivo, pré-condições, a sequência de paradas e, para cada uma, as tools a chamar pelo nome qualificado no gateway (por exemplo `cliente.obter_perfil`, `consentimento.verificar`, `seguradoras.cotar`).
+- `references/`: um arquivo por trecho (elegibilidade, cotação, emissão), carregado só quando o agente chega lá.
+- `references/desvios.md`: regras de recálculo para cada tipo de incidente.
+- Metadados de governança: tools permitidas, limites de alçada e pontos que exigem aprovação humana.
+
+Fluxo de navegação, que o Modo Raio-X mostra passo a passo:
+
+1. O agente conecta ao gateway e lê as capacidades agregadas.
+2. `skills/list` retorna nome e descrição das skills. É como digitar o destino no GPS.
+3. O agente escolhe a skill e lê o SKILL.md via `resources/read`. A rota aparece no mapa.
+4. Em cada parada, a skill indica o arquivo de referência do trecho. O mapa dá zoom naquele bairro.
+5. O agente chama as tools indicadas, sempre pelo gateway. Cada chamada acende ruas e nós do bairro correspondente.
+6. Num incidente, a tool retorna erro ou estado degradado, a skill traz a regra de desvio e o agente recalcula.
+
+Skills previstas:
+
+| Skill | Papel no mapa | Tools que articula |
+| --- | --- | --- |
+| `contratacao-seguro-residencial` | Rota principal da demo | contexto, cliente, consentimento, risco, seguradoras, pagamentos |
+| `verificacao-consentimento` | Trecho reutilizável, chamado por outras skills | consentimento, contexto |
+| `cotacao-multisseguradora` | Rota econômica | seguradoras, contexto |
+| `escalonamento-humano` | Pedágio de aprovação | atendimento, contexto |
+
+**Contraste obrigatório:** a mesma tarefa é executada (a) sem camada de contexto, (b) com todas as tools do gateway, mas sem skill, e (c) com skill. Métricas comparadas na tela: chamadas de tool, tools irrelevantes chamadas, tokens, tempo, violações de regra e se a resposta final está correta.
+
+Fonte: [SEP-2640: Skills Extension](https://modelcontextprotocol.io/seps/2640-skills-extension) · [Skills Over MCP WG](https://modelcontextprotocol.info/community/working-groups/skills-over-mcp/)
+
+## Roteiro da demo, cena a cena
+
+Duração-alvo: 12 minutos, com versão curta de 5. Cada cena tem um botão no "modo apresentador" e pode ser repetida.
+
+| # | Cena | O que a plateia vê | Mensagem | Duração |
+| --- | --- | --- | --- | --- |
+| 1 | A cidade | O mapa do banco como uma cidade: bairros, ruas, trânsito ao vivo | O negócio tem geografia, e ela pode ser mapeada | 1 min |
+| 2 | Dirigir sem mapa | Agente sem camada de contexto responde à Ana: inventa cobertura, ignora consentimento | Modelo bom sem contexto ainda erra | 1,5 min |
+| 3 | Mapa sem GPS | Agente com acesso a todas as tools do gateway, mas sem skill: chama tools demais, gasta tokens, erra a ordem e chega tarde | Ter o mapa não basta | 1,5 min |
+| 4 | Digitar o destino | `skills/list`, escolha da skill e três rotas sugeridas no estilo Waze | A skill é a porta de entrada | 1,5 min |
+| 5 | A viagem | O robô percorre a rota, o zoom acompanha cada bairro, as paradas acendem | Navegação guiada, auditável | 2 min |
+| 6 | Incidente | O apresentador derruba a API da seguradora; trecho vermelho, recálculo ao vivo | Adaptação sem perder as regras | 2 min |
+| 7 | Pedágio | Valor acima da alçada: o agente para e chama um especialista humano | Governança é parte do mapa | 1 min |
+| 8 | Raio-X | Mesma viagem no modo técnico: chamadas MCP, proveniência, placar comparando as cenas 2, 3 e 5 | Nada é mágica | 1,5 min |
+
+A versão curta usa as cenas 1, 4, 5, 6 e 8.
+
+## Incidentes e recálculo de rota
+
+O painel de incidentes do apresentador dispara mudanças reais no estado do grafo. O agente reage a elas; nada é roteirizado no front.
+
+| Incidente | Metáfora no mapa | Reação esperada do agente |
+| --- | --- | --- |
+| API de cotação da seguradora preferencial fora do ar | Rua interditada | Recalcula para outra seguradora e explica a troca de preço e cobertura |
+| Latência alta na emissão | Congestionamento | Mantém a rota, avisa sobre o atraso ou oferece a rota alternativa |
+| Consentimento da cliente expirado | Contramão | Para, pede renovação do consentimento e só depois segue |
+| Nova política: imóveis em área de risco exigem vistoria | Desvio por obra | Insere a parada "vistoria" na rota e recalcula o prazo |
+| Prêmio acima do limite de alçada | Pedágio | Roteia por um especialista humano antes de emitir |
+| Dado de origem não confiável (proveniência fraca) | Ponte interditada | Recusa usar o dado em uma decisão de impacto e busca fonte autoritativa |
+
+Toda reação precisa mostrar três coisas: o que mudou, qual regra da skill foi usada e qual a nova estimativa de tempo, custo e risco.
+
+## Arquitetura técnica e docker compose
+
+Tudo roda em Docker e sobe com um único `docker compose up`. Todo o backend é em Python. O agente tem **uma única conexão**: o MCP gateway. Todo serviço de negócio é um servidor MCP atrás do gateway e chega ao agente como tools.
+
+**Fluxo:** `web` ↔ `agent` → `mcp-gateway` → servidores MCP de domínio → `graph` e o estado simulado.
+
+| Serviço | Papel | Expõe via gateway | Stack |
+| --- | --- | --- | --- |
+| `web` | Modo Mapa, Modo Raio-X, painel do apresentador, bastidores | — | React + TypeScript, IBM Carbon, MapLibre GL, deck.gl |
+| `agent` | Host MCP: descobre skills, planeja, executa e emite eventos para o `web` | — | Python, FastAPI, SDK MCP; Anthropic ou Azure OpenAI |
+| `mcp-gateway` | Ponto único de acesso: agrega tools e skills de todos os servidores, aplica políticas, autentica, registra proveniência e telemetria | Tudo, com nomes qualificados por servidor | Python, SDK MCP, FastAPI |
+| `skills-mcp` | Catálogo de skills-workflow (`io.modelcontextprotocol/skills`) | `skills/list`, `skills/get`, `resources/read` | Python, SDK MCP |
+| `contexto-mcp` | Camada de contexto: ontologia, estado vivo, regras, proveniência | `contexto.*` (consultar entidade, rota, regra, proveniência) | Python, SDK MCP, driver Neo4j |
+| `cliente-mcp` | Cadastro, relacionamento e produtos da cliente | `cliente.*` | Python, SDK MCP |
+| `consentimento-mcp` | Bases legais e consentimentos (LGPD) | `consentimento.*` | Python, SDK MCP |
+| `risco-mcp` | Elegibilidade, adequação, alçadas | `risco.*` | Python, SDK MCP |
+| `seguradoras-mcp` | Três seguradoras fictícias: cotação e emissão | `seguradoras.*` | Python, SDK MCP |
+| `pagamentos-mcp` | Débito em conta e cartão | `pagamentos.*` | Python, SDK MCP |
+| `atendimento-mcp` | Fila de especialistas humanos (o pedágio) | `atendimento.*` | Python, SDK MCP |
+| `graph` | Ontologia, instâncias e estado vivo | — (só o `contexto-mcp` acessa) | Neo4j com seed na subida |
+| `simulator` | Injeta incidentes e trânsito nos servidores de domínio e no grafo; acionado pelo painel do apresentador | — (fora do alcance do agente) | Python, FastAPI |
+| `docs` | Site de bastidores | — | MkDocs Material com tema Carbon, embutido no `web` |
+
+Decisões de arquitetura:
+
+- **O agente só conhece o gateway.** Nenhuma URL de servidor de domínio fica no agente. Trocar, adicionar ou desligar um serviço é configuração do gateway.
+- **O gateway é o ponto de governança.** Ele aplica as tools permitidas por skill, bloqueia chamadas fora de política (a "contramão") e carimba proveniência em toda resposta.
+- **O gateway é o ponto de observação.** Todo evento do Raio-X sai dele e do agente, então o que aparece na tela é o que de fato trafegou.
+- **Gateway próprio em Python.** O suporte à extensão de skills em gateways prontos ainda varia, e assim agregamos skills e tools do nosso jeito.
+- **Provedor de LLM por variável de ambiente:** `LLM_PROVIDER=anthropic|azure_openai`, com uma interface única no `agent`.
+- **O simulador fica fora do alcance do agente.** Incidentes acontecem no mundo, e o agente só os percebe pelas respostas das tools e pelo estado no grafo.
+- **Um barramento de eventos** (`route.planned`, `step.started`, `tool.called`, `incident.detected`, `route.recalculated`, `human.required`) alimenta os dois modos visuais.
+- **Replay offline** de execuções reais, para apresentar sem rede ou sem chave de API.
+- **Segredos** em `.env` (com `.env.example` versionado), nunca no código.
+
+## Diretrizes de UI: Carbon e visual de mapa
+
+A moldura é IBM Carbon, sóbria e profissional. O mapa é a área lúdica, onde fica a cor.
+
+**Moldura (Carbon)**
+
+- Tema Carbon g90 ou g100 para apresentação em telão, com alternativa g10 para material impresso.
+- UI Shell com header, painel lateral direito (Navegador e Raio-X) e painel inferior recolhível (log de eventos).
+- Tipografia IBM Plex Sans e Plex Mono (Mono no Raio-X); grid e espaçamento de 8px do Carbon.
+- Componentes Carbon para tudo que é controle: toggle de modo, tiles de métricas, data table do log, tags de status, notificações de incidente.
+
+**Mapa (lúdico, mas elegante)**
+
+- Mapa no estilo do infográfico: cidade ilustrada e isométrica, cores suaves, rio e áreas verdes, cercada pela moldura neutra do Carbon.
+- Cada bairro com uma cor de destaque discreta, tirada da paleta de dados do Carbon.
+- Trânsito com semáforo de status: verde, amarelo e vermelho dessaturados, sempre acompanhados de ícone ou rótulo, nunca só cor.
+- Rota ativa como linha grossa animada; rotas alternativas tracejadas, com etiqueta de tempo, custo e risco.
+- O agente como o robô do Banco Bússola dentro de um pino, com movimento suave.
+- Zoom semântico: longe mostra bairros, perto mostra nós e arestas do grafo com rótulos.
+- Navegação livre: arrastar, zoom, clicar em nó para ver detalhes e proveniência, e "seguir o agente" ligado ou desligado.
+- Animações de 200 a 600 ms, nunca bloqueando a leitura.
+
+**Acessibilidade:** contraste WCAG AA, foco de teclado visível e textos legíveis a 5 metros do telão.
+
+### Identidade visual do Banco Bússola
+
+O infográfico do Mapa da demo é a referência visual oficial. A marca é laranja e o agente é um robô simpático com um mapa nas mãos.
+
+- **Símbolo:** bússola de traço grosso, com agulha inclinada, sobre um quadrado laranja de cantos arredondados. Funciona em 16 px (favicon) e no telão.
+- **Logotipo:** "Banco" em cima e "Bússola" em destaque, em laranja.
+- **Assinatura:** "Seu próximo passo, com mais sentido."
+- **Frase da demo:** "Agentes que chegam mais longe, porque entendem o caminho."
+- **Cor de destaque, Laranja-Bússola:** aproximadamente `#F26522`, a ser extraída do infográfico e validada para contraste no tema escuro do Carbon. Usada na marca, na rota ativa, nos números das paradas e no robô.
+- **Cores de apoio:** azul-marinho para títulos e ícones, como no infográfico. Âmbar para rotas alternativas e alertas de trânsito. Vermelho Carbon reservado a incidentes, que precisa ser bem distinto do laranja: incidentes sempre levam ícone e rótulo.
+- **Base:** os cinzas neutros do Carbon na moldura. O mapa ilustrado traz a cor.
+- **O robô:** é o agente em todo lugar. No mapa, vira um marcador pequeno (o robô dentro de um pino) que percorre a rota. Nas cenas sem mapa, aparece confuso, com ponto de interrogação; com skill, aparece seguro. Os estados são: pensando, navegando, recalculando (o mapa gira nas mãos dele), aguardando humano e chegou.
+- **Seguradoras parceiras:** Âncora (âncora), Farol (farol) e Horizonte (sol estilizado), com ícones de traço em azul, como no infográfico.
+- **Estilo de ilustração:** cidade isométrica desenhada à mão, rio, bairros com nome e rota laranja tracejada. O Modo Mapa ao vivo deve conversar com esse estilo.
+- **Tom de voz:** curto, calmo e confiante, como um bom copiloto. "Rota recalculada: a Farol respondeu mais rápido."
+
+### Idioma: somente português do Brasil
+
+A demo inteira é em pt-BR, sem seletor de idioma: interface, ontologia, skills, nomes de tools, narração do agente, infográfico e site de bastidores. Os textos da interface ficam centralizados num arquivo de mensagens, sem texto espalhado pelo código. Isso facilita revisar a linguagem, e não implica tradução. Identificadores internos de código (variáveis, classes, eventos) podem ficar em inglês.
+
+## Doc behind the scenes: entregável obrigatório
+
+Além do software, a demo entrega uma documentação rica que explica o conceito e o funcionamento. Ela é usada durante a apresentação como "os bastidores" de cada cena e também depois, como material de leitura.
+
+**Formato:** um site de documentação servido pelo próprio docker compose (serviço `docs`, em Carbon), acessível por um botão "Bastidores" em cada cena. O botão abre o capítulo correspondente num painel lateral, sem sair da demo.
+
+**Estrutura mínima:**
+
+1. **O problema:** por que agentes sem contexto falham, com exemplos da própria demo.
+2. **O conceito de camada de contexto:** ontologia, estado vivo, governança e proveniência, explicados pela metáfora do mapa.
+3. **Skills como GPS:** o que é uma Agent Skill, a extensão SEP-2640, progressive disclosure, e por que a skill é a porta de entrada.
+4. **Bastidores de cada cena:** para cada uma das 8 cenas, o que a plateia viu, o que aconteceu de verdade (eventos, chamadas MCP, consultas) e o que isso prova.
+5. **Anatomia da jornada de seguro:** a ontologia, as skills e as regras usadas, com trechos reais dos arquivos.
+6. **Arquitetura:** diagrama dos serviços, fluxo de eventos e como trocar o provedor de LLM.
+7. **Como reproduzir:** subir a demo, rodar cada cena, criar um novo incidente, escrever uma nova skill.
+8. **Glossário e perguntas frequentes:** termos para o público executivo e respostas às objeções técnicas mais comuns.
+
+**Requisitos:**
+
+- Dois níveis de leitura em cada capítulo: um resumo executivo no topo e um aprofundamento técnico abaixo.
+- Diagramas e trechos de código gerados a partir do repositório, para que a doc não desatualize em relação à demo.
+- Capturas e GIFs de cada cena.
+- Linguagem do dia a dia, sem tom professoral.
+
+## Entregáveis, critérios de aceite e fases para o Claude Code
+
+O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo limpa via `docker compose up`.
+
+1. **Fundação:** repositório, `CLAUDE.md` com as regras permanentes, docker compose com todos os serviços, `.env.example`, healthchecks.
+2. **Camada de contexto:** ontologia, seed do grafo da jornada de seguro com o layout da cidade, `contexto-mcp`.
+3. **Gateway e servidores de domínio:** `mcp-gateway` agregando tools e skills, os seis servidores MCP de domínio e o `simulator`.
+4. **Skills-workflow:** as 4 skills no `skills-mcp`, com metadados de governança aplicados pelo gateway e testes de descoberta e leitura.
+5. **Agente e eventos:** host MCP falando só com o gateway, dois provedores de LLM, barramento de eventos, modos sem contexto, sem skill e com skill.
+6. **Mapa:** Modo Mapa com cidade, rota, trânsito, rotas alternativas e zoom semântico; tela de abertura com o infográfico navegável e as áreas clicáveis.
+7. **Raio-X e apresentador:** Modo Raio-X, painel de incidentes, placar comparativo, replay offline.
+8. **Bastidores:** site de documentação com os 8 capítulos e o botão por cena.
+9. **Polimento:** ensaio completo, acessibilidade, performance em telão.
+
+**Critérios de aceite:**
+
+- [ ] `docker compose up` sobe tudo do zero em menos de 3 minutos, sem passos manuais além do `.env`
+- [ ] A demo roda com Anthropic e com Azure OpenAI, mudando só variável de ambiente
+- [ ] As 8 cenas rodam ao vivo e em replay offline
+- [ ] Cada incidente provoca recálculo real, com motivo e regra exibidos
+- [ ] O placar mostra diferença mensurável entre sem contexto, sem skill e com skill
+- [ ] O Modo Mapa é entendido sem narração por alguém não técnico
+- [ ] Toda animação corresponde a um evento real do agente
+- [ ] A doc de bastidores cobre todas as cenas, nos dois níveis de leitura
+
+## Riscos e decisões em aberto
+
+| Risco | Mitigação |
+| --- | --- |
+| Resposta do LLM variar entre ensaios e a cena não sair como esperado | Temperatura baixa, seeds de cenário fixos e replay offline como plano B |
+| Rede ou chave de API falhar no dia | Replay offline e gravação em vídeo de cada cena |
+| A metáfora do mapa parecer só enfeite para o público técnico | Raio-X provando que cada animação é um evento real |
+| Grafo grande demais ficar ilegível | Zoom semântico e limite de 150 a 300 nós |
+| Suporte à extensão de skills mudar nos SDKs | Isolar a agregação de skills no gateway e o consumo num módulo próprio do `agent` |
+
+**Decisões tomadas:**
+
+- [x] Linguagem do backend: Python em todos os serviços
+- [x] Nome do banco fictício: Banco Bússola
+- [x] Layout do mapa: cidade fixa com bairros curados (ver Camada de contexto)
+- [x] Arquitetura de acesso: agente fala só com o MCP gateway; serviços são tools MCP
+- [x] Site de bastidores: MkDocs Material com tema Carbon
+- [x] Identidade visual do Banco Bússola (ver Diretrizes de UI)
+- [x] Idioma: somente português do Brasil
