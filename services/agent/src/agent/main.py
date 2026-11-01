@@ -45,7 +45,7 @@ def criar_app(config: Config | None = None, checagens: dict[str, Checagem] | Non
     @app.get("/api/status")
     async def status() -> dict:
         """Estado da plataforma visto pelo agente: só pelo gateway."""
-        gateway, servicos, ferramentas, ferramentas_fora = "fora", [], 0, 0
+        gateway, servicos, ferramentas, ferramentas_fora, skills = "fora", [], 0, 0, 0
         try:
             async with httpx.AsyncClient(timeout=4) as cliente:
                 resposta = await cliente.get(
@@ -56,6 +56,7 @@ def criar_app(config: Config | None = None, checagens: dict[str, Checagem] | Non
                 corpo = resposta.json()
                 gateway, servicos = "ok", corpo["servicos"]
                 ferramentas, ferramentas_fora = corpo.get("ferramentas", 0), corpo.get("ferramentas_fora", 0)
+                skills = corpo.get("skills", 0)
         except httpx.HTTPError:
             pass
 
@@ -71,6 +72,7 @@ def criar_app(config: Config | None = None, checagens: dict[str, Checagem] | Non
             "servicos": servicos,
             "ferramentas": ferramentas,
             "ferramentas_fora": ferramentas_fora,
+            "skills": skills,
         }
 
     return app

@@ -48,6 +48,7 @@ export const mensagens = {
     contagemFora: (n: number) =>
       n === 0 ? 'Todas as tools no ar' : n === 1 ? '1 tool fora do ar' : `${n} tools fora do ar`,
     resumo: (total: number, fora: number) => (fora ? `${total} tools · ${fora} fora do ar` : `${total} tools`),
+    skills: (n: number) => (n === 1 ? '1 skill' : `${n} skills`),
     rotuloToggle: (nome: string) => `Ligar ou desligar ${nome}`,
     erroAcao: 'O simulador não respondeu.',
     erroAcaoDetalhe: 'Verifique se o serviço simulator está no ar (docker compose ps).',

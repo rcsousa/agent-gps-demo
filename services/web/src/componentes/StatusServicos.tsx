@@ -112,7 +112,11 @@ export function StatusServicos() {
                 titulo={mensagens.servicos.gateway}
                 tecnico="mcp-gateway"
                 estado={status.gateway}
-                detalhe={status.gateway === 'ok' ? tt.resumo(status.ferramentas, status.ferramentas_fora) : undefined}
+                detalhe={
+                  status.gateway === 'ok'
+                    ? `${tt.resumo(status.ferramentas, status.ferramentas_fora)} · ${tt.skills(status.skills)}`
+                    : undefined
+                }
               />
             </Column>
             <Column {...coluna}>
