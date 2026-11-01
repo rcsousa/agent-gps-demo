@@ -7,6 +7,7 @@
 #   ./scripts/gateway.sh --prompt canais.atendimento_agencia '{"cliente_id": "cliente-ana"}'
 #   ./scripts/gateway.sh cliente.obter_perfil '{"cliente_id": "cliente-ana"}'
 #   ./scripts/gateway.sh seguradoras.cotar_seguro '{"cliente_id": "cliente-ana", "seguradora": "farol"}'
+#   ./scripts/gateway.sh seguradoras.cotar_seguro '{...}' --skill contratacao-seguro-residencial --execucao e1
 #   ./scripts/gateway.sh contexto.consultar_rota
 #   ./scripts/gateway.sh contexto://mapa
 set -e
