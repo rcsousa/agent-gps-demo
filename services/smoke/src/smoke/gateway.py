@@ -1,8 +1,12 @@
-"""Chama uma tool ou lê um resource pelo MCP gateway e imprime a resposta em JSON.
+"""Fala com o MCP gateway como o agente faria e imprime a resposta em JSON.
 
-Uso (pelo script): ./scripts/gateway.sh cliente.obter_perfil '{"cliente_id": "cliente-ana"}'
-Listar as tools:   ./scripts/gateway.sh --listar
-Ler um resource:   ./scripts/gateway.sh contexto://mapa
+Uso (pelo script):
+  ./scripts/gateway.sh cliente.obter_perfil '{"cliente_id": "cliente-ana"}'
+  ./scripts/gateway.sh pagamentos.estornar '{"pagamento_id": "x"}' --skill contratacao-seguro-residencial
+  ./scripts/gateway.sh --listar                         # tools
+  ./scripts/gateway.sh --skills                         # skills (skills/list)
+  ./scripts/gateway.sh skill://<nome>/SKILL.md          # arquivo de skill, com digest verificado
+  ./scripts/gateway.sh contexto://mapa                  # outro resource
 """
 
 import asyncio
@@ -11,6 +15,7 @@ import os
 import sys
 
 from bussola_comum.cliente_mcp import conectar
+from bussola_comum.skills import CHAVE_SKILL_ATIVA, ler_arquivo, listar_skills, obter_skill
 
 URL = "http://mcp-gateway:8000/mcp"
 
@@ -19,17 +24,32 @@ def _imprimir(dados) -> None:
     print(json.dumps(dados, ensure_ascii=False, indent=2))
 
 
-async def executar(alvo: str, argumentos: dict) -> int:
+async def executar(alvo: str, argumentos: dict, skill: str | None) -> int:
     async with conectar(URL, os.environ["GATEWAY_TOKEN"]) as cliente:
         if alvo == "--listar":
             for tool in (await cliente.list_tools()).tools:
                 print(f"{tool.name:45} {tool.description[:80]}")
             return 0
+        if alvo == "--skills":
+            for entrada in await listar_skills(cliente):
+                fm = entrada["frontmatter"]
+                print(f"\n{entrada['uri']}\n  {fm['description']}")
+                print(f"  tools permitidas: {fm.get('allowed-tools', '')}")
+                for arquivo in entrada["resources"]:
+                    print(f"  · {arquivo['uri']}  {arquivo['size']} bytes  {arquivo['digest'][:19]}…")
+            return 0
+        if alvo.startswith("skill://"):
+            raiz = alvo.split("/", 3)[2]
+            entrada = await obter_skill(cliente, f"skill://{raiz}/SKILL.md")
+            print(await ler_arquivo(cliente, alvo, entrada))
+            print("\n[digest e tamanho conferem com skills/get]", file=sys.stderr)
+            return 0
         if "://" in alvo:
             resultado = await cliente.read_resource(alvo)
             _imprimir(json.loads(resultado.contents[0].text))
             return 0
-        resultado = await cliente.call_tool(alvo, argumentos)
+        meta = {CHAVE_SKILL_ATIVA: f"skill://{skill}/SKILL.md"} if skill else None
+        resultado = await cliente.call_tool(alvo, argumentos, meta=meta)
     if resultado.is_error:
         print(f"Erro da tool: {resultado.content[0].text}", file=sys.stderr)
         _imprimir({"_meta": resultado.meta})
@@ -41,11 +61,17 @@ async def executar(alvo: str, argumentos: dict) -> int:
 
 
 def main() -> int:
-    if len(sys.argv) < 2:
+    args = sys.argv[1:]
+    skill = None
+    if "--skill" in args:
+        i = args.index("--skill")
+        skill = args[i + 1]
+        del args[i : i + 2]
+    if not args:
         print(__doc__, file=sys.stderr)
         return 2
-    argumentos = json.loads(sys.argv[2]) if len(sys.argv) > 2 else {}
-    return asyncio.run(executar(sys.argv[1], argumentos))
+    argumentos = json.loads(args[1]) if len(args) > 1 else {}
+    return asyncio.run(executar(args[0], argumentos, skill))
 
 
 if __name__ == "__main__":
