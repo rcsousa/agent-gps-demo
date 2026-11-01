@@ -388,6 +388,9 @@ def test_sem_contexto_nao_chama_tools(mundo_limpo):
 
 
 def test_provedor_real_sem_chave_falha_com_mensagem_clara():
+    # O smoke nunca gasta tokens: com um LLM configurado, este cenário não se aplica.
+    if httpx.get(f"{API_AGENTE}/status", timeout=10).json()["llm"]["configurado"]:
+        pytest.skip("LLM configurado no .env: o smoke não chama o modelo de verdade.")
     ident = httpx.post(
         f"{API_AGENTE}/execucoes", json={"modo": "com_skill", "provedor": "anthropic"}, timeout=10
     ).json()["id"]

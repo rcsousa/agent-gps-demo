@@ -41,7 +41,30 @@ def test_status_informa_provedor_de_llm():
         .get("/api/status")
         .json()
     )
-    assert corpo["llm"] == {"provedor": "azure_openai", "configurado": True}
+    assert corpo["llm"] == {
+        "provedor": "azure_openai",
+        "plataforma": None,
+        "modelo": "gpt",
+        "configurado": True,
+    }
+
+
+def test_status_informa_claude_no_foundry():
+    corpo = (
+        _cliente(
+            anthropic_plataforma="foundry",
+            anthropic_foundry_base_url="https://exemplo.api.cognitive.microsoft.com/anthropic/",
+            anthropic_foundry_api_key="x",
+        )
+        .get("/api/status")
+        .json()
+    )
+    assert corpo["llm"] == {
+        "provedor": "anthropic",
+        "plataforma": "foundry",
+        "modelo": "claude-opus-5-5",
+        "configurado": True,
+    }
 
 
 def test_agente_nao_conhece_servidores_de_dominio():
