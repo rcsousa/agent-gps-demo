@@ -3,6 +3,7 @@ FROM squidfunk/mkdocs-material:9 AS build
 WORKDIR /docs
 COPY services/docs/ ./
 COPY docs/assets/mapa-da-demo.png conteudo/assets/mapa-da-demo.png
+COPY services/contexto-mcp/ontologia/ ontologia/
 RUN mkdocs build --strict --site-dir /site
 
 FROM nginx:1.27-alpine
