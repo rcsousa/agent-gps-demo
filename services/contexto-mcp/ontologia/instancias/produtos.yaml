@@ -1,0 +1,142 @@
+# Bairro Produtos: catálogo de seguros distribuídos pelo Banco Bússola.
+# Foco no seguro residencial, oferecido pelas três parceiras.
+
+proveniencia_padrao:
+  fonte: Catálogo de produtos de seguros v2026.10
+  data: 2026-10-01
+  responsavel: Diretoria de Seguros e Parcerias
+  confianca: alta
+
+entidades:
+  # --8<-- [start:residencial]
+  - id: produto-residencial-ancora
+    tipo: ProdutoSeguro
+    nome: Residencial Âncora Essencial
+    descricao: Seguro residencial com coberturas básicas e assistência 24 h. Seguradora preferencial do banco.
+    atributos: { ramo: residencial, premio_mensal_referencia: 26.70, preferencial: true, importancia_segurada_maxima: 3000000 }
+  - id: produto-residencial-farol
+    tipo: ProdutoSeguro
+    nome: Residencial Farol Completo
+    descricao: Seguro residencial com coberturas amplas, incluindo alagamento.
+    atributos: { ramo: residencial, premio_mensal_referencia: 25.80, preferencial: false, importancia_segurada_maxima: 5000000 }
+  - id: produto-residencial-horizonte
+    tipo: ProdutoSeguro
+    nome: Residencial Horizonte Mais
+    descricao: Seguro residencial com o menor prêmio e assistências opcionais.
+    atributos: { ramo: residencial, premio_mensal_referencia: 23.30, preferencial: false, importancia_segurada_maxima: 2000000 }
+  # --8<-- [end:residencial]
+  - id: produto-auto-farol
+    tipo: ProdutoSeguro
+    nome: Auto Farol
+    descricao: Seguro auto distribuído pelo banco.
+    atributos: { ramo: auto, preferencial: true }
+  - id: produto-vida-horizonte
+    tipo: ProdutoSeguro
+    nome: Vida Horizonte
+    descricao: Seguro de vida individual.
+    atributos: { ramo: vida, preferencial: true }
+
+  # Coberturas do residencial
+  - { id: cobertura-incendio, tipo: Cobertura, nome: "Incêndio, raio e explosão", descricao: "Cobertura básica obrigatória do residencial.", atributos: { basica: true } }
+  - { id: cobertura-danos-eletricos, tipo: Cobertura, nome: "Danos elétricos", descricao: "Danos a aparelhos por variação de tensão.", atributos: { basica: false } }
+  - { id: cobertura-roubo, tipo: Cobertura, nome: "Roubo e furto qualificado", descricao: "Bens dentro do imóvel.", atributos: { basica: false } }
+  - { id: cobertura-rc-familiar, tipo: Cobertura, nome: "Responsabilidade civil familiar", descricao: "Danos causados a terceiros pela família.", atributos: { basica: false } }
+  - { id: cobertura-vendaval, tipo: Cobertura, nome: "Vendaval e granizo", descricao: "Danos por ventos fortes e granizo.", atributos: { basica: false } }
+  - { id: cobertura-alagamento, tipo: Cobertura, nome: "Alagamento", descricao: "Danos por alagamento e enchente.", atributos: { basica: false } }
+  - { id: cobertura-vidros, tipo: Cobertura, nome: "Quebra de vidros", descricao: "Vidros, espelhos e mármores.", atributos: { basica: false } }
+  - { id: cobertura-perda-aluguel, tipo: Cobertura, nome: "Perda ou pagamento de aluguel", descricao: "Aluguel enquanto o imóvel é reparado.", atributos: { basica: false } }
+  - { id: cobertura-desmoronamento, tipo: Cobertura, nome: "Desmoronamento", descricao: "Desabamento parcial ou total.", atributos: { basica: false } }
+  # Coberturas de auto e vida
+  - { id: cobertura-auto-colisao, tipo: Cobertura, nome: "Colisão (auto)", descricao: "Danos ao veículo segurado.", atributos: { basica: true } }
+  - { id: cobertura-auto-terceiros, tipo: Cobertura, nome: "Danos a terceiros (auto)", descricao: "Danos materiais e corporais a terceiros.", atributos: { basica: true } }
+  - { id: cobertura-vida-morte, tipo: Cobertura, nome: "Morte (vida)", descricao: "Indenização aos beneficiários.", atributos: { basica: true } }
+  - { id: cobertura-vida-invalidez, tipo: Cobertura, nome: "Invalidez por acidente (vida)", descricao: "Indenização por invalidez permanente.", atributos: { basica: false } }
+
+  # Assistências
+  - { id: assistencia-chaveiro, tipo: Assistencia, nome: "Chaveiro 24 h", descricao: "Abertura de portas e troca de fechadura.", atributos: { acionamentos_ano: 3 } }
+  - { id: assistencia-encanador, tipo: Assistencia, nome: "Encanador", descricao: "Vazamentos e reparos hidráulicos.", atributos: { acionamentos_ano: 3 } }
+  - { id: assistencia-eletricista, tipo: Assistencia, nome: "Eletricista", descricao: "Reparos elétricos emergenciais.", atributos: { acionamentos_ano: 3 } }
+  - { id: assistencia-vidraceiro, tipo: Assistencia, nome: "Vidraceiro", descricao: "Troca emergencial de vidros.", atributos: { acionamentos_ano: 2 } }
+  - { id: assistencia-desentupimento, tipo: Assistencia, nome: "Desentupimento", descricao: "Pias, ralos e vasos sanitários.", atributos: { acionamentos_ano: 2 } }
+  - { id: assistencia-pet, tipo: Assistencia, nome: "Assistência pet", descricao: "Consulta veterinária emergencial.", atributos: { acionamentos_ano: 2 } }
+  - { id: assistencia-guincho, tipo: Assistencia, nome: "Guincho (auto)", descricao: "Reboque do veículo.", atributos: { acionamentos_ano: 4 } }
+
+  # Franquias
+  - { id: franquia-danos-eletricos, tipo: Franquia, nome: "Franquia de danos elétricos", descricao: "10% do prejuízo, mínimo de R$ 500.", atributos: { percentual: 10, minimo: 500 } }
+  - { id: franquia-roubo, tipo: Franquia, nome: "Franquia de roubo", descricao: "10% do prejuízo, mínimo de R$ 800.", atributos: { percentual: 10, minimo: 800 } }
+  - { id: franquia-vendaval, tipo: Franquia, nome: "Franquia de vendaval", descricao: "10% do prejuízo, mínimo de R$ 1.000.", atributos: { percentual: 10, minimo: 1000 } }
+  - { id: franquia-alagamento, tipo: Franquia, nome: "Franquia de alagamento", descricao: "15% do prejuízo, mínimo de R$ 1.500.", atributos: { percentual: 15, minimo: 1500 } }
+  - { id: franquia-vidros, tipo: Franquia, nome: "Franquia de vidros", descricao: "Valor fixo de R$ 200.", atributos: { valor_fixo: 200 } }
+  - { id: franquia-auto-colisao, tipo: Franquia, nome: "Franquia de colisão (auto)", descricao: "Franquia reduzida.", atributos: { valor_fixo: 3200 } }
+
+relacoes:
+  - [produto-residencial-ancora, OFERECIDO_POR, seguradora-ancora]
+  - [produto-residencial-farol, OFERECIDO_POR, seguradora-farol]
+  - [produto-residencial-horizonte, OFERECIDO_POR, seguradora-horizonte]
+  - [produto-auto-farol, OFERECIDO_POR, seguradora-farol]
+  - [produto-vida-horizonte, OFERECIDO_POR, seguradora-horizonte]
+
+  # Âncora Essencial
+  - [produto-residencial-ancora, INCLUI, cobertura-incendio]
+  - [produto-residencial-ancora, INCLUI, cobertura-danos-eletricos]
+  - [produto-residencial-ancora, INCLUI, cobertura-roubo]
+  - [produto-residencial-ancora, INCLUI, cobertura-rc-familiar]
+  - [produto-residencial-ancora, INCLUI, cobertura-vidros]
+  - [produto-residencial-ancora, INCLUI, assistencia-chaveiro]
+  - [produto-residencial-ancora, INCLUI, assistencia-encanador]
+  - [produto-residencial-ancora, INCLUI, assistencia-eletricista]
+  # Farol Completo
+  - [produto-residencial-farol, INCLUI, cobertura-incendio]
+  - [produto-residencial-farol, INCLUI, cobertura-danos-eletricos]
+  - [produto-residencial-farol, INCLUI, cobertura-roubo]
+  - [produto-residencial-farol, INCLUI, cobertura-rc-familiar]
+  - [produto-residencial-farol, INCLUI, cobertura-vendaval]
+  - [produto-residencial-farol, INCLUI, cobertura-alagamento]
+  - [produto-residencial-farol, INCLUI, cobertura-perda-aluguel]
+  - [produto-residencial-farol, INCLUI, assistencia-chaveiro]
+  - [produto-residencial-farol, INCLUI, assistencia-encanador]
+  - [produto-residencial-farol, INCLUI, assistencia-vidraceiro]
+  - [produto-residencial-farol, INCLUI, assistencia-desentupimento]
+  # Horizonte Mais
+  - [produto-residencial-horizonte, INCLUI, cobertura-incendio]
+  - [produto-residencial-horizonte, INCLUI, cobertura-danos-eletricos]
+  - [produto-residencial-horizonte, INCLUI, cobertura-vendaval]
+  - [produto-residencial-horizonte, INCLUI, cobertura-desmoronamento]
+  - [produto-residencial-horizonte, INCLUI, assistencia-chaveiro]
+  - [produto-residencial-horizonte, INCLUI, assistencia-pet]
+  # Auto e vida
+  - [produto-auto-farol, INCLUI, cobertura-auto-colisao]
+  - [produto-auto-farol, INCLUI, cobertura-auto-terceiros]
+  - [produto-auto-farol, INCLUI, assistencia-guincho]
+  - [produto-vida-horizonte, INCLUI, cobertura-vida-morte]
+  - [produto-vida-horizonte, INCLUI, cobertura-vida-invalidez]
+  # Franquias
+  - [cobertura-danos-eletricos, TEM_FRANQUIA, franquia-danos-eletricos]
+  - [cobertura-roubo, TEM_FRANQUIA, franquia-roubo]
+  - [cobertura-vendaval, TEM_FRANQUIA, franquia-vendaval]
+  - [cobertura-alagamento, TEM_FRANQUIA, franquia-alagamento]
+  - [cobertura-vidros, TEM_FRANQUIA, franquia-vidros]
+  - [cobertura-auto-colisao, TEM_FRANQUIA, franquia-auto-colisao]
+
+  # Regras e normas que os produtos residenciais exigem
+  # --8<-- [start:exigencias]
+  - [produto-residencial-ancora, EXIGE, regra-imovel-residencial]
+  - [produto-residencial-ancora, EXIGE, regra-regiao-atendida]
+  - [produto-residencial-ancora, EXIGE, regra-valor-maximo-imovel]
+  - [produto-residencial-ancora, EXIGE, regra-sem-restricao-cadastral]
+  - [produto-residencial-ancora, EXIGE, adequacao-necessidade-declarada]
+  - [produto-residencial-farol, EXIGE, regra-imovel-residencial]
+  - [produto-residencial-farol, EXIGE, regra-regiao-atendida]
+  - [produto-residencial-farol, EXIGE, regra-sem-restricao-cadastral]
+  - [produto-residencial-farol, EXIGE, adequacao-necessidade-declarada]
+  - [produto-residencial-horizonte, EXIGE, regra-imovel-residencial]
+  - [produto-residencial-horizonte, EXIGE, regra-construcao-alvenaria]
+  - [produto-residencial-horizonte, EXIGE, regra-sem-restricao-cadastral]
+  - [produto-residencial-horizonte, EXIGE, adequacao-necessidade-declarada]
+  - [produto-residencial-ancora, SUJEITA_A, alcada-automatica]
+  - [produto-residencial-farol, SUJEITA_A, alcada-automatica]
+  - [produto-residencial-horizonte, SUJEITA_A, alcada-automatica]
+  - [produto-residencial-ancora, REGIDO_POR, norma-seguros-danos]
+  - [produto-residencial-farol, REGIDO_POR, norma-seguros-danos]
+  - [produto-residencial-horizonte, REGIDO_POR, norma-seguros-danos]
+  # --8<-- [end:exigencias]

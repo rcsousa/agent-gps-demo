@@ -1,0 +1,136 @@
+# Bairro Parceiros: seguradoras fictícias, suas APIs e SLAs, e os sistemas
+# internos do banco. O estado vivo (status, latência, custo) é o "trânsito"
+# que o simulador altera a partir da Fase 3.
+
+proveniencia_padrao:
+  fonte: Catálogo de integrações e SLAs
+  data: 2026-10-20
+  responsavel: Arquitetura de Integrações
+  confianca: alta
+
+entidades:
+  # --8<-- [start:seguradoras]
+  - id: seguradora-ancora
+    tipo: Seguradora
+    nome: Âncora Seguros
+    descricao: Seguradora preferencial do banco no residencial. Ícone de âncora.
+    atributos: { icone: ancora, preferencial: true, ufs_atendidas: [SP, RJ, MG, PR, SC, RS] }
+  - id: seguradora-farol
+    tipo: Seguradora
+    nome: Farol Seguros
+    descricao: Coberturas amplas e boa resposta de cotação. Ícone de farol.
+    atributos: { icone: farol, preferencial: false, ufs_atendidas: [SP, RJ, ES, BA, PE] }
+  - id: seguradora-horizonte
+    tipo: Seguradora
+    nome: Horizonte Seguros
+    descricao: Prêmios menores, cotação mais lenta. Ícone de sol estilizado.
+    atributos: { icone: horizonte, preferencial: false, ufs_atendidas: [SP, MG, GO, DF] }
+  # --8<-- [end:seguradoras]
+
+  # --8<-- [start:apis]
+  - id: api-cotacao-ancora
+    tipo: ApiCotacao
+    nome: API de cotação da Âncora
+    descricao: Cotação de residencial em tempo real.
+    atributos: { protocolo: REST, versao: v3 }
+    estado: { status: ok, latencia_ms: 420, custo_estimado: 0.04 }
+  - id: api-cotacao-farol
+    tipo: ApiCotacao
+    nome: API de cotação da Farol
+    descricao: Cotação de residencial em tempo real.
+    atributos: { protocolo: REST, versao: v2 }
+    estado: { status: ok, latencia_ms: 380, custo_estimado: 0.05 }
+  - id: api-cotacao-horizonte
+    tipo: ApiCotacao
+    nome: API de cotação da Horizonte
+    descricao: Cotação em lote, com resposta mais lenta.
+    atributos: { protocolo: REST, versao: v1 }
+    estado: { status: ok, latencia_ms: 1900, custo_estimado: 0.02 }
+  # --8<-- [end:apis]
+  - id: api-emissao-ancora
+    tipo: ApiEmissao
+    nome: API de emissão da Âncora
+    descricao: Emite a apólice e devolve o número.
+    atributos: { protocolo: REST, versao: v3 }
+    estado: { status: ok, latencia_ms: 900, custo_estimado: 0.10 }
+  - id: api-emissao-farol
+    tipo: ApiEmissao
+    nome: API de emissão da Farol
+    descricao: Emite a apólice e devolve o número.
+    atributos: { protocolo: REST, versao: v2 }
+    estado: { status: ok, latencia_ms: 1100, custo_estimado: 0.10 }
+  - id: api-emissao-horizonte
+    tipo: ApiEmissao
+    nome: API de emissão da Horizonte
+    descricao: Emissão assíncrona, com confirmação por callback.
+    atributos: { protocolo: REST, versao: v1 }
+    estado: { status: ok, latencia_ms: 2600, custo_estimado: 0.06 }
+
+  - { id: sla-ancora, tipo: SLA, nome: "SLA da Âncora", descricao: "Disponibilidade de 99,9% e cotação em até 2 s.", atributos: { disponibilidade: 99.9, latencia_maxima_ms: 2000 } }
+  - { id: sla-farol, tipo: SLA, nome: "SLA da Farol", descricao: "Disponibilidade de 99,5% e cotação em até 2 s.", atributos: { disponibilidade: 99.5, latencia_maxima_ms: 2000 } }
+  - { id: sla-horizonte, tipo: SLA, nome: "SLA da Horizonte", descricao: "Disponibilidade de 99% e cotação em até 5 s.", atributos: { disponibilidade: 99.0, latencia_maxima_ms: 5000 } }
+
+  - id: sistema-crm
+    tipo: Sistema
+    nome: CRM Bússola
+    descricao: Cadastro, perfil e histórico de relacionamento.
+    atributos: { dono: Time de Dados de Clientes }
+    estado: { status: ok, latencia_ms: 120 }
+  - id: sistema-core-bancario
+    tipo: Sistema
+    nome: Core bancário
+    descricao: Contas, saldos e débitos.
+    atributos: { dono: Tecnologia de Core }
+    estado: { status: ok, latencia_ms: 200 }
+  - id: sistema-motor-risco
+    tipo: Sistema
+    nome: Motor de regras de risco
+    descricao: Avalia elegibilidade, adequação e alçadas.
+    atributos: { dono: Diretoria de Riscos }
+    estado: { status: ok, latencia_ms: 250 }
+  - id: sistema-cofre-consentimentos
+    tipo: Sistema
+    nome: Cofre de consentimentos
+    descricao: Guarda consentimentos e suas evidências.
+    atributos: { dono: Encarregado de Dados (DPO) }
+    estado: { status: ok, latencia_ms: 90 }
+  - id: sistema-gateway-pagamentos
+    tipo: Sistema
+    nome: Gateway de pagamentos
+    descricao: Processa débito em conta, cartão e Pix.
+    atributos: { dono: Meios de Pagamento }
+    estado: { status: ok, latencia_ms: 350, custo_estimado: 0.01 }
+  - id: sistema-registro-operacoes
+    tipo: Sistema
+    nome: Sistema de registro de operações
+    descricao: Registra aceites e apólices para fins regulatórios.
+    atributos: { dono: Diretoria de Compliance }
+    estado: { status: ok, latencia_ms: 300 }
+  - id: sistema-vistoria
+    tipo: Sistema
+    nome: Plataforma de vistorias
+    descricao: Agenda vistorias com empresas credenciadas.
+    atributos: { dono: Operações de Seguros, prazo_tipico_dias: 3 }
+    estado: { status: ok, latencia_ms: 600 }
+
+relacoes:
+  - [seguradora-ancora, EXPOE, api-cotacao-ancora]
+  - [seguradora-ancora, EXPOE, api-emissao-ancora]
+  - [seguradora-farol, EXPOE, api-cotacao-farol]
+  - [seguradora-farol, EXPOE, api-emissao-farol]
+  - [seguradora-horizonte, EXPOE, api-cotacao-horizonte]
+  - [seguradora-horizonte, EXPOE, api-emissao-horizonte]
+  - [api-cotacao-ancora, GARANTIDO_POR, sla-ancora]
+  - [api-emissao-ancora, GARANTIDO_POR, sla-ancora]
+  - [api-cotacao-farol, GARANTIDO_POR, sla-farol]
+  - [api-emissao-farol, GARANTIDO_POR, sla-farol]
+  - [api-cotacao-horizonte, GARANTIDO_POR, sla-horizonte]
+  - [api-emissao-horizonte, GARANTIDO_POR, sla-horizonte]
+  - [sistema-motor-risco, INTEGRA_COM, sistema-crm]
+  - [sistema-crm, INTEGRA_COM, sistema-cofre-consentimentos]
+  - [sistema-crm, INTEGRA_COM, sistema-core-bancario]
+  - [sistema-gateway-pagamentos, INTEGRA_COM, sistema-core-bancario]
+  - [sistema-registro-operacoes, INTEGRA_COM, api-emissao-ancora]
+  - [sistema-registro-operacoes, INTEGRA_COM, api-emissao-farol]
+  - [sistema-registro-operacoes, INTEGRA_COM, api-emissao-horizonte]
+  - [sistema-motor-risco, INTEGRA_COM, sistema-vistoria]

@@ -1,0 +1,192 @@
+# Jornada de contratação de seguro residencial: as 9 paradas da spec,
+# duas paradas que entram só quando a regra pede (vistoria e aprovação
+# humana) e as 3 rotas que a demo mostra no estilo Waze.
+#
+# Cada parada fica no bairro do trecho que executa. "tempo_base_s" é a
+# duração típica da parada; a estimativa da rota soma esse tempo com a
+# latência atual das entidades tocadas (o trânsito).
+
+proveniencia_padrao:
+  fonte: Desenho da jornada de seguros v1.0
+  data: 2026-10-25
+  responsavel: Produto Digital de Seguros
+  confianca: alta
+
+entidades:
+  - id: contratacao-seguro-residencial
+    tipo: Jornada
+    nome: Contratação de seguro residencial
+    descricao: Do pedido da cliente no app até a apólice emitida.
+    atributos: { destino: apolice-emitida }
+
+  # --8<-- [start:paradas]
+  - id: parada-intencao
+    tipo: Parada
+    bairro: canais
+    nome: Entender a intenção
+    descricao: Classificar o pedido e escolher a skill de contratação de seguro.
+    atributos: { numero: 1, tempo_base_s: 15 }
+  - id: parada-identificacao
+    tipo: Parada
+    bairro: cliente
+    nome: Identificar a cliente
+    descricao: Perfil, relacionamento e produtos já contratados.
+    atributos: { numero: 2, tempo_base_s: 20 }
+  - id: parada-consentimento
+    tipo: Parada
+    bairro: regulatorio
+    nome: Consentimento e LGPD
+    descricao: Verificar se há base legal para usar os dados nessa oferta.
+    atributos: { numero: 3, tempo_base_s: 15 }
+  - id: parada-elegibilidade
+    tipo: Parada
+    bairro: risco
+    nome: Elegibilidade
+    descricao: Regras do produto, imóvel, região e restrições cadastrais.
+    atributos: { numero: 4, tempo_base_s: 25 }
+  - id: parada-adequacao
+    tipo: Parada
+    bairro: risco
+    nome: Adequação da oferta
+    descricao: O produto faz sentido para o perfil e a necessidade declarada.
+    atributos: { numero: 5, tempo_base_s: 25 }
+  - id: parada-cotacao
+    tipo: Parada
+    bairro: parceiros
+    nome: Cotação
+    descricao: Consultar uma ou mais seguradoras parceiras e comparar coberturas e preço.
+    atributos: { numero: 6, tempo_base_s: 60 }
+  - id: parada-proposta
+    tipo: Parada
+    bairro: canais
+    nome: Proposta e aceite
+    descricao: Apresentar a oferta, explicar coberturas e registrar o aceite da cliente.
+    atributos: { numero: 7, tempo_base_s: 90 }
+  - id: parada-pagamento
+    tipo: Parada
+    bairro: canais
+    nome: Pagamento
+    descricao: Débito em conta ou cartão.
+    atributos: { numero: 8, tempo_base_s: 20 }
+  - id: parada-emissao
+    tipo: Parada
+    bairro: parceiros
+    nome: Emissão
+    descricao: Gerar a apólice com a seguradora e confirmar para a cliente.
+    atributos: { numero: 9, tempo_base_s: 30 }
+  - id: parada-aprovacao-humana
+    tipo: Parada
+    bairro: canais
+    nome: Aprovação do especialista
+    descricao: O pedágio. Um especialista humano aprova a proposta acima da alçada automática.
+    atributos: { tempo_base_s: 420, opcional: true }
+  - id: parada-vistoria
+    tipo: Parada
+    bairro: risco
+    nome: Vistoria
+    descricao: Desvio por obra. Entra na rota quando o imóvel está em área de risco alto.
+    atributos: { tempo_base_s: 259200, opcional: true }
+  # --8<-- [end:paradas]
+
+  # --8<-- [start:rotas]
+  - id: rota-rapida
+    tipo: Rota
+    nome: Rota rápida
+    descricao: Cliente com dados completos e consentimento válido; cotação só com a seguradora preferencial.
+    atributos: { criterio: menor_tempo, risco_base: baixo, premio_anual_referencia: 320 }
+  - id: rota-economica
+    tipo: Rota
+    nome: Rota econômica
+    descricao: Cotação com as três seguradoras para buscar o menor prêmio, levando mais tempo.
+    atributos: { criterio: menor_preco, risco_base: baixo, premio_anual_referencia: 280, tempo_adicional_s: 120 }
+  - id: rota-assistida
+    tipo: Rota
+    nome: Rota assistida
+    descricao: Passa por um especialista humano (pedágio) quando o valor ou o risco ultrapassam o limite.
+    atributos: { criterio: menor_risco, risco_base: medio, premio_anual_referencia: 310 }
+  # --8<-- [end:rotas]
+
+relacoes:
+  - [contratacao-seguro-residencial, INICIA_EM, canal-app]
+  - [contratacao-seguro-residencial, TEM_ROTA, rota-rapida]
+  - [contratacao-seguro-residencial, TEM_ROTA, rota-economica]
+  - [contratacao-seguro-residencial, TEM_ROTA, rota-assistida]
+
+  # O que cada parada toca, exige ou usa
+  - [parada-intencao, TOCA, canal-app]
+  - [parada-intencao, SUJEITA_A, politica-uso-de-ia]
+  - [parada-identificacao, USA, sistema-crm]
+  - [parada-identificacao, USA, score-relacionamento]
+  - [parada-consentimento, USA, sistema-cofre-consentimentos]
+  - [parada-consentimento, REQUER, finalidade-oferta-personalizada]
+  - [parada-consentimento, REQUER, finalidade-compartilhamento-seguradoras]
+  - [parada-consentimento, SUJEITA_A, politica-privacidade]
+  - [parada-elegibilidade, USA, sistema-motor-risco]
+  - [parada-elegibilidade, EXIGE, regra-imovel-residencial]
+  - [parada-elegibilidade, EXIGE, regra-regiao-atendida]
+  - [parada-elegibilidade, EXIGE, regra-sem-restricao-cadastral]
+  - [parada-elegibilidade, EXIGE, regra-vistoria-area-risco]
+  - [parada-adequacao, USA, sistema-motor-risco]
+  - [parada-adequacao, EXIGE, adequacao-necessidade-declarada]
+  - [parada-adequacao, EXIGE, adequacao-cobertura-x-valor]
+  - [parada-adequacao, EXIGE, adequacao-renda-x-premio]
+  - [parada-adequacao, SUJEITA_A, politica-oferta-responsavel]
+  - [parada-cotacao, TOCA, produto-residencial-ancora]
+  - [parada-cotacao, TOCA, produto-residencial-farol]
+  - [parada-cotacao, TOCA, produto-residencial-horizonte]
+  - [parada-proposta, TOCA, canal-app]
+  - [parada-proposta, EXIGE, exigencia-registro-aceite]
+  - [parada-proposta, SUJEITA_A, politica-registro-aceite]
+  - [parada-pagamento, TOCA, pagamento-debito-em-conta]
+  - [parada-pagamento, USA, sistema-gateway-pagamentos]
+  - [parada-pagamento, REQUER, finalidade-cobranca]
+  - [parada-emissao, USA, sistema-registro-operacoes]
+  - [parada-emissao, EXIGE, exigencia-registro-apolice]
+  - [parada-emissao, SUJEITA_A, alcada-automatica]
+  - [parada-aprovacao-humana, EXIGE, fila-aprovacao-alcada]
+  - [parada-aprovacao-humana, SUJEITA_A, alcada-especialista]
+  - [parada-vistoria, USA, sistema-vistoria]
+  - [parada-vistoria, EXIGE, fila-vistoria]
+  - [parada-vistoria, EXIGE, exigencia-vistoria-previa]
+
+  # Rota rápida: paradas 1 a 9, só a Âncora (preferencial)
+  - { de: rota-rapida, tipo: PASSA_POR, para: parada-intencao, atributos: { ordem: 1 } }
+  - { de: rota-rapida, tipo: PASSA_POR, para: parada-identificacao, atributos: { ordem: 2 } }
+  - { de: rota-rapida, tipo: PASSA_POR, para: parada-consentimento, atributos: { ordem: 3 } }
+  - { de: rota-rapida, tipo: PASSA_POR, para: parada-elegibilidade, atributos: { ordem: 4 } }
+  - { de: rota-rapida, tipo: PASSA_POR, para: parada-adequacao, atributos: { ordem: 5 } }
+  - { de: rota-rapida, tipo: PASSA_POR, para: parada-cotacao, atributos: { ordem: 6 } }
+  - { de: rota-rapida, tipo: PASSA_POR, para: parada-proposta, atributos: { ordem: 7 } }
+  - { de: rota-rapida, tipo: PASSA_POR, para: parada-pagamento, atributos: { ordem: 8 } }
+  - { de: rota-rapida, tipo: PASSA_POR, para: parada-emissao, atributos: { ordem: 9 } }
+  - [rota-rapida, USA, api-cotacao-ancora]
+  - [rota-rapida, USA, api-emissao-ancora]
+
+  # Rota econômica: paradas 1 a 9, cotação com as três
+  - { de: rota-economica, tipo: PASSA_POR, para: parada-intencao, atributos: { ordem: 1 } }
+  - { de: rota-economica, tipo: PASSA_POR, para: parada-identificacao, atributos: { ordem: 2 } }
+  - { de: rota-economica, tipo: PASSA_POR, para: parada-consentimento, atributos: { ordem: 3 } }
+  - { de: rota-economica, tipo: PASSA_POR, para: parada-elegibilidade, atributos: { ordem: 4 } }
+  - { de: rota-economica, tipo: PASSA_POR, para: parada-adequacao, atributos: { ordem: 5 } }
+  - { de: rota-economica, tipo: PASSA_POR, para: parada-cotacao, atributos: { ordem: 6 } }
+  - { de: rota-economica, tipo: PASSA_POR, para: parada-proposta, atributos: { ordem: 7 } }
+  - { de: rota-economica, tipo: PASSA_POR, para: parada-pagamento, atributos: { ordem: 8 } }
+  - { de: rota-economica, tipo: PASSA_POR, para: parada-emissao, atributos: { ordem: 9 } }
+  - [rota-economica, USA, api-cotacao-ancora]
+  - [rota-economica, USA, api-cotacao-farol]
+  - [rota-economica, USA, api-cotacao-horizonte]
+  - [rota-economica, USA, api-emissao-horizonte]
+
+  # Rota assistida: pedágio do especialista antes do pagamento e da emissão
+  - { de: rota-assistida, tipo: PASSA_POR, para: parada-intencao, atributos: { ordem: 1 } }
+  - { de: rota-assistida, tipo: PASSA_POR, para: parada-identificacao, atributos: { ordem: 2 } }
+  - { de: rota-assistida, tipo: PASSA_POR, para: parada-consentimento, atributos: { ordem: 3 } }
+  - { de: rota-assistida, tipo: PASSA_POR, para: parada-elegibilidade, atributos: { ordem: 4 } }
+  - { de: rota-assistida, tipo: PASSA_POR, para: parada-adequacao, atributos: { ordem: 5 } }
+  - { de: rota-assistida, tipo: PASSA_POR, para: parada-cotacao, atributos: { ordem: 6 } }
+  - { de: rota-assistida, tipo: PASSA_POR, para: parada-proposta, atributos: { ordem: 7 } }
+  - { de: rota-assistida, tipo: PASSA_POR, para: parada-aprovacao-humana, atributos: { ordem: 8 } }
+  - { de: rota-assistida, tipo: PASSA_POR, para: parada-pagamento, atributos: { ordem: 9 } }
+  - { de: rota-assistida, tipo: PASSA_POR, para: parada-emissao, atributos: { ordem: 10 } }
+  - [rota-assistida, USA, api-cotacao-farol]
+  - [rota-assistida, USA, api-emissao-farol]
