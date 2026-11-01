@@ -1,0 +1,112 @@
+// IBM Plex é servida localmente pelo @fontsource (a demo precisa funcionar sem rede).
+@use '@carbon/react/scss/config' with (
+  $css--font-face: false
+);
+@use '@carbon/react/scss/themes';
+@use '@carbon/react/scss/theme' with (
+  $theme: themes.$g100
+);
+@use '@carbon/react';
+@use '@carbon/react/scss/spacing' as *;
+@use '@carbon/react/scss/type' as *;
+
+$laranja-bussola: #f26522;
+
+:root {
+  @include theme.theme();
+}
+
+body {
+  background: theme.$background;
+  color: theme.$text-primary;
+}
+
+.marca {
+  display: flex;
+  align-items: center;
+  gap: $spacing-03;
+
+  &__simbolo {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  &__nome {
+    color: $laranja-bussola;
+  }
+}
+
+.pagina {
+  padding-block: calc(3rem + #{$spacing-07}) $spacing-09;
+}
+
+.status {
+  // Alinha títulos com os tiles (margem do Grid do Carbon).
+  &__cabecalho,
+  &__grupo,
+  .cds--inline-notification {
+    margin-inline: $spacing-05;
+  }
+
+  &__cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: $spacing-05;
+    margin-block-end: $spacing-07;
+  }
+
+  &__titulo {
+    @include type-style('heading-05');
+  }
+
+  &__descricao {
+    @include type-style('body-02');
+    color: theme.$text-secondary;
+    max-inline-size: 48rem;
+    margin-block-start: $spacing-03;
+  }
+
+  &__grupo {
+    @include type-style('heading-02');
+    margin-block: $spacing-07 $spacing-05;
+  }
+
+  &__acoes {
+    display: flex;
+    align-items: center;
+    gap: $spacing-05;
+    color: theme.$text-secondary;
+    @include type-style('helper-text-01');
+  }
+}
+
+.tile-servico {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-03;
+  min-block-size: 8rem;
+  margin-block-end: $spacing-05;
+
+  &__nome {
+    @include type-style('heading-03');
+  }
+
+  &__tecnico {
+    @include type-style('code-01');
+    color: theme.$text-secondary;
+  }
+
+  &__rodape {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-block-start: auto;
+  }
+
+  &__latencia {
+    @include type-style('code-01');
+    color: theme.$text-helper;
+  }
+}

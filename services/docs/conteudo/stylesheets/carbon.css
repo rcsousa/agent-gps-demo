@@ -1,0 +1,67 @@
+/* Tema Carbon para o MkDocs Material: cinzas neutros do Carbon na moldura,
+   Laranja-Bússola como destaque. g100 no telão (slate), g10 na impressão (default). */
+
+:root {
+  --bussola-laranja: #f26522;
+  --md-text-font: "IBM Plex Sans";
+  --md-code-font: "IBM Plex Mono";
+}
+
+[data-md-color-scheme="slate"] {
+  --md-hue: 0;
+  --md-default-bg-color: #161616;          /* Carbon g100 background */
+  --md-default-fg-color: #f4f4f4;          /* text-primary */
+  --md-default-fg-color--light: #c6c6c6;   /* text-secondary */
+  --md-default-fg-color--lighter: #8d8d8d;
+  --md-default-fg-color--lightest: #393939;
+  --md-primary-fg-color: #262626;          /* layer-01 */
+  --md-primary-bg-color: #f4f4f4;
+  --md-accent-fg-color: var(--bussola-laranja);
+  --md-typeset-a-color: #78a9ff;           /* link-primary (g100) */
+  --md-code-bg-color: #262626;
+  --md-footer-bg-color: #262626;
+  --md-footer-bg-color--dark: #161616;
+}
+
+[data-md-color-scheme="default"] {
+  --md-default-bg-color: #f4f4f4;          /* Carbon g10 background */
+  --md-default-fg-color: #161616;
+  --md-primary-fg-color: #161616;
+  --md-primary-bg-color: #f4f4f4;
+  --md-accent-fg-color: var(--bussola-laranja);
+  --md-typeset-a-color: #0f62fe;           /* link-primary (g10) */
+  --md-code-bg-color: #ffffff;
+}
+
+/* Carbon é retangular: sem cantos arredondados. */
+.md-typeset code,
+.md-typeset pre > code,
+.md-typeset .admonition,
+.md-typeset details,
+.md-search__form {
+  border-radius: 0;
+}
+
+.md-header__title,
+.md-typeset h1,
+.md-typeset h2 {
+  font-weight: 600;
+}
+
+.md-typeset h1 {
+  color: var(--md-default-fg-color);
+}
+
+/* Resumo executivo (admonition "abstract") com o laranja da marca. */
+.md-typeset .admonition.abstract,
+.md-typeset details.abstract {
+  border-color: var(--bussola-laranja);
+}
+.md-typeset .abstract > .admonition-title,
+.md-typeset .abstract > summary {
+  background-color: rgb(242 101 34 / 12%);
+}
+.md-typeset .abstract > .admonition-title::before,
+.md-typeset .abstract > summary::before {
+  background-color: var(--bussola-laranja);
+}

@@ -1,0 +1,196 @@
+# Demo GPS de Contexto — Banco Bússola
+# Sobe tudo com: docker compose up -d --build
+# Fluxo: web ↔ agent → mcp-gateway → servidores MCP → graph
+
+name: bussola
+
+x-python-servico: &python-servico
+  restart: unless-stopped
+  networks: [bussola]
+  environment: &python-env
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+  healthcheck: &python-saude
+    test: ["CMD", "python", "-m", "bussola_comum.healthcheck", "http://localhost:8000/saude"]
+    interval: 5s
+    timeout: 4s
+    retries: 12
+    start_period: 10s
+
+x-build-python: &build-python
+  context: .
+  dockerfile: docker/python-service.Dockerfile
+
+services:
+  # ---------------------------------------------------------------- front
+  web:
+    build: ./services/web
+    restart: unless-stopped
+    networks: [bussola]
+    ports: ["${WEB_PORT:-8080}:80"]
+    depends_on:
+      agent: { condition: service_healthy }
+      docs: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  docs:
+    build:
+      context: .
+      dockerfile: services/docs/Dockerfile
+    restart: unless-stopped
+    networks: [bussola]
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # ---------------------------------------------------------------- agente
+  agent:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: agent, MODULE: agent } }
+    environment:
+      <<: *python-env
+      # O agente conhece só o gateway e o barramento.
+      GATEWAY_URL: http://mcp-gateway:8000
+      GATEWAY_TOKEN: ${GATEWAY_TOKEN}
+      BUS_URL: redis://bus:6379/0
+      LLM_PROVIDER: ${LLM_PROVIDER:-anthropic}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      AZURE_OPENAI_ENDPOINT: ${AZURE_OPENAI_ENDPOINT:-}
+      AZURE_OPENAI_API_KEY: ${AZURE_OPENAI_API_KEY:-}
+      AZURE_OPENAI_DEPLOYMENT: ${AZURE_OPENAI_DEPLOYMENT:-}
+      AZURE_OPENAI_API_VERSION: ${AZURE_OPENAI_API_VERSION:-}
+      DEMO_MODO: ${DEMO_MODO:-ao_vivo}
+    depends_on:
+      mcp-gateway: { condition: service_healthy }
+      bus: { condition: service_healthy }
+
+  # ---------------------------------------------------------------- gateway
+  mcp-gateway:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: mcp-gateway, MODULE: mcp_gateway } }
+    environment:
+      <<: *python-env
+      GATEWAY_TOKEN: ${GATEWAY_TOKEN}
+      BUS_URL: redis://bus:6379/0
+    depends_on:
+      bus: { condition: service_healthy }
+      skills-mcp: { condition: service_healthy }
+      contexto-mcp: { condition: service_healthy }
+      cliente-mcp: { condition: service_healthy }
+      consentimento-mcp: { condition: service_healthy }
+      risco-mcp: { condition: service_healthy }
+      seguradoras-mcp: { condition: service_healthy }
+      pagamentos-mcp: { condition: service_healthy }
+      atendimento-mcp: { condition: service_healthy }
+
+  # ---------------------------------------------------------------- servidores MCP
+  skills-mcp:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: skills-mcp, MODULE: skills_mcp } }
+
+  contexto-mcp:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: contexto-mcp, MODULE: contexto_mcp } }
+    environment:
+      <<: *python-env
+      NEO4J_URI: bolt://graph:7687
+      NEO4J_USER: ${NEO4J_USER:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+    depends_on:
+      graph: { condition: service_healthy }
+
+  cliente-mcp:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: cliente-mcp, MODULE: cliente_mcp } }
+
+  consentimento-mcp:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: consentimento-mcp, MODULE: consentimento_mcp } }
+
+  risco-mcp:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: risco-mcp, MODULE: risco_mcp } }
+
+  seguradoras-mcp:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: seguradoras-mcp, MODULE: seguradoras_mcp } }
+
+  pagamentos-mcp:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: pagamentos-mcp, MODULE: pagamentos_mcp } }
+
+  atendimento-mcp:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: atendimento-mcp, MODULE: atendimento_mcp } }
+
+  # ---------------------------------------------------------------- mundo simulado
+  simulator:
+    <<: *python-servico
+    build: { <<: *build-python, args: { SERVICE: simulator, MODULE: simulator } }
+    environment:
+      <<: *python-env
+      BUS_URL: redis://bus:6379/0
+    depends_on:
+      bus: { condition: service_healthy }
+      graph: { condition: service_healthy }
+
+  # ---------------------------------------------------------------- infraestrutura
+  graph:
+    image: neo4j:5-community
+    restart: unless-stopped
+    networks: [bussola]
+    ports:
+      - "${NEO4J_BROWSER_PORT:-7474}:7474"
+      - "${NEO4J_BOLT_PORT:-7687}:7687"
+    environment:
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD}
+      NEO4J_server_memory_heap_max__size: 512m
+      NEO4J_server_memory_pagecache_size: 256m
+    volumes:
+      - graph-dados:/data
+    healthcheck:
+      test: ["CMD-SHELL", "cypher-shell -u '${NEO4J_USER:-neo4j}' -p '${NEO4J_PASSWORD}' 'RETURN 1' > /dev/null"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 15s
+
+  # Barramento de eventos (Redis Streams): route.planned, tool.called, ...
+  bus:
+    image: redis:7-alpine
+    restart: unless-stopped
+    networks: [bussola]
+    command: ["redis-server", "--appendonly", "yes"]
+    volumes:
+      - bus-dados:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+
+  # ---------------------------------------------------------------- testes
+  # docker compose --profile test run --rm smoke
+  smoke:
+    profiles: [test]
+    build: { <<: *build-python, args: { SERVICE: smoke, MODULE: smoke } }
+    networks: [bussola]
+    environment:
+      GATEWAY_TOKEN: ${GATEWAY_TOKEN}
+    command: ["pytest", "-v"]
+    depends_on:
+      web: { condition: service_healthy }
+      simulator: { condition: service_healthy }
+
+networks:
+  bussola:
+
+volumes:
+  graph-dados:
+  bus-dados:
