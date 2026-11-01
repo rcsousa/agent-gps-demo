@@ -259,6 +259,12 @@ $largura-painel: 40rem;
     padding: $spacing-04 $spacing-06 $spacing-09;
   }
 
+  // Nomes de tools e condições são longos: quebram dentro da célula em vez de esconder colunas.
+  &__aba table code {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   &__aba {
     padding-inline: 0;
     padding-block: $spacing-05;
