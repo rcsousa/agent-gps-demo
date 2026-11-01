@@ -1,0 +1,64 @@
+site_name: Bastidores · GPS de Contexto
+site_description: Como a demo do Banco Bússola funciona por dentro
+site_author: Ricardo Coelho de Sousa
+docs_dir: conteudo
+# Servido em /bastidores/ pelo web; os links do MkDocs são relativos.
+use_directory_urls: true
+
+theme:
+  name: material
+  language: pt-BR
+  favicon: assets/favicon.svg
+  logo: assets/favicon.svg
+  font:
+    text: IBM Plex Sans
+    code: IBM Plex Mono
+  palette:
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-sunny
+        name: Tema claro (impressão)
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/weather-night
+        name: Tema escuro (telão)
+  features:
+    - navigation.sections
+    - navigation.top
+    - navigation.footer
+    - content.code.copy
+    - search.highlight
+
+plugins:
+  - search:
+      lang: pt
+  # Baixa as fontes no build e as serve localmente: a doc funciona sem rede.
+  - privacy
+
+extra_css:
+  - stylesheets/carbon.css
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight
+
+nav:
+  - Início: index.md
+  - 1. O problema: 01-o-problema.md
+  - 2. A camada de contexto: 02-camada-de-contexto.md
+  - 3. Skills como GPS: 03-skills-como-gps.md
+  - 4. Bastidores de cada cena: 04-bastidores-das-cenas.md
+  - 5. Anatomia da jornada de seguro: 05-anatomia-da-jornada.md
+  - 6. Arquitetura: 06-arquitetura.md
+  - 7. Como reproduzir: 07-como-reproduzir.md
+  - 8. Glossário e perguntas frequentes: 08-glossario-e-faq.md
