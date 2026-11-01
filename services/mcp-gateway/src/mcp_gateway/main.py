@@ -88,10 +88,12 @@ def criar_app(
         fora = await estado.tools_fora()
         for servico, upstream in zip(servicos, catalogo.upstreams, strict=True):
             servico["ferramentas"] = catalogo.ferramentas_de(upstream, fora)
+            servico["prompts"] = catalogo.prompts_de(upstream)
         return JSONResponse(
             {
                 "servicos": list(servicos),
                 "ferramentas": len(catalogo.tools),
+                "prompts": len(catalogo.prompts),
                 "ferramentas_fora": len(fora & set(catalogo.tools)),
                 "skills": len(catalogo.skills),
             }

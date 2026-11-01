@@ -29,6 +29,7 @@ class PedidoExecucao(BaseModel):
     modo: str
     provedor: str | None = None
     pedido: str | None = None
+    canal: str | None = None
 
 
 class RespostaCliente(BaseModel):
@@ -60,7 +61,7 @@ def criar_app(
     @app.get("/api/status")
     async def status() -> dict:
         """Estado da plataforma visto pelo agente: só pelo gateway."""
-        gateway, servicos, ferramentas, ferramentas_fora, skills = "fora", [], 0, 0, 0
+        gateway, servicos, ferramentas, ferramentas_fora, skills, prompts = "fora", [], 0, 0, 0, 0
         try:
             async with httpx.AsyncClient(timeout=4) as cliente:
                 resposta = await cliente.get(
@@ -71,7 +72,7 @@ def criar_app(
                 corpo = resposta.json()
                 gateway, servicos = "ok", corpo["servicos"]
                 ferramentas, ferramentas_fora = corpo.get("ferramentas", 0), corpo.get("ferramentas_fora", 0)
-                skills = corpo.get("skills", 0)
+                skills, prompts = corpo.get("skills", 0), corpo.get("prompts", 0)
         except httpx.HTTPError:
             pass
 
@@ -88,6 +89,7 @@ def criar_app(
             "ferramentas": ferramentas,
             "ferramentas_fora": ferramentas_fora,
             "skills": skills,
+            "prompts": prompts,
         }
 
     # --- Execuções ------------------------------------------------------------------
@@ -100,8 +102,22 @@ def criar_app(
             raise HTTPException(
                 400, f"Provedor desconhecido: {pedido.provedor}. Use um de: {', '.join(PROVEDORES)}."
             )
-        execucao = await motor.iniciar(pedido.modo, pedido.provedor, pedido.pedido)
-        return {"id": execucao.id, "modo": execucao.modo, "provedor": execucao.provedor}
+        if pedido.canal:
+            try:
+                canais = await motor.canais()
+            except Exception:  # noqa: BLE001
+                canais = None  # Gateway sem resposta: a execução segue com a persona embutida.
+            if canais is not None and pedido.canal not in canais:
+                raise HTTPException(
+                    400, f"Canal desconhecido: {pedido.canal}. Use um de: {', '.join(canais)}."
+                )
+        execucao = await motor.iniciar(pedido.modo, pedido.provedor, pedido.pedido, pedido.canal)
+        return {
+            "id": execucao.id,
+            "modo": execucao.modo,
+            "canal": execucao.canal,
+            "provedor": execucao.provedor,
+        }
 
     @app.get("/api/execucoes")
     async def listar() -> list[dict]:

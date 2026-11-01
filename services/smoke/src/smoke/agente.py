@@ -1,7 +1,7 @@
 """Dirige o agente pela API do web e acompanha os eventos ao vivo (SSE).
 
 Uso (pelo script):
-  ./scripts/agente.sh executar --modo com_skill [--provedor roteiro] [--auto]
+  ./scripts/agente.sh executar --modo com_skill [--canal app|agencia|central] [--provedor roteiro] [--auto]
   ./scripts/agente.sh responder <id> "Sim, é esse apartamento"
   ./scripts/agente.sh responder <id> --sugestao 1
   ./scripts/agente.sh estado <id>
@@ -20,7 +20,11 @@ API = "http://web/api"
 def _linha(evento: dict) -> str:
     tipo, d = evento["tipo"], evento["dados"]
     if tipo == "run.started":
-        return f"▶ início · modo {d['modo']} · provedor {d['provedor']} ({d['modelo']})"
+        return f"▶ início · modo {d['modo']} · canal {d['canal']} · provedor {d['provedor']} ({d['modelo']})"
+    if tipo == "prompt.loaded":
+        if d["origem"] == "gateway":
+            return f"◆ persona do canal: {d['nome']} (pelo gateway)"
+        return f"◆ persona embutida · {d.get('motivo', '')}"
     if tipo == "skill.loaded":
         return f"◆ skill carregada: {d['nome']} ({len(d['tools_permitidas'])} tools permitidas)"
     if tipo == "route.planned":
@@ -39,9 +43,9 @@ def _linha(evento: dict) -> str:
         return f"  ✋ pedágio: especialista acionado (ticket {d['ticket_id']})"
     if tipo == "client.asked":
         opcoes = "".join(f"\n      [{i}] {o}" for i, o in enumerate(d["opcoes"], 1))
-        return f"  ? pergunta para a Ana: {d['pergunta']}{opcoes}"
+        return f"  ? pergunta: {d['pergunta']}{opcoes}"
     if tipo == "client.answered":
-        return f"  ↳ Ana: {d['texto']}"
+        return f"  ↳ resposta: {d['texto']}"
     if tipo == "agent.message":
         return f"  💬 agente: {d['texto']}"
     if tipo == "run.finished":
@@ -87,6 +91,8 @@ def main() -> int:
     comando = args[0]
     if comando == "executar":
         corpo = {"modo": args[args.index("--modo") + 1] if "--modo" in args else "com_skill"}
+        if "--canal" in args:
+            corpo["canal"] = args[args.index("--canal") + 1]
         if "--provedor" in args:
             corpo["provedor"] = args[args.index("--provedor") + 1]
         resposta = httpx.post(f"{API}/execucoes", json=corpo, timeout=10)

@@ -233,6 +233,7 @@ Tudo roda em Docker e sobe com um único `docker compose up`. Todo o backend é 
 | `seguradoras-mcp` | Três seguradoras fictícias: cotação e emissão | `seguradoras.*` | Python, SDK MCP |
 | `pagamentos-mcp` | Débito em conta e cartão | `pagamentos.*` | Python, SDK MCP |
 | `atendimento-mcp` | Fila de especialistas humanos (o pedágio) | `atendimento.*` | Python, SDK MCP |
+| `canais-mcp` | Canais de atendimento: a persona do agente em cada canal | Prompts `canais.atendimento_*` (`prompts/list`, `prompts/get`) | Python, SDK MCP |
 | `graph` | Ontologia, instâncias e estado vivo | — (só o `contexto-mcp` acessa) | Neo4j |
 | `seed` | Recarrega o grafo com o estado-base da ontologia a cada subida e termina | — | Python (mesma imagem do `contexto-mcp`) |
 | `bus` | Barramento de eventos e estado vivo dos sistemas simulados | — | Redis (Streams) |
@@ -253,12 +254,17 @@ Decisões de arquitetura:
   - Modelo padrão da Anthropic: Claude Opus 5.5 (`claude-opus-5-5`), trocável por `ANTHROPIC_MODEL`. Os *fallbacks* do lado do servidor ficam ligados por padrão (`ANTHROPIC_FALLBACKS`).
   - Um terceiro provedor, `roteiro`, faz um ensaio determinístico sem LLM, pelas mesmas tools e pelo mesmo gateway. Serve para ensaiar sem chave e para os testes ponta a ponta, e aparece como "roteiro" nos eventos.
 - **A Ana é respondida pelo apresentador.** Quando o agente pergunta algo à cliente, a execução pausa até o apresentador responder. A pergunta traz opções sugeridas, para a resposta sair em um clique.
+- **O prompt do agente tem três camadas, cada uma no seu lugar:**
+  - a **persona do canal** (quem é o agente, com quem fala, o tom) vem do banco, como prompt MCP do `canais-mcp`, pelo gateway. Cada execução escolhe um canal da ontologia: app, agência ou central;
+  - as **instruções do host** (como usar as ferramentas que só o agente tem) ficam no código do agente;
+  - o **workflow do negócio** fica nas skills.
+  - O modo sem contexto usa uma persona mínima embutida, porque não consulta o banco. Se a persona do canal não vier, a execução segue com a embutida e o evento avisa.
 - **Toda chamada é correlacionada à execução.** O agente envia `_meta["bussola/execucao"]`, e o gateway repete o id na proveniência e no `tool.called`.
 - **O simulador fica fora do alcance do agente.** Incidentes acontecem no mundo, e o agente só os percebe pelas respostas das tools e pelo estado no grafo.
 - **Um barramento de eventos** alimenta os dois modos visuais. Todo evento traz o `execucao_id`:
   - do mapa: `route.planned`, `step.started`, `incident.detected`, `route.recalculated`, `human.required`;
-  - da execução: `run.started` e `run.finished` (com as métricas do placar), `skill.loaded`, `client.asked`, `client.answered` e `agent.message`;
-  - do gateway: `tool.called`, `skills.listed` e `resource.read`.
+  - da execução: `run.started` (sempre o primeiro) e `run.finished` (com as métricas do placar), `prompt.loaded`, `skill.loaded`, `client.asked`, `client.answered` e `agent.message`;
+  - do gateway: `tool.called`, `prompt.read`, `skills.listed` e `resource.read`.
 - **Replay offline** de execuções reais, para apresentar sem rede ou sem chave de API.
 - **Segredos** em `.env` (com `.env.example` versionado), nunca no código.
 - **Barramento em Redis Streams.** O serviço `bus` guarda os eventos em ordem (stream `bussola:eventos`), o que sustenta o replay e o Raio-X.
@@ -361,6 +367,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 3. **Gateway e servidores de domínio:** `mcp-gateway` agregando tools e skills, os seis servidores MCP de domínio e o `simulator`.
 4. **Skills-workflow:** as 4 skills no `skills-mcp`, com metadados de governança aplicados pelo gateway e testes de descoberta e leitura.
 5. **Agente e eventos:** host MCP falando só com o gateway, dois provedores de LLM, barramento de eventos, modos sem contexto, sem skill e com skill.
+   - **5.1 Prompts por canal:** `canais-mcp` com a persona de cada canal como prompt MCP, agregada pelo gateway.
 6. **Mapa:** Modo Mapa com cidade, rota, trânsito, rotas alternativas e zoom semântico; tela de abertura com o infográfico navegável e as áreas clicáveis.
 7. **Raio-X e apresentador:** Modo Raio-X, painel de incidentes, placar comparativo, replay offline.
 8. **Bastidores:** site de documentação com os 8 capítulos e o botão por cena.
@@ -408,3 +415,4 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] A Ana é respondida pelo apresentador, com opções sugeridas pelo agente
 - [x] Modelo padrão: Claude Opus 5.5 (`claude-opus-5-5`), com *fallbacks* do lado do servidor
 - [x] Provedor `roteiro` para ensaio sem chave e para os testes ponta a ponta
+- [x] Persona do agente por canal de atendimento, como prompt MCP do `canais-mcp`; regras do host no agente; workflow nas skills

@@ -19,10 +19,11 @@ def _objeto(propriedades: dict, obrigatorias: list[str]) -> dict:
 
 PERGUNTAR_CLIENTE = DefinicaoTool(
     "conversa.perguntar_cliente",
-    "Pergunta algo à cliente pelo app e espera a resposta. Ofereça opções curtas quando fizer sentido.",
+    "Pergunta algo a quem você atende (a cliente ou o atendente do canal) e espera a resposta. "
+    "Ofereça opções curtas quando fizer sentido.",
     _objeto(
         {
-            "pergunta": {"type": "string", "description": "A pergunta, em português, para a cliente."},
+            "pergunta": {"type": "string", "description": "A pergunta, em português, para quem você atende."},
             "opcoes": {"type": "array", "items": {"type": "string"}, "description": "Respostas sugeridas."},
         },
         ["pergunta"],
