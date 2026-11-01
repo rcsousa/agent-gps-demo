@@ -50,7 +50,9 @@ O esquema diz quais ruas existem e entre quais tipos de lugar. Uma relação for
 
 ### Estado vivo: o trânsito
 
-As APIs das seguradoras têm status, latência e custo. É isso que o simulador altera a partir da Fase 3, e é daí que saem as estimativas de rota.
+As APIs das seguradoras têm status, latência e custo, e é daí que saem as estimativas de rota.
+
+O trânsito muda de verdade. Quando o apresentador derruba a API de cotação da Âncora, o simulador grava `status: fora` nessa entidade, no grafo e nos sistemas ao mesmo tempo. Na pergunta seguinte, `consultar_rota` devolve a rota rápida **bloqueada**, com o alerta "trecho interditado", e a cotação da Âncora falha. Nada é roteirizado na tela: o mapa só reflete o estado.
 
 ```yaml
 --8<-- "instancias/parceiros.yaml:apis"
