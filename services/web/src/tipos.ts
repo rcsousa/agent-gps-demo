@@ -79,6 +79,8 @@ export interface SkillDoCatalogo {
   tools_com_reuso: string[];
   usa_skills: string[];
   arquivos: ArquivoDeSkill[];
+  // Ordem garantida pelo gateway (workflow.yaml): o que cada tool exige antes.
+  ordem: { tool: string; exige: string[]; impedida_por: string[] }[];
 }
 
 export interface PromptDoCatalogo {

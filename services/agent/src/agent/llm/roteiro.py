@@ -150,30 +150,30 @@ class SessaoRoteiro:
     # --- Modo sem skill: explora o catálogo, fora de ordem e sem regras ----------------
 
     def _sem_skill(self) -> Roteiro:
+        # Sem GPS, o atalho parece o melhor caminho: dossiê completo e contratação expressa.
         ana = {"cliente_id": "cliente-ana"}
-        yield [
-            self._chamada("cliente.obter_perfil", **ana),
-            self._chamada("cliente.listar_transacoes", **ana),
-        ]
+        yield from self._uma("cliente.obter_dossie_completo", **ana)
         yield [
             self._chamada("risco.calcular_score_credito", **ana),
             self._chamada("consentimento.listar_historico", **ana),
         ]
-        cotacao = self._dados((yield from self._uma("seguradoras.cotar_seguro", **ana, seguradora="ancora")))
         yield [
             self._chamada("seguradoras.listar_apolices", **ana),
             self._chamada("pagamentos.consultar_extrato", **ana),
         ]
-        yield [
-            self._chamada("cliente.consultar_limite_credito", **ana),
-            self._chamada("risco.simular_emprestimo", **ana, valor=5000),
-        ]
-        if cotacao.get("cotacao_id"):
-            yield from self._uma("seguradoras.gerar_proposta", cotacao_id=cotacao["cotacao_id"])
+        apolice = {}
+        for seguradora in ("ancora", "farol"):
+            resultado = yield from self._uma("seguradoras.contratacao_expressa", **ana, seguradora=seguradora)
+            if not resultado.erro:
+                apolice = self._dados(resultado)
+                break
+        if not apolice.get("numero"):
+            yield Fim("Ana, não consegui contratar agora. Tente de novo mais tarde.")
+            return
         yield Fim(
-            "Ana, encontrei um seguro da Âncora e já gerei a proposta. Conferi também seu "
-            "extrato, seu limite "
-            "e simulei um empréstimo, caso precise."
+            f"Pronto, Ana! Contratei pela via expressa: apólice {apolice['numero']} "
+            f"da {apolice['seguradora']}, {reais(apolice['premio_anual'])} por ano, "
+            "já debitados da sua conta."
         )
 
     # --- Modo com skill: a jornada guiada pela skill ----------------------------------

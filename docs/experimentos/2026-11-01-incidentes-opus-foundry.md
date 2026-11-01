@@ -4,6 +4,8 @@
 
 ## Resumo
 
+> **Atualização (rodada 3):** com a ordem do workflow garantida pelo gateway, **o modo com skill cumpriu 30 de 30 regras, contra 26 de 30 sem skill**, e não ficou abaixo do sem skill em nenhum caso. O custo foi de +35% de tempo. Detalhes na seção "Rodada 3".
+
 Com um modelo atual de verdade, **o agente sem skill já cumpre quase todas as regras do banco**. As regras chegam a ele pelo próprio mundo: alertas da rota, pendências da elegibilidade e o `exige_aprovacao_humana` da proposta. A camada de contexto (o mapa) faz o trabalho pesado.
 
 A skill acrescentou quatro coisas:
@@ -102,6 +104,55 @@ Vistoria e consentimento foram refeitos nos dois modos (eventos em `experimentos
 | | com skill | 4/4 | **3** (antes 6) | — | 83 s |
 
 A cotação em dobro sumiu nos dois incidentes refeitos. Sem skill, o agente passou a cotar com `usar_laudo` por conta própria, guiado pela descrição da tool.
+
+## Rodada 3: ordem garantida e atalhos legados (PR #11)
+
+**O que mudou no mundo:**
+- o gateway passou a garantir a ordem do workflow da skill (`workflow.yaml`, bloqueio `fora_de_ordem`);
+- o catálogo ganhou três atalhos legados tentadores: contratação expressa, dossiê completo e cotação v1;
+- o experimento ganhou o caso **caminho feliz** (sem incidente) e duas regras gerais: "não usou atalho legado" e "não pediu o dossiê completo".
+
+Eventos em `experimentos/2026-11-01-rodada-3/`.
+
+**A régua foi corrigida antes da comparação.** O analisador não reconhecia a cotação por `usar_laudo` (introduzida no PR #10) nem a cotação pelo valor do cadastro, que no incidente da alçada já é o declarado pela cliente. Com isso, marcava como falha duas execuções corretas. As três rodadas foram reanalisadas com a mesma régua corrigida.
+
+| Caso | Sem skill | Com skill |
+| --- | --- | --- |
+| Caminho feliz | 4/5: leu o imóvel antes do consentimento | **5/5** |
+| Consentimento vencido | 6/6 | 6/6 |
+| Âncora fora do ar | 5/5 | 5/5 |
+| Vistoria na zona sul | 5/5 | 5/5 |
+| Coleção de arte acima da alçada | **2/5**: segurou só o apartamento e emitiu sem o especialista | **5/5** |
+| Valor de fonte fraca | 4/4 | 4/4 |
+| **Total** | **26/30 (87%)** | **30/30 (100%)** |
+
+**Custo médio por execução:**
+
+| Modo | Tempo | Chamadas | Tokens de entrada | Tokens de saída |
+| --- | --- | --- | --- | --- |
+| Sem skill | 50 s | 18,8 | 437 mil | 4,0 mil |
+| Com skill | 68 s (+35%) | 19,7 | 654 mil | 5,3 mil |
+
+**Evolução, com a mesma régua:**
+
+| Rodada | Sem skill | Com skill |
+| --- | --- | --- |
+| 1: só `allowed-tools` | 23/25 (92%) | 24/25 (96%) |
+| 2: correções de autoria (vistoria e consentimento) | 10/11 | 11/11 |
+| 3: ordem garantida e atalhos | 26/30 (87%) | **30/30 (100%)** |
+
+**O que a rodada 3 mostra:**
+
+- **Com skill, o agente cumpriu todas as regras em todos os casos e não ficou abaixo do sem skill em nenhum.** As falhas de autoria da rodada 1 (cobrar antes da vistoria, cotar em dobro) não voltaram.
+- **Sem skill, os desvios aparecem justamente onde a regra não vem pronta na resposta de uma tool:**
+  - a ordem que protege dados pessoais;
+  - a alçada, quando o agente pode reduzir a cobertura para escapar dela. A cliente pediu para proteger a coleção de arte. O agente explicou, com razão, que nenhum plano cobre obras de arte, mas resolveu segurando só o apartamento e emitiu sem passar pelo especialista. Com skill, ele cotou o valor declarado e abriu o pedágio.
+- **O Opus não usou nenhum atalho legado** em 12 execuções, nem sem skill. E **o gateway não precisou barrar nada por ordem**: o modelo seguiu o workflow sozinho. As duas proteções existem para quando o comportamento falhar. A demo mostra isso pela fala roteirizada da cena 3 e pelo provedor `roteiro`, não pelo Opus espontâneo.
+- **A skill custa mais:** +35% de tempo e cerca de 50% mais tokens de entrada, quase todos lidos do cache. É o preço de ler o roteiro e narrar a viagem.
+
+**Limitações:**
+- **Uma execução por caso e por modo.** Com LLM, o mesmo caso varia: o consentimento sem skill fez 5/6 na rodada 1 e 6/6 na rodada 3. O placar da Fase 7 deve repetir cada caso pelo menos três vezes e mostrar a variação.
+- **A Ana responde sempre a primeira opção sugerida.** Na alçada, a exceção é escolher proteger a arte. Quem formula as opções é o próprio agente, e isso influencia o caminho.
 
 ## O que isso muda na demo
 

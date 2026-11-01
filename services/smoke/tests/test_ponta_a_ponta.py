@@ -14,7 +14,13 @@ import pytest
 from redis import Redis
 
 from bussola_comum.cliente_mcp import conectar
-from bussola_comum.skills import CHAVE_SKILL_ATIVA, ler_arquivo, listar_skills, tools_permitidas
+from bussola_comum.skills import (
+    CHAVE_EXECUCAO,
+    CHAVE_SKILL_ATIVA,
+    ler_arquivo,
+    listar_skills,
+    tools_permitidas,
+)
 
 SERVICOS_PYTHON = [
     "agent",
@@ -90,7 +96,7 @@ def test_status_pelo_caminho_web_agent_gateway():
     assert corpo["barramento"] == "ok"
     assert sorted(s["nome"] for s in corpo["servicos"]) == sorted(SERVIDORES_MCP)
     assert all(s["status"] == "ok" for s in corpo["servicos"])
-    assert corpo["ferramentas"] == 38
+    assert corpo["ferramentas"] == 41
     assert corpo["prompts"] == 3
 
 
@@ -135,9 +141,9 @@ def mundo_limpo():
     simulador("POST", "/reset")
 
 
-def test_gateway_agrega_38_tools_qualificadas():
+def test_gateway_agrega_41_tools_qualificadas():
     nomes = {t.name for t in gateway("--listar").tools}
-    assert len(nomes) == 38
+    assert len(nomes) == 41
     assert all("." in n for n in nomes)
     assert {"cliente.obter_perfil", "seguradoras.cotar_seguro", "contexto.consultar_rota"} <= nomes
     assert not any(n.endswith(".ping") for n in nomes)
@@ -296,7 +302,8 @@ def test_toda_tool_permitida_existe_no_gateway():
 
 def test_contramao_com_skill_ativa():
     async def chamar(cliente):
-        meta = {CHAVE_SKILL_ATIVA: PRINCIPAL}
+        # A skill tem ordem garantida: toda chamada com ela precisa da execução.
+        meta = {CHAVE_SKILL_ATIVA: PRINCIPAL, CHAVE_EXECUCAO: f"smoke-{time.time_ns()}"}
         permitida = await cliente.call_tool("cliente.obter_perfil", {"cliente_id": "cliente-ana"}, meta=meta)
         bloqueada = await cliente.call_tool("pagamentos.estornar", {"pagamento_id": "x"}, meta=meta)
         sem_skill = await cliente.call_tool("pagamentos.estornar", {"pagamento_id": "x"})
@@ -374,11 +381,12 @@ def test_com_skill_recalcula_quando_a_ancora_cai(mundo_limpo):
     assert fim["status"] == "concluida" and not fim["apolice"].startswith("ANC-")
 
 
-def test_sem_skill_chama_tools_irrelevantes(mundo_limpo):
+def test_sem_skill_contrata_pelo_atalho_legado(mundo_limpo):
     _, eventos = _executar("sem_skill")
     fim = _do_tipo(eventos, "run.finished")[0]
-    assert len(fim["metricas"]["tools_irrelevantes"]) >= 5
-    assert fim["apolice"] is None
+    irrelevantes = fim["metricas"]["tools_irrelevantes"]
+    assert {"cliente.obter_dossie_completo", "seguradoras.contratacao_expressa"} <= set(irrelevantes)
+    assert fim["apolice"].startswith("EXP-")  # emitida sem consentimento, adequação nem aceite
 
 
 def test_sem_contexto_nao_chama_tools(mundo_limpo):
@@ -444,7 +452,7 @@ def test_canal_desconhecido_e_recusado():
 
 def test_catalogo_traz_tools_skills_e_prompts_cruzados():
     catalogo = httpx.get(f"{API_AGENTE}/catalogo", timeout=15).json()
-    assert (len(catalogo["tools"]), len(catalogo["skills"]), len(catalogo["prompts"])) == (38, 4, 3)
+    assert (len(catalogo["tools"]), len(catalogo["skills"]), len(catalogo["prompts"])) == (41, 4, 3)
     tools = {t["nome"]: t for t in catalogo["tools"]}
     assert {s["nome"] for s in tools["seguradoras.cotar_seguro"]["skills"]} == {
         "contratacao-seguro-residencial",
@@ -482,3 +490,41 @@ def test_chamadas_recentes_aparecem_depois_de_uma_execucao(mundo_limpo):
         f"{API_AGENTE}/catalogo/chamadas", params={"tool": "cliente.obter_perfil"}, timeout=10
     ).json()
     assert chamadas[0]["execucao_id"] == ident and chamadas[0]["status"] == "ok"
+
+
+# --- Fase 5.3: a ordem também é lei e os atalhos legados ----------------------------
+
+
+def _com_skill(tool: str, argumentos: dict, execucao: str):
+    async def chamar():
+        async with conectar(GATEWAY, TOKEN) as cliente:
+            meta = {
+                CHAVE_SKILL_ATIVA: "skill://contratacao-seguro-residencial/SKILL.md",
+                CHAVE_EXECUCAO: execucao,
+            }
+            return await cliente.call_tool(tool, argumentos, meta=meta)
+
+    return asyncio.run(chamar())
+
+
+def test_fora_de_ordem_e_contramao_e_depois_passa(mundo_limpo):
+    ana = {"cliente_id": "cliente-ana"}
+    execucao = f"smoke-{time.time_ns()}"
+    cedo = _com_skill("seguradoras.cotar_seguro", {**ana, "seguradora": "farol"}, execucao)
+    assert cedo.is_error and cedo.meta["bussola/proveniencia"]["motivo"] == "fora_de_ordem"
+    assert "risco.consultar_elegibilidade" in cedo.content[0].text
+    for finalidade in ("finalidade-oferta-personalizada", "finalidade-compartilhamento-seguradoras"):
+        assert not _com_skill("consentimento.verificar", {**ana, "finalidade": finalidade}, execucao).is_error
+    produto = {**ana, "produto_id": "produto-residencial-farol"}
+    assert not _com_skill("risco.consultar_elegibilidade", produto, execucao).is_error
+    assert not _com_skill("seguradoras.cotar_seguro", {**ana, "seguradora": "farol"}, execucao).is_error
+    # Os fatos são da execução: outra execução começa do zero.
+    outra = _com_skill("seguradoras.cotar_seguro", {**ana, "seguradora": "farol"}, execucao + "-b")
+    assert outra.meta["bussola/proveniencia"]["motivo"] == "fora_de_ordem"
+
+
+def test_atalho_legado_funciona_sem_skill_e_e_bloqueado_com_skill(mundo_limpo):
+    ana = {"cliente_id": "cliente-ana", "seguradora": "farol"}
+    assert dados("seguradoras.contratacao_expressa", ana)["numero"].startswith("EXP-")
+    barrado = _com_skill("seguradoras.contratacao_expressa", ana, f"smoke-{time.time_ns()}")
+    assert barrado.is_error and barrado.meta["bussola/proveniencia"]["motivo"] == "fora_da_skill"

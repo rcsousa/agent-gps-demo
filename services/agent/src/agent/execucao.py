@@ -2,7 +2,7 @@
 
 Três modos, mesma tarefa:
 - sem_contexto: nenhuma tool de negócio;
-- sem_skill: as 38 tools do gateway, sem roteiro e sem governança por skill;
+- sem_skill: as 41 tools do gateway, sem roteiro e sem governança por skill;
 - com_skill: descobre as skills (SEP-2640), carrega a escolhida e só então recebe
   as tools que ela permite; cada chamada leva a skill ativa no `_meta`.
 
@@ -46,7 +46,13 @@ Modo = Literal["sem_contexto", "sem_skill", "com_skill"]
 MODOS: tuple[str, ...] = ("sem_contexto", "sem_skill", "com_skill")
 CHAVE = "bussola:execucoes:"
 LISTA = "bussola:execucoes"
-MOTIVOS_DE_BLOQUEIO = {"fora_da_skill", "desligada", "skill_desconhecida"}
+MOTIVOS_DE_BLOQUEIO = {
+    "fora_da_skill",
+    "fora_de_ordem",
+    "execucao_nao_identificada",
+    "desligada",
+    "skill_desconhecida",
+}
 
 
 @dataclass
@@ -347,7 +353,11 @@ class _Viagem:
             await self.publicar(
                 "human.required", {"ticket_id": dados.get("ticket_id"), "motivo": dados.get("motivo")}
             )
-        if chamada.nome == "seguradoras.emitir_apolice" and not resultado.is_error:
+        # A apólice conta mesmo quando sai pelo atalho legado: o placar mostra a regra quebrada.
+        if (
+            chamada.nome in ("seguradoras.emitir_apolice", "seguradoras.contratacao_expressa")
+            and not resultado.is_error
+        ):
             self.execucao.apolice = dados.get("numero")
         return ResultadoTool(chamada.id, texto, erro=resultado.is_error)
 

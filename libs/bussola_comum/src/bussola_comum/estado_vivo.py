@@ -17,6 +17,8 @@ PREFIXO_ESTADO = "bussola:estado:"
 PREFIXO_DOMINIO = "bussola:dominio:"
 # Tools que o apresentador desligou: o gateway as mantém visíveis, mas barra a chamada.
 CHAVE_TOOLS_FORA = "bussola:tools:fora"
+PREFIXO_FATOS = "bussola:fatos:"
+VALIDADE_FATOS_S = 24 * 3600
 ATRASO_MAXIMO_S = 3.0
 
 
@@ -91,6 +93,19 @@ class EstadoVivo:
 
     async def religar_todas(self) -> None:
         await self.redis.delete(CHAVE_TOOLS_FORA)
+
+    # --- Fatos por execução (a ordem do workflow) ---------------------------------
+
+    async def registrar_fato(self, execucao_id: str, tool: str, resultado: dict[str, Any] | None) -> None:
+        """O que deu certo nesta execução: base dos pré-requisitos do workflow da skill."""
+        chave = PREFIXO_FATOS + execucao_id
+        await self.redis.rpush(
+            chave, json.dumps({"tool": tool, "resultado": resultado or {}}, ensure_ascii=False)
+        )
+        await self.redis.expire(chave, VALIDADE_FATOS_S)
+
+    async def fatos(self, execucao_id: str) -> list[dict[str, Any]]:
+        return [json.loads(f) for f in await self.redis.lrange(PREFIXO_FATOS + execucao_id, 0, -1)]
 
     async def _apagar(self, padrao: str) -> None:
         chaves = [c async for c in self.redis.scan_iter(padrao)]

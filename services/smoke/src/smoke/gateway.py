@@ -3,6 +3,7 @@
 Uso (pelo script):
   ./scripts/gateway.sh cliente.obter_perfil '{"cliente_id": "cliente-ana"}'
   ./scripts/gateway.sh pagamentos.estornar '{"pagamento_id": "x"}' --skill contratacao-seguro-residencial
+  ./scripts/gateway.sh <tool> '{...}' --skill <nome> --execucao <id>   # a ordem vale por execução
   ./scripts/gateway.sh --listar                         # tools
   ./scripts/gateway.sh --skills                         # skills (skills/list)
   ./scripts/gateway.sh --prompts                        # prompts (persona por canal)
@@ -15,9 +16,10 @@ import asyncio
 import json
 import os
 import sys
+import uuid
 
 from bussola_comum.cliente_mcp import conectar
-from bussola_comum.skills import CHAVE_SKILL_ATIVA, ler_arquivo, listar_skills, obter_skill
+from bussola_comum.skills import CHAVE_EXECUCAO, CHAVE_SKILL_ATIVA, ler_arquivo, listar_skills, obter_skill
 
 URL = "http://mcp-gateway:8000/mcp"
 
@@ -26,7 +28,7 @@ def _imprimir(dados) -> None:
     print(json.dumps(dados, ensure_ascii=False, indent=2))
 
 
-async def executar(alvo: str, argumentos: dict, skill: str | None) -> int:
+async def executar(alvo: str, argumentos: dict, skill: str | None, execucao: str | None = None) -> int:
     async with conectar(URL, os.environ["GATEWAY_TOKEN"]) as cliente:
         if alvo == "--listar":
             for tool in (await cliente.list_tools()).tools:
@@ -55,7 +57,7 @@ async def executar(alvo: str, argumentos: dict, skill: str | None) -> int:
             resultado = await cliente.read_resource(alvo)
             _imprimir(json.loads(resultado.contents[0].text))
             return 0
-        meta = {CHAVE_SKILL_ATIVA: f"skill://{skill}/SKILL.md"} if skill else None
+        meta = {CHAVE_SKILL_ATIVA: f"skill://{skill}/SKILL.md", CHAVE_EXECUCAO: execucao} if skill else None
         resultado = await cliente.call_tool(alvo, argumentos, meta=meta)
     if resultado.is_error:
         print(f"Erro da tool: {resultado.content[0].text}", file=sys.stderr)
@@ -78,11 +80,19 @@ async def ler_prompt(nome: str, argumentos: dict) -> int:
 
 def main() -> int:
     args = sys.argv[1:]
-    skill = None
+    skill = execucao = None
     if "--skill" in args:
         i = args.index("--skill")
         skill = args[i + 1]
         del args[i : i + 2]
+    if "--execucao" in args:
+        i = args.index("--execucao")
+        execucao = args[i + 1]
+        del args[i : i + 2]
+    if skill and not execucao:
+        # Com skill, a ordem vale por execução: sem id, cada chamada começa uma execução nova.
+        execucao = f"cli-{uuid.uuid4().hex[:8]}"
+        print(f"[execução {execucao}: repita --execucao {execucao} para seguir na mesma]", file=sys.stderr)
     if not args:
         print(__doc__, file=sys.stderr)
         return 2
@@ -90,7 +100,7 @@ def main() -> int:
         argumentos = json.loads(args[2]) if len(args) > 2 else {}
         return asyncio.run(ler_prompt(args[1], argumentos))
     argumentos = json.loads(args[1]) if len(args) > 1 else {}
-    return asyncio.run(executar(args[0], argumentos, skill))
+    return asyncio.run(executar(args[0], argumentos, skill, execucao))
 
 
 if __name__ == "__main__":

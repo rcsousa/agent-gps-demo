@@ -8,7 +8,8 @@ from dataclasses import dataclass, field
 from mcp import types
 from mcp.client.client import Client
 
-from bussola_comum.skills import anuncia_skills, listar_skills, tools_da_skill
+from bussola_comum import workflow as wf
+from bussola_comum.skills import anuncia_skills, ler_arquivo, listar_skills, tools_da_skill
 from mcp_gateway.upstreams import Upstream
 
 log = logging.getLogger("mcp-gateway.catalogo")
@@ -49,6 +50,8 @@ class Catalogo:
     brutas: dict[str, list[str]] = field(default_factory=dict)
     # Skills (SEP-2640) de quem anuncia a extensão: URI do SKILL.md -> (servidor, entrada).
     skills: dict[str, tuple[Upstream, dict]] = field(default_factory=dict)
+    # Workflow (ordem garantida) de cada skill que declara um workflow.yaml: URI do SKILL.md -> regras.
+    workflows: dict[str, wf.Workflow] = field(default_factory=dict)
 
     def tools_da_skill(self, uri: str) -> set[str] | None:
         """Tools que a skill permite, somadas às das skills que ela usa. None se a skill não existe."""
@@ -91,6 +94,7 @@ class Catalogo:
                         (await cliente.list_prompts()).prompts if capacidades and capacidades.prompts else []
                     )
                     skills = await listar_skills(cliente) if anuncia_skills(cliente) else []
+                    workflows = {e["uri"]: await _workflow(cliente, e) for e in skills}
             except Exception as erro:  # noqa: BLE001
                 if self.disponiveis.get(upstream.nome, True):
                     log.warning("Não foi possível listar %s: %s", upstream.nome, erro)
@@ -127,3 +131,16 @@ class Catalogo:
             self.skills = {u: s for u, s in self.skills.items() if s[0].nome != upstream.nome}
             for entrada in skills:
                 self.skills[entrada["uri"]] = (upstream, entrada)
+                if workflows.get(entrada["uri"]):
+                    self.workflows[entrada["uri"]] = workflows[entrada["uri"]]
+                else:
+                    self.workflows.pop(entrada["uri"], None)
+
+
+async def _workflow(cliente: Client, entrada: dict) -> wf.Workflow | None:
+    """O workflow.yaml da skill, lido com tamanho e digest conferidos. None se a skill não tem."""
+    raiz = entrada["uri"].removesuffix("SKILL.md")
+    uri = raiz + wf.ARQUIVO
+    if not any(r["uri"] == uri for r in entrada["resources"]):
+        return None
+    return wf.carregar(await ler_arquivo(cliente, uri, entrada))

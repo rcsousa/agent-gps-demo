@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 PROVENIENCIA = "bussola/proveniencia"
+CONTRAMAO = {"fora_da_skill", "fora_de_ordem", "execucao_nao_identificada"}
 # O SDK MCP prefixa erros de tool em inglês; para o mapa, só a mensagem do sistema interessa.
 PREFIXO_SDK = re.compile(r"^Error executing tool [\w.]+: ")
 
@@ -22,7 +23,10 @@ def detectar(
         descricao = PREFIXO_SDK.sub("", descricao)
         achados.append({"metafora": metafora, "descricao": descricao, "tool": tool, "entidade": entidade})
 
-    if erro and (motivo == "desligada" or "fora do ar" in texto or "interditado" in texto):
+    if erro and motivo in CONTRAMAO:
+        # O gateway barrou: tool fora da skill ou chamada fora da ordem do workflow.
+        achar("Contramão", texto)
+    elif erro and (motivo == "desligada" or "fora do ar" in texto or "interditado" in texto):
         achar("Rua interditada", texto)
     if dados.get("aviso") and "lentidão" in dados["aviso"]:
         achar("Congestionamento", dados["aviso"])

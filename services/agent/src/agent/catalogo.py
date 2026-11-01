@@ -15,6 +15,7 @@ from mcp.client.client import Client
 from redis.asyncio import Redis
 
 from agent import prompts
+from bussola_comum import workflow as wf
 from bussola_comum.eventos import STREAM, decodificar
 from bussola_comum.skills import (
     SkillNaoConfere,
@@ -51,6 +52,7 @@ class Catalogo:
             tools = (await gateway.list_tools()).tools
             lista_de_prompts = (await gateway.list_prompts()).prompts
             entradas = {e["uri"]: e for e in await listar_skills(gateway)}
+            ordens = {uri: await _ordem(gateway, e) for uri, e in entradas.items()}
 
         # Quem oferece o quê, segundo o gateway (inclui o que fica oculto e o que está fora do ar).
         origem_tool: dict[str, tuple[str, dict]] = {}
@@ -103,6 +105,7 @@ class Catalogo:
                     "tools_com_reuso": sorted(tools_por_skill[uri]),
                     "usa_skills": skills_usadas(e["frontmatter"]),
                     "arquivos": e["resources"],
+                    "ordem": ordens[uri],
                 }
                 for uri, e in sorted(entradas.items())
             ],
@@ -212,3 +215,20 @@ def _prompt(prompt: Any, servidor: str) -> dict[str, Any]:
             for a in prompt.arguments or []
         ],
     }
+
+
+async def _ordem(gateway: Client, entrada: dict[str, Any]) -> list[dict[str, Any]]:
+    """A ordem garantida da skill (workflow.yaml), em linguagem do painel. Vazia se não houver."""
+    uri = entrada["uri"].removesuffix("SKILL.md") + wf.ARQUIVO
+    if not any(r["uri"] == uri for r in entrada["resources"]):
+        return []
+    workflow = wf.carregar(await ler_arquivo(gateway, uri, entrada))
+    tools = sorted(set(workflow.pre_requisitos) | set(workflow.impedimentos))
+    return [
+        {
+            "tool": tool,
+            "exige": [r.descrever() for r in workflow.pre_requisitos.get(tool, ())],
+            "impedida_por": list(workflow.impedimentos.get(tool, ())),
+        }
+        for tool in tools
+    ]

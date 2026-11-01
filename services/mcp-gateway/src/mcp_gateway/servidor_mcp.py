@@ -2,7 +2,8 @@
 
 Cada chamada é roteada ao servidor de origem, recebe proveniência em `_meta`
 e vira um evento `tool.called` no barramento. Com uma skill ativa
-(`_meta["bussola/skill"]`), só passam as tools que ela permite.
+(`_meta["bussola/skill"]`), só passam as tools que ela permite, e na ordem
+que o workflow dela exige (pré-requisitos por execução).
 """
 
 import time
@@ -48,7 +49,7 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
     async def listar_tools(ctx, params) -> types.ListToolsResult:
         return types.ListToolsResult(tools=[t.tool for _, t in sorted(catalogo.tools.items())])
 
-    async def governanca(nome: str, skill: str | None) -> tuple[str | None, str | None]:
+    async def governanca(nome: str, skill: str | None, execucao: str | None) -> tuple[str | None, str | None]:
         """(motivo, mensagem) de bloqueio, ou (None, None) se a chamada pode seguir."""
         if await estado.tool_fora(nome):
             # O apresentador desligou a tool: a rua continua no mapa, interditada.
@@ -66,6 +67,16 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
                 f"Contramão: a skill {skill} não permite a tool {nome}. "
                 f"Permitidas: {', '.join(sorted(permitidas))}."
             )
+        workflow = catalogo.workflows.get(skill)
+        if workflow is None:
+            return None, None
+        if not execucao:
+            # A ordem só existe dentro de uma execução: sem ela, não há como saber o que já aconteceu.
+            return "execucao_nao_identificada", (
+                f'A skill {skill} tem ordem garantida: informe a execução em _meta["{CHAVE_EXECUCAO}"].'
+            )
+        if falta := workflow.faltando(nome, await estado.fatos(execucao)):
+            return "fora_de_ordem", f"Contramão: {falta}. Faça isso antes e tente de novo."
         return None, None
 
     async def chamar_tool(ctx, params: types.CallToolRequestParams) -> types.CallToolResult:
@@ -82,10 +93,11 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
         }
 
         motivo = None
+        execucao = proveniencia["execucao_id"]
         if roteada is None:
             resultado = _erro(f"Tool desconhecida no gateway: '{params.name}'.")
         else:
-            motivo, mensagem = await governanca(params.name, skill)
+            motivo, mensagem = await governanca(params.name, skill, execucao)
             if motivo:
                 resultado = _erro(mensagem)
             else:
@@ -104,6 +116,12 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
             **({"motivo": motivo} if motivo else {}),
         }
         resultado.meta = {**(resultado.meta or {}), CHAVE_PROVENIENCIA: proveniencia}
+        if execucao and not resultado.is_error:
+            # O que deu certo vira fato da execução: é o que os pré-requisitos do workflow consultam.
+            conteudo = resultado.structured_content
+            await estado.registrar_fato(
+                execucao, params.name, conteudo if isinstance(conteudo, dict) else None
+            )
         await publicador.publicar(
             "tool.called",
             {

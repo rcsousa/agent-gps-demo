@@ -11,7 +11,7 @@
 
 | | Sem contexto | Sem skill | Com skill |
 | --- | --- | --- | --- |
-| O que o agente tem | Só a conversa | As 38 tools do gateway | As skills e, depois de carregar uma, só as tools dela |
+| O que o agente tem | Só a conversa | As 41 tools do gateway | As skills e, depois de carregar uma, só as tools dela |
 | Chamadas de tool | 0 | 10 | 14 |
 | Tools irrelevantes | — | 7 | 0 |
 | Consentimento verificado | Não | Não | Sim, as duas finalidades |
@@ -102,6 +102,7 @@ Os exemplos acima são do roteiro. Com o Claude Opus 5.5 real, testado em 01/11/
   - **a explicação das trocas** à cliente;
   - **a narração verificável da viagem:** cada recálculo cita a regra que seguiu.
   - A skill também tem falhas de autoria que o teste revelou, como cobrar antes da vistoria. Skill é software: precisa de teste.
+- **Com a ordem do workflow garantida pelo gateway** (capítulo 3), a rodada seguinte fechou em **30 de 30 regras com skill, contra 26 de 30 sem skill**. Com skill, o agente não ficou abaixo do sem skill em nenhum caso. Sem skill, ele chegou a contornar a alçada reduzindo a cobertura que a cliente pediu. O preço foi cerca de 35% mais tempo.
 - **O que o banco ganha não é só acerto, é garantia.** Sem skill, nada impede o agente de chamar `pagamentos.estornar`: ele só não chamou. Com skill, o gateway bloqueia (a contramão do capítulo 3).
 
 ### Para reproduzir

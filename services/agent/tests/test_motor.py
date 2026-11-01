@@ -364,3 +364,12 @@ def test_roteiro_fala_com_quem_esta_do_outro_lado():
     assert SessaoRoteiro("com_skill", canal="agencia")._fala("imovel").startswith("Confirme com a Ana")
     assert SessaoRoteiro("com_skill", canal="central")._fala("imovel").startswith("Pergunte à Ana")
     assert SessaoRoteiro("com_skill", canal="loja")._fala("imovel").startswith("Para confirmar")
+
+
+def test_bloqueio_por_ordem_e_contramao():
+    from agent.incidentes import detectar
+
+    meta = {"bussola/proveniencia": {"motivo": "fora_de_ordem"}}
+    texto = "Contramão: seguradoras.cotar_seguro exige antes: risco.consultar_elegibilidade."
+    [achado] = detectar("seguradoras.cotar_seguro", {}, texto, True, meta)
+    assert achado["metafora"] == "Contramão" and "exige antes" in achado["descricao"]
