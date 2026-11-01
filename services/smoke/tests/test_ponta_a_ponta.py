@@ -434,3 +434,48 @@ def test_sem_contexto_nao_le_a_persona_do_banco(mundo_limpo):
 def test_canal_desconhecido_e_recusado():
     resposta = httpx.post(f"{API_AGENTE}/execucoes", json={"modo": "com_skill", "canal": "loja"}, timeout=10)
     assert resposta.status_code == 400 and "agencia, app, central" in resposta.json()["detail"]
+
+
+# --- Fase 5.2: catálogo do dashboard de status -------------------------------------
+
+
+def test_catalogo_traz_tools_skills_e_prompts_cruzados():
+    catalogo = httpx.get(f"{API_AGENTE}/catalogo", timeout=15).json()
+    assert (len(catalogo["tools"]), len(catalogo["skills"]), len(catalogo["prompts"])) == (38, 4, 3)
+    tools = {t["nome"]: t for t in catalogo["tools"]}
+    assert {s["nome"] for s in tools["seguradoras.cotar_seguro"]["skills"]} == {
+        "contratacao-seguro-residencial",
+        "cotacao-multisseguradora",
+    }
+    assert tools["pagamentos.estornar"]["skills"] == []  # distração
+    assert all(t["servidor"].endswith("-mcp") for t in catalogo["tools"])
+
+
+def test_codigo_e_previa_pelo_proprio_servidor():
+    fonte = httpx.get(
+        f"{API_AGENTE}/catalogo/fonte", params={"uri": "fonte://cliente-mcp/tool/obter_perfil"}, timeout=10
+    ).json()
+    assert "async def obter_perfil" in fonte["texto"] and fonte["arquivo"].startswith("services/cliente-mcp/")
+    previa = httpx.get(f"{API_AGENTE}/catalogo/prompt/canais.atendimento_agencia/previa", timeout=10).json()
+    assert "Ana Ribeiro" in previa["texto"]
+    arquivo = httpx.get(
+        f"{API_AGENTE}/catalogo/skill",
+        params={"uri": "skill://contratacao-seguro-residencial/references/cotacao.md"},
+        timeout=10,
+    ).json()
+    assert arquivo["verificado"] and arquivo["texto"].startswith("# Parada 6")
+    # O agente nunca recebe código como resource.
+    assert not any(str(r.uri).startswith("fonte://") for r in asyncio.run(_resources()))
+
+
+async def _resources():
+    async with conectar(GATEWAY, TOKEN) as cliente:
+        return (await cliente.list_resources()).resources
+
+
+def test_chamadas_recentes_aparecem_depois_de_uma_execucao(mundo_limpo):
+    ident, _ = _executar("com_skill")
+    chamadas = httpx.get(
+        f"{API_AGENTE}/catalogo/chamadas", params={"tool": "cliente.obter_perfil"}, timeout=10
+    ).json()
+    assert chamadas[0]["execucao_id"] == ident and chamadas[0]["status"] == "ok"

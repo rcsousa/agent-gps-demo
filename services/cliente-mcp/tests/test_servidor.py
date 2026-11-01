@@ -71,3 +71,24 @@ async def test_crm_fora_do_ar(estado):
     resultado = await chamar(estado, "obter_perfil", {"cliente_id": "cliente-ana"})
     assert resultado.is_error
     assert "fora do ar" in resultado.content[0].text
+
+
+# --- Código-fonte para o dashboard (fábrica comum) ------------------------------------
+
+
+async def test_fonte_da_tool_e_o_codigo_real_fora_do_catalogo(estado):
+    import json
+
+    from mcp.shared.exceptions import MCPError
+
+    async with Client(criar_servidor(estado, checagens={})) as cliente:
+        fonte = json.loads(
+            (await cliente.read_resource("fonte://cliente-mcp/tool/obter_perfil")).contents[0].text
+        )
+        listados = [str(r.uri) for r in (await cliente.list_resources()).resources]
+        with pytest.raises(MCPError):
+            await cliente.read_resource("fonte://cliente-mcp/tool/nao_existe")
+    assert fonte["arquivo"] == "services/cliente-mcp/src/cliente_mcp/servidor.py"
+    assert fonte["linguagem"] == "python" and fonte["linha"] > 1
+    assert "async def obter_perfil(cliente_id: str)" in fonte["texto"]
+    assert not any(u.startswith("fonte://") for u in listados)  # o agente nunca recebe código

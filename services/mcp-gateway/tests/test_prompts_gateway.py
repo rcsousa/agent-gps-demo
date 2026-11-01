@@ -9,6 +9,7 @@ from mcp.server.mcpserver import MCPServer
 from mcp.shared.exceptions import MCPError
 
 from bussola_comum.estado_vivo import EstadoVivo
+from bussola_comum.mcp_servidor import criar_servidor_mcp as servidor_de_dominio
 from bussola_comum.skills import CHAVE_EXECUCAO
 from mcp_gateway.catalogo import Catalogo
 from mcp_gateway.servidor_mcp import CHAVE_PROVENIENCIA, criar_servidor_mcp
@@ -18,7 +19,7 @@ pytestmark = pytest.mark.anyio
 
 
 def _canais() -> MCPServer:
-    s = MCPServer(name="canais-mcp")
+    s = servidor_de_dominio("canais-mcp", "Canais", checagens={})
 
     @s.prompt(name="atendimento_app", description="Persona no app.")
     def atendimento_app(cliente_id: str) -> str:
@@ -111,3 +112,18 @@ async def test_servidor_fora_mantem_o_catalogo_e_interdita(gateway):
         with pytest.raises(MCPError, match="trecho interditado"):
             await c.get_prompt("canais.atendimento_app", {"cliente_id": "cliente-ana"})
     assert publicador.eventos[-1][1]["status"] == "erro"
+
+
+async def test_fonte_roteada_pelo_nome_do_servidor(gateway):
+    import json
+
+    _, _, servidor, _ = gateway
+    async with Client(servidor) as c:
+        fonte = json.loads(
+            (await c.read_resource("fonte://canais-mcp/prompt/atendimento_app")).contents[0].text
+        )
+        listados = [str(r.uri) for r in (await c.list_resources()).resources]
+        with pytest.raises(MCPError, match="Resource desconhecido"):
+            await c.read_resource("fonte://servidor-x/tool/ping")
+    assert "def atendimento_app(cliente_id: str)" in fonte["texto"]
+    assert not any(u.startswith("fonte://") for u in listados)
