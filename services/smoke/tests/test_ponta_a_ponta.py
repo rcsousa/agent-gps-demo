@@ -4,10 +4,13 @@ O smoke é ferramenta de teste: ele pode conhecer todos os serviços.
 O agente, não.
 """
 
+import asyncio
+import json
 import os
 
 import httpx
 import pytest
+from mcp.client.client import Client
 
 SERVICOS_PYTHON = [
     "agent",
@@ -67,3 +70,34 @@ def test_bastidores_servidos_pelo_web():
     resposta = httpx.get("http://web/bastidores/", timeout=5, follow_redirects=True)
     assert resposta.status_code == 200
     assert "Bastidores" in resposta.text
+
+
+# --- Fase 2: camada de contexto ------------------------------------------------
+
+
+def _contexto(tool: str, argumentos: dict | None = None):
+    async def chamar():
+        async with Client("http://contexto-mcp:8000/mcp", read_timeout_seconds=15) as cliente:
+            if tool.startswith("contexto://"):
+                return await cliente.read_resource(tool)
+            return await cliente.call_tool(tool, argumentos or {})
+
+    return asyncio.run(chamar())
+
+
+def test_grafo_semeado_com_a_ana():
+    resultado = _contexto("consultar_entidade", {"id": "cliente-ana"})
+    assert not resultado.is_error
+    assert resultado.structured_content["entidade"]["nome"] == "Ana Ribeiro"
+
+
+def test_tres_rotas_com_estimativa():
+    rotas = _contexto("consultar_rota").structured_content["rotas"]
+    assert {r["id"] for r in rotas} == {"rota-rapida", "rota-economica", "rota-assistida"}
+    assert all(r["estimativa"]["tempo_texto"].startswith("~") for r in rotas)
+
+
+def test_mapa_com_todos_os_nos_posicionados():
+    mapa = json.loads(_contexto("contexto://mapa").contents[0].text)
+    assert 150 <= len(mapa["nos"]) <= 300
+    assert all(n["x"] is not None and n["y"] is not None for n in mapa["nos"])

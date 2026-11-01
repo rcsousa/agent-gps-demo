@@ -15,7 +15,10 @@ docker compose build $SERVICOS
 
 for s in $SERVICOS; do
   echo "== $s"
-  docker compose run --rm --no-deps "$s" sh -c "ruff check . && pytest -q"
+  # O contexto-mcp sobe com o grafo (e o seed) para os testes de integração.
+  DEPS="--no-deps"
+  [ "$s" = "contexto-mcp" ] && DEPS=""
+  docker compose run --rm $DEPS "$s" sh -c "ruff check . && pytest -q"
 done
 
 echo "== web (typecheck)"
