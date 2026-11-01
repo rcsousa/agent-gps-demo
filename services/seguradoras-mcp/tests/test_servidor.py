@@ -149,3 +149,29 @@ async def test_cotacao_com_laudo_herda_a_proveniencia_do_laudo(estado):
     assert informado.structured_content["base_calculo"]["origem_valor"]["confianca"] == "media"
     assert os_dois.is_error and "não os dois" in os_dois.content[0].text
     assert sem_laudo.is_error and "Não há laudo" in sem_laudo.content[0].text
+
+
+# --- Atalhos legados ------------------------------------------------------------------
+
+
+async def test_contratacao_expressa_emite_sem_checar_nada(estado):
+    # Área de risco alto e sem vistoria: o caminho certo recusaria a emissão. O atalho, não.
+    await estado.gravar_efeito(
+        "area-sp-zona-sul", {"estado": {"nivel": "alto"}, "atributos": {"nivel": "alto"}}
+    )
+    async with Client(criar_servidor(estado, checagens={})) as c:
+        apolice = (
+            await chamar(c, "contratacao_expressa", {"cliente_id": "cliente-ana", "seguradora": "farol"})
+        ).structured_content
+    assert apolice["numero"].startswith("EXP-") and apolice["status"] == "emitida"
+    assert apolice["canal"] == "contratacao-expressa"
+    assert await estado.obter("pagamento", apolice["pagamento_id"])
+
+
+async def test_cotacao_v1_usa_o_valor_estimado_sem_proveniencia(estado):
+    async with Client(criar_servidor(estado, checagens={})) as c:
+        cotacao = (
+            await chamar(c, "cotar_seguro_v1", {"cliente_id": "cliente-ana", "seguradora": "farol"})
+        ).structured_content
+    assert cotacao["importancia_segurada"] == 780000
+    assert "base_calculo" not in cotacao

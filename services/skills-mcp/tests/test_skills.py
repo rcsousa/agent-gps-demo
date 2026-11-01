@@ -14,8 +14,10 @@ from bussola_comum.skills import (
     listar_skills,
     obter_skill,
     skills_usadas,
+    tools_da_skill,
     tools_permitidas,
 )
+from bussola_comum.workflow import ARQUIVO, carregar
 from skills_mcp.catalogo import PASTA_PADRAO, ErroSkill, carregar_catalogo, carregar_skill
 from skills_mcp.servidor import criar_servidor
 
@@ -57,7 +59,9 @@ def test_skills_usadas_existem(catalogo):
 def test_toda_referencia_citada_existe_e_nada_sobra(catalogo):
     principal = catalogo["skill://contratacao-seguro-residencial/SKILL.md"]
     texto = principal.arquivos[0].texto
-    citados = set(re.findall(r"skill://contratacao-seguro-residencial/(references/[a-z]+\.md)", texto))
+    citados = set(
+        re.findall(r"skill://contratacao-seguro-residencial/(references/[a-z]+\.md|workflow\.yaml)", texto)
+    )
     arquivos = {a.uri.split("/", 3)[3] for a in principal.arquivos[1:]}
     assert citados == arquivos
 
@@ -77,9 +81,25 @@ def test_nenhuma_tool_de_distracao_e_permitida(catalogo):
         "pagamentos.estornar",
         "seguradoras.cancelar_apolice",
         "atendimento.transferir_para_humano",
+        # Atalhos legados: parecem certos para a tarefa, mas pulam regras.
+        "seguradoras.contratacao_expressa",
+        "cliente.obter_dossie_completo",
+        "seguradoras.cotar_seguro_v1",
     }
     for skill in catalogo.values():
         assert not tools_permitidas(skill.frontmatter) & distracao, skill.nome
+
+
+def test_workflow_valido_e_so_com_tools_da_skill(catalogo):
+    principal = catalogo["skill://contratacao-seguro-residencial/SKILL.md"]
+    [arquivo] = [a for a in principal.arquivos if a.uri.endswith("/" + ARQUIVO)]
+    workflow = carregar(arquivo.texto)
+    entradas = {uri: skill.entrada() for uri, skill in catalogo.items()}
+    permitidas = tools_da_skill(entradas, principal.uri)
+    assert workflow.tools_citadas() <= permitidas, workflow.tools_citadas() - permitidas
+    # A ordem que importa ao banco está lá: cotar exige elegibilidade; pagar, o aceite.
+    assert "seguradoras.cotar_seguro" in workflow.pre_requisitos
+    assert "risco.agendar_vistoria" in workflow.impedimentos["pagamentos.processar_pagamento"]
 
 
 def test_skill_mal_formada_e_recusada(tmp_path):

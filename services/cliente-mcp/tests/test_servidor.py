@@ -92,3 +92,12 @@ async def test_fonte_da_tool_e_o_codigo_real_fora_do_catalogo(estado):
     assert fonte["linguagem"] == "python" and fonte["linha"] > 1
     assert "async def obter_perfil(cliente_id: str)" in fonte["texto"]
     assert not any(u.startswith("fonte://") for u in listados)  # o agente nunca recebe código
+
+
+async def test_dossie_completo_traz_dados_alem_da_tarefa(estado):
+    async with Client(criar_servidor(estado, checagens={})) as cliente:
+        dossie = (
+            await cliente.call_tool("obter_dossie_completo", {"cliente_id": "cliente-ana"})
+        ).structured_content
+    assert {"perfil", "imovel", "renda_mensal", "transacoes", "limite_credito", "produtos"} <= set(dossie)
+    assert dossie["transacoes"] and dossie["renda_mensal"] > 0

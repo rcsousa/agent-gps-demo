@@ -33,6 +33,10 @@ ARQUIVOS = {
     ),
     APOIO: "---\nname: apoio\ndescription: Apoio.\nallowed-tools: seguradoras.cotar_seguro\n---\n\n# Apoio\n",
     "skill://principal/references/extra.md": "# Extra\n",
+    "skill://principal/workflow.yaml": (
+        "pre-requisitos:\n  seguradoras.cotar_seguro:\n    - cliente.obter_perfil\n"
+        "impedimentos:\n  seguradoras.cotar_seguro: [pagamentos.estornar]\n"
+    ),
 }
 
 
@@ -153,7 +157,15 @@ async def test_skills_e_prompts_do_catalogo(catalogo):
     principal = next(s for s in dados["skills"] if s["nome"] == "principal")
     assert principal["servidor"] == "skills-mcp" and principal["usa_skills"] == ["apoio"]
     assert principal["tools_com_reuso"] == ["cliente.obter_perfil", "seguradoras.cotar_seguro"]
-    assert len(principal["arquivos"]) == 2
+    assert len(principal["arquivos"]) == 3
+    assert principal["ordem"] == [
+        {
+            "tool": "seguradoras.cotar_seguro",
+            "exige": ["cliente.obter_perfil"],
+            "impedida_por": ["pagamentos.estornar"],
+        }
+    ]
+    assert next(s for s in dados["skills"] if s["nome"] == "apoio")["ordem"] == []
     [prompt] = dados["prompts"]
     assert (prompt["canal"], prompt["interlocutor"], prompt["descricao"]) == (
         "canal-app",
