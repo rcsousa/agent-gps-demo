@@ -174,15 +174,22 @@ Duração-alvo: 12 minutos, com versão curta de 5. Cada cena tem um botão no "
 | # | Cena | O que a plateia vê | Mensagem | Duração |
 | --- | --- | --- | --- | --- |
 | 1 | A cidade | O mapa do banco como uma cidade: bairros, ruas, trânsito ao vivo | O negócio tem geografia, e ela pode ser mapeada | 1 min |
-| 2 | Dirigir sem mapa | Agente sem camada de contexto responde à Ana: inventa cobertura, ignora consentimento | Modelo bom sem contexto ainda erra | 1,5 min |
-| 3 | Mapa sem GPS | Agente com acesso a todas as tools do gateway, mas sem skill: chama tools demais, gasta tokens, erra a ordem e chega tarde | Ter o mapa não basta | 1,5 min |
+| 2 | Dirigir sem mapa | Agente sem camada de contexto responde à Ana: não tem como cotar, verificar consentimento nem emitir, e só consegue orientá-la a procurar outro canal | Modelo bom sem contexto não chega lá | 1,5 min |
+| 3 | Mapa sem GPS | Agente com todas as tools do gateway, mas sem skill. Faz quase tudo certo, mas lê dados pessoais antes do consentimento e troca de seguradora sem explicar. No meio da viagem, a Ana pede "aproveita e estorna aquele pagamento": sem skill, nada impede o agente; com skill, o gateway bloqueia (contramão) | Bom comportamento não é garantia | 1,5 min |
 | 4 | Digitar o destino | `skills/list`, escolha da skill e três rotas sugeridas no estilo Waze | A skill é a porta de entrada | 1,5 min |
 | 5 | A viagem | O robô percorre a rota, o zoom acompanha cada bairro, as paradas acendem | Navegação guiada, auditável | 2 min |
 | 6 | Incidente | O apresentador derruba a API da seguradora; trecho vermelho, recálculo ao vivo | Adaptação sem perder as regras | 2 min |
 | 7 | Pedágio | Valor acima da alçada: o agente para e chama um especialista humano | Governança é parte do mapa | 1 min |
-| 8 | Raio-X | Mesma viagem no modo técnico: chamadas MCP, proveniência, placar comparando as cenas 2, 3 e 5 | Nada é mágica | 1,5 min |
+| 8 | Raio-X | Mesma viagem no modo técnico: chamadas MCP, proveniência, placar de regras cumpridas comparando as cenas 2, 3 e 5 | Nada é mágica | 1,5 min |
 
 A versão curta usa as cenas 1, 4, 5, 6 e 8.
+
+**O que as cenas mostram vem do modelo real, não de um roteiro.** O experimento de 01/11/2026 (`docs/experimentos/`), feito com o Claude Opus 5.5, ajustou as cenas 2 e 3:
+- **Cena 2:** sem contexto, o modelo não inventa cobertura. Ele reconhece que não tem acesso e orienta a cliente, e é isso que a cena mostra.
+- **Cena 3:** sem skill, o modelo cumpre a maioria das regras, porque elas chegam pelas próprias tools. O contraste está na disciplina (ordem da privacidade, explicações) e na **garantia**: só com a skill o gateway impede o que está fora da rota.
+- **A fala da Ana na cena 3** ("aproveita e estorna aquele pagamento") é uma fala roteirizada do apresentador, enviada como resposta da Ana durante a viagem. O painel do apresentador (Fase 7) oferece essa fala como sugestão.
+
+**O placar** compara as cenas por **regras do banco cumpridas**, conferidas pelos eventos do barramento (`./scripts/experimento.sh`), e não por tools irrelevantes: com modelos atuais, essa contagem não diferencia os modos. Tempo e tokens aparecem como custo de cada modo.
 
 ## Incidentes e recálculo de rota
 
@@ -386,7 +393,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [ ] A demo roda com Anthropic e com Azure OpenAI, mudando só variável de ambiente
 - [ ] As 8 cenas rodam ao vivo e em replay offline
 - [ ] Cada incidente provoca recálculo real, com motivo e regra exibidos
-- [ ] O placar mostra diferença mensurável entre sem contexto, sem skill e com skill
+- [ ] O placar mostra diferença mensurável entre sem contexto, sem skill e com skill, em regras do banco cumpridas
 - [ ] O Modo Mapa é entendido sem narração por alguém não técnico
 - [ ] Toda animação corresponde a um evento real do agente
 - [ ] A doc de bastidores cobre todas as cenas, nos dois níveis de leitura
@@ -423,4 +430,5 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Modelo padrão: Claude Opus 5.5 (`claude-opus-5-5`) no Microsoft Foundry (Azure); *fallbacks* do lado do servidor só na API da Anthropic
 - [x] Provedor `roteiro` para ensaio sem chave e para os testes ponta a ponta
 - [x] Dashboard de status em `/status`, com o código de tools e prompts servido pelo próprio servidor MCP (`fonte://`), fora do catálogo do agente
+- [x] Cenas 2 e 3 e placar ajustados ao comportamento do modelo real (experimento de 01/11/2026): placar por regras cumpridas
 - [x] Persona do agente por canal de atendimento, como prompt MCP do `canais-mcp`; regras do host no agente; workflow nas skills
