@@ -6,9 +6,11 @@ conteúdo exatamente como a API os devolveu e só cresce: é o que o pensamento
 preservado dos modelos atuais exige.
 """
 
+import asyncio
+import logging
 from typing import Any
 
-from anthropic import AsyncAnthropic
+from anthropic import AsyncAnthropic, AsyncAnthropicFoundry, RateLimitError
 
 from agent.llm.base import (
     ChamadaTool,
@@ -23,6 +25,11 @@ from agent.llm.base import (
 
 BETA_FALLBACK = "server-side-fallback-2026-07-01"
 MAX_TOKENS = 16000
+# Limite de tokens por minuto (comum em deployments do Foundry): espera o que a API pedir e tenta de novo.
+TENTATIVAS_NO_LIMITE = 4
+ESPERA_PADRAO_S = 60
+
+log = logging.getLogger("agent.llm.anthropic")
 
 
 class SessaoAnthropic:
@@ -37,8 +44,21 @@ class SessaoAnthropic:
         esforco: str,
         fallbacks: bool,
         api_key: str = "",
+        plataforma: str = "api",
+        foundry_base_url: str = "",
+        foundry_api_key: str = "",
         cliente: Any = None,
+        dormir: Any = asyncio.sleep,
     ) -> None:
+        self.plataforma = plataforma
+        self.dormir = dormir
+        if cliente is None and plataforma == "foundry":
+            if not (foundry_base_url and foundry_api_key):
+                raise ErroProvedor(
+                    "Microsoft Foundry incompleto: preencha ANTHROPIC_FOUNDRY_BASE_URL e "
+                    "ANTHROPIC_FOUNDRY_API_KEY no .env, ou use o provedor roteiro."
+                )
+            cliente = AsyncAnthropicFoundry(api_key=foundry_api_key, base_url=foundry_base_url)
         if cliente is None and not api_key:
             raise ErroProvedor(
                 "ANTHROPIC_API_KEY não configurada. Use o provedor roteiro ou preencha o .env."
@@ -46,7 +66,8 @@ class SessaoAnthropic:
         self.cliente = cliente or AsyncAnthropic(api_key=api_key)
         self.modelo = modelo
         self.esforco = esforco
-        self.fallbacks = fallbacks
+        # O Foundry não oferece fallback do lado do servidor: lá ele fica sempre desligado.
+        self.fallbacks = fallbacks and plataforma != "foundry"
         # O system prompt não muda durante a execução: fica em cache.
         self.sistema = [{"type": "text", "text": sistema, "cache_control": {"type": "ephemeral"}}]
         self.mensagens: list[dict[str, Any]] = [{"role": "user", "content": pedido}]
@@ -58,6 +79,8 @@ class SessaoAnthropic:
             "system": self.sistema,
             "messages": self.mensagens,
             "output_config": {"effort": self.esforco},
+            # Cache automático no último bloco: o histórico, que cresce a cada passo, também é reaproveitado.
+            "cache_control": {"type": "ephemeral"},
         }
         if tools:
             parametros["tools"] = [
@@ -68,7 +91,7 @@ class SessaoAnthropic:
             # Se o modelo recusar, o servidor tenta outro modelo adequado à categoria da recusa.
             parametros |= {"betas": [BETA_FALLBACK], "fallbacks": "default"}
 
-        resposta = await self.cliente.beta.messages.create(**parametros)
+        resposta = await self._criar(parametros)
         self.mensagens.append({"role": "assistant", "content": resposta.content})
 
         uso = Uso(
@@ -97,6 +120,18 @@ class SessaoAnthropic:
         ]
         return Passo(texto=texto, chamadas=chamadas, fim=not chamadas, motivo_parada=motivo or "", uso=uso)
 
+    async def _criar(self, parametros: dict[str, Any]) -> Any:
+        for tentativa in range(TENTATIVAS_NO_LIMITE + 1):
+            try:
+                return await self.cliente.beta.messages.create(**parametros)
+            except RateLimitError as erro:
+                if tentativa == TENTATIVAS_NO_LIMITE:
+                    raise
+                espera = _segundos_de_espera(erro)
+                log.warning("Limite de tokens atingido; nova tentativa em %s s.", espera)
+                await self.dormir(espera)
+        raise AssertionError("inalcançável")
+
     def adicionar_resultados(self, resultados: list[ResultadoTool]) -> None:
         # Todos os resultados de um passo voltam numa única mensagem.
         self.mensagens.append(
@@ -108,3 +143,11 @@ class SessaoAnthropic:
                 ],
             }
         )
+
+
+def _segundos_de_espera(erro: RateLimitError) -> float:
+    cabecalhos = getattr(getattr(erro, "response", None), "headers", None) or {}
+    try:
+        return min(float(cabecalhos.get("retry-after", ESPERA_PADRAO_S)), 120.0)
+    except ValueError:
+        return ESPERA_PADRAO_S

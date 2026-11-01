@@ -21,7 +21,8 @@ PERSONA_EMBUTIDA = (
 CONVERSA = (
     "Para perguntar algo a quem você atende ou pedir uma confirmação, use a tool "
     "`conversa.perguntar_cliente` e, quando fizer sentido, ofereça opções de resposta. "
-    "Quando terminar, escreva a mensagem final."
+    "Quando terminar, escreva a mensagem final. Todo texto que você escrever, inclusive entre uma tool e "
+    "outra, aparece na tela: escreva sempre em português do Brasil."
 )
 
 SEM_SKILL = "Você tem acesso às tools dos sistemas do banco."

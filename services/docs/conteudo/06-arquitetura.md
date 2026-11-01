@@ -165,7 +165,18 @@ As APIs não aceitam ponto em nome de tool, então o adaptador troca `cliente.ob
 
 ### Como trocar o provedor de LLM
 
-Mude `LLM_PROVIDER` no `.env` para `anthropic` ou `azure_openai` e preencha as variáveis do provedor: `ANTHROPIC_API_KEY`, ou `AZURE_OPENAI_ENDPOINT`, `_API_KEY`, `_DEPLOYMENT` e `_API_VERSION`. Cada execução também pode pedir outro provedor, por exemplo `"provedor": "roteiro"`. Sem chave, a execução termina com status `erro` e uma mensagem dizendo qual variável falta.
+Mude `LLM_PROVIDER` no `.env` para `anthropic` ou `azure_openai` e preencha as variáveis do provedor.
+
+| Onde o modelo roda | Variáveis |
+| --- | --- |
+| **Claude no Microsoft Foundry (Azure)**, o padrão da demo | `LLM_PROVIDER=anthropic`, `ANTHROPIC_PLATAFORMA=foundry`, `ANTHROPIC_FOUNDRY_BASE_URL` (o endpoint do recurso, terminando em `/anthropic/`), `ANTHROPIC_FOUNDRY_API_KEY` e `ANTHROPIC_MODEL` com o nome do deployment |
+| Claude na API da Anthropic | `LLM_PROVIDER=anthropic`, `ANTHROPIC_PLATAFORMA=api`, `ANTHROPIC_API_KEY` e `ANTHROPIC_MODEL` |
+| Azure OpenAI | `LLM_PROVIDER=azure_openai`, `AZURE_OPENAI_ENDPOINT`, `_API_KEY`, `_DEPLOYMENT` e `_API_VERSION` |
+
+O Foundry é a mesma API do Claude, com outro cliente do SDK (`AsyncAnthropicFoundry`): o resto do provedor não muda. Duas diferenças tratadas no código:
+
+- o Foundry não oferece *fallback* do lado do servidor, então ele fica desligado lá, mesmo com `ANTHROPIC_FALLBACKS=true`;
+- deployments costumam ter limite de tokens por minuto. O provedor usa cache automático, que cobre também o histórico da conversa, e, se ainda assim receber um 429, espera o tempo pedido pela API e tenta de novo. Cada execução também pode pedir outro provedor, por exemplo `"provedor": "roteiro"`. Sem chave, a execução termina com status `erro` e uma mensagem dizendo qual variável falta.
 
 ### O dashboard: o código vem do próprio servidor
 
