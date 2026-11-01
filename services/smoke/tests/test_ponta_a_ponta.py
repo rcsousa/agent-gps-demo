@@ -7,6 +7,7 @@ O agente, não. Por isso as tools são sempre chamadas pelo gateway.
 import asyncio
 import json
 import os
+import time
 
 import httpx
 import pytest
@@ -307,3 +308,89 @@ def test_contramao_com_skill_ativa():
 
 def test_status_conta_as_skills():
     assert httpx.get("http://web/api/status", timeout=10).json()["skills"] == 4
+
+
+# --- Fase 5: agente e eventos (provedor roteiro: ensaio sem LLM) ----------------
+
+API_AGENTE = "http://web/api"
+
+
+def _executar(modo: str, ao_perguntar=None) -> tuple[str, list[dict]]:
+    """Inicia uma execução e lê o SSE até o run.finished, respondendo pela Ana."""
+    ident = httpx.post(
+        f"{API_AGENTE}/execucoes", json={"modo": modo, "provedor": "roteiro"}, timeout=10
+    ).json()["id"]
+    eventos: list[dict] = []
+    with httpx.stream("GET", f"{API_AGENTE}/execucoes/{ident}/eventos", timeout=120) as resposta:
+        for linha in resposta.iter_lines():
+            if not linha.startswith("data:"):
+                continue
+            evento = json.loads(linha[5:])
+            eventos.append(evento)
+            if evento["tipo"] == "client.asked":
+                if ao_perguntar:
+                    ao_perguntar(len([e for e in eventos if e["tipo"] == "client.asked"]))
+                texto = evento["dados"]["opcoes"][0]
+                httpx.post(f"{API_AGENTE}/execucoes/{ident}/resposta", json={"texto": texto}, timeout=10)
+            if evento["tipo"] == "run.finished":
+                break
+    return ident, eventos
+
+
+def _do_tipo(eventos: list[dict], tipo: str) -> list[dict]:
+    return [e["dados"] for e in eventos if e["tipo"] == tipo]
+
+
+def test_com_skill_ate_a_apolice(mundo_limpo):
+    ident, eventos = _executar("com_skill")
+    tipos = [e["tipo"] for e in eventos]
+    assert tipos[0] == "run.started" and tipos[-1] == "run.finished"
+    assert _do_tipo(eventos, "skill.loaded")[0]["nome"] == "contratacao-seguro-residencial"
+    assert _do_tipo(eventos, "route.planned")[0]["rota"] == "rota-rapida"
+    assert [p["numero"] for p in _do_tipo(eventos, "step.started")] == list(range(1, 10))
+    chamadas = _do_tipo(eventos, "tool.called")
+    assert chamadas and all(c["execucao_id"] == ident for c in chamadas)
+    assert all(c["skill"] == "skill://contratacao-seguro-residencial/SKILL.md" for c in chamadas)
+    fim = _do_tipo(eventos, "run.finished")[0]
+    assert fim["status"] == "concluida" and fim["apolice"].startswith("ANC-")
+    assert fim["metricas"]["tools_irrelevantes"] == []
+
+
+def test_com_skill_recalcula_quando_a_ancora_cai(mundo_limpo):
+    def derrubar(numero_da_pergunta: int) -> None:
+        if numero_da_pergunta == 1:  # depois de planejar a rota rápida, antes da cotação
+            simulador("POST", "/incidentes/cotacao-ancora-fora/aplicar")
+
+    _, eventos = _executar("com_skill", ao_perguntar=derrubar)
+    assert any(i["metafora"] == "Rua interditada" for i in _do_tipo(eventos, "incident.detected"))
+    recalculos = [
+        r for r in _do_tipo(eventos, "route.recalculated") if r["regra"].startswith("Rua interditada")
+    ]
+    assert [(r["de"], r["para"]) for r in recalculos] == [("rota-rapida", "rota-economica")]
+    fim = _do_tipo(eventos, "run.finished")[0]
+    assert fim["status"] == "concluida" and not fim["apolice"].startswith("ANC-")
+
+
+def test_sem_skill_chama_tools_irrelevantes(mundo_limpo):
+    _, eventos = _executar("sem_skill")
+    fim = _do_tipo(eventos, "run.finished")[0]
+    assert len(fim["metricas"]["tools_irrelevantes"]) >= 5
+    assert fim["apolice"] is None
+
+
+def test_sem_contexto_nao_chama_tools(mundo_limpo):
+    _, eventos = _executar("sem_contexto")
+    assert _do_tipo(eventos, "tool.called") == []
+    assert _do_tipo(eventos, "run.finished")[0]["metricas"]["chamadas_tool"] == 0
+
+
+def test_provedor_real_sem_chave_falha_com_mensagem_clara():
+    ident = httpx.post(
+        f"{API_AGENTE}/execucoes", json={"modo": "com_skill", "provedor": "anthropic"}, timeout=10
+    ).json()["id"]
+    for _ in range(50):
+        estado = httpx.get(f"{API_AGENTE}/execucoes/{ident}", timeout=10).json()
+        if estado["status"] == "erro":
+            break
+        time.sleep(0.2)
+    assert estado["status"] == "erro" and "ANTHROPIC_API_KEY" in estado["erro"]
