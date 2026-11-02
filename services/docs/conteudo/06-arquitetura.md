@@ -316,13 +316,43 @@ Tudo vai para o stream `bussola:eventos`, no formato `{tipo, origem, instante, d
 | `human.required` | agent | Pedido de aprovação a um especialista |
 | `client.asked` / `client.answered` | agent | Conversa com a Ana |
 | `agent.message` | agent | Texto do agente para a cliente |
-| `tool.called` | gateway | Toda chamada de tool, com a skill ativa e o `execucao_id` |
-| `skills.listed`, `resource.read` | gateway | Leituras do catálogo de skills |
+| `model.step` | agent | Cada chamada ao modelo: tokens (entrada, saída e cache), duração e tools pedidas. Nenhum texto do modelo |
+| `tool.called` | gateway | Toda chamada de tool, com a skill ativa, o `execucao_id`, a duração, o resultado resumido (até 2.000 caracteres) e o erro |
+| `tools.listed` | gateway | O `tools/list` de uma execução |
+| `skills.listed`, `skill.read` | gateway | `skills/list` e `skills/get` (SEP-2640) |
+| `resource.read` | gateway | A leitura de um arquivo de skill (`skill://`), com tamanho, duração e skill ativa |
 | `prompt.read` | gateway | Leitura de um prompt, com proveniência e `execucao_id` |
+
+**Toda requisição do agente ao gateway leva `_meta`** com a execução (e a skill ativa, se houver): tools, `tools/list`, `skills/list`, `skills/get`, `resources/read` e `prompts/get`. É assim que o Raio-X mostra o protocolo inteiro de uma viagem, sem misturar com o que outras execuções ou o dashboard pediram.
 
 O agente não sabe o que o simulador fez. O `incident.detected` vem do que as tools responderam, já com a metáfora do mapa (Rua interditada, Contramão, Pedágio...).
 
-**Métricas no `run.finished`:** chamadas de tool, tools distintas, tools irrelevantes (as que não estão em nenhuma skill), bloqueios do gateway, incidentes, erros, tokens (entrada, saída e cache) e duração. São a base do placar comparativo da Fase 7.
+**Métricas no `run.finished`:** chamadas de tool, tools distintas, tools irrelevantes (as que não estão em nenhuma skill), bloqueios do gateway, incidentes, erros, tokens (entrada, saída e cache), duração, custo e **as regras do banco cumpridas**.
+
+### O placar: regras conferidas nos eventos
+
+O verificador de regras (`bussola_comum.regras`) é o mesmo do experimento com o modelo real (`./scripts/experimento.sh`).
+- **O caso da viagem** vem dos incidentes ativos quando ela começa: o web pergunta ao simulador e os envia no pedido. Sem incidente, o caso é o caminho feliz.
+- **No fim de cada execução**, o agente lê os eventos dela no barramento (os dele e os do gateway) e confere as regras do caso. O resultado vai em `run.finished.metricas.regras`.
+- **Só conta o que trafegou:** uma tentativa barrada pelo gateway (fora de ordem ou contramão) não aconteceu.
+- `GET /api/placar` agrega as execuções terminadas por modo × modelo (regras, execuções perfeitas, tempo e custo médios) e traz, ao lado, a **referência** versionada do experimento Opus × Haiku (`agent/dados/placar-referencia.json`).
+
+### Gravações e replay offline
+
+```
+POST /api/gravacoes {execucao, cena, incidentes}  ──► gravacoes/cena-<n>.jsonl (cabeçalho + eventos)
+GET  /api/gravacoes                               ──► a lista (cabeçalhos)
+GET  /api/gravacoes/<nome>/eventos                ──► SSE no mesmo formato do ao vivo, no ritmo original
+```
+
+- **Uma gravação é a execução real**, como saiu do barramento. O cabeçalho guarda cena, modo, canal, modelo, apólice, data e os incidentes ativos.
+- **A pasta `gravacoes/` é um volume do `agent` e fica versionada no repositório.** Numa máquina nova, sem rede e sem chave, as cenas tocam do mesmo jeito.
+- **No replay:**
+  - o web reaplica os incidentes da gravação pelo simulador, para o trânsito do mapa bater;
+  - o agente serve os eventos com as esperas originais, com teto de 3 s;
+  - o mesmo diretor de animações desenha tudo;
+  - ninguém responde pela Ana (as respostas estão gravadas);
+  - o selo "Replay · gravado em … com …" fica na tela o tempo todo.
 
 ### Fluxo de uma execução
 

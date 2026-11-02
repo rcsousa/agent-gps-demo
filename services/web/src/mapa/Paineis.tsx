@@ -188,10 +188,14 @@ export function Legenda() {
   );
 }
 
-export function Conversa(props: { viagem: EstadoDaViagem; aoResponder: (texto: string) => Promise<void> }) {
+// Responder pela Ana: as opções sugeridas pelo agente e o texto livre.
+export function RespostaDaAna(props: {
+  pergunta: { texto: string; opcoes: string[] };
+  aoResponder: (texto: string) => Promise<void>;
+  compacta?: boolean; // no topo do Raio-X: só o necessário para responder
+}) {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
-  const { viagem } = props;
 
   async function responder(resposta: string) {
     if (!resposta.trim()) return;
@@ -205,8 +209,58 @@ export function Conversa(props: { viagem: EstadoDaViagem; aoResponder: (texto: s
   }
 
   return (
-    <aside className="mapa__conversa" aria-label={t.conversa.titulo}>
-      <h2 className="mapa__cartao-titulo">{t.conversa.titulo}</h2>
+    <div className={`mapa__resposta${props.compacta ? ' mapa__resposta--compacta' : ''}`}>
+      <span className="mapa__navegador-rotulo">{t.conversa.respondaPelaAna}</span>
+      {props.compacta && <p className="mapa__pergunta">{props.pergunta.texto}</p>}
+      <div className="mapa__opcoes">
+        {props.pergunta.opcoes.map((opcao) => (
+          <Button key={opcao} kind="tertiary" size="sm" disabled={enviando} onClick={() => responder(opcao)}>
+            {opcao}
+          </Button>
+        ))}
+      </div>
+      <form
+        className="mapa__texto-livre"
+        onSubmit={(evento) => {
+          evento.preventDefault();
+          responder(texto);
+        }}
+      >
+        <TextInput
+          id={props.compacta ? 'resposta-livre-raio-x' : 'resposta-livre'}
+          size="sm"
+          labelText={t.conversa.textoLivre}
+          hideLabel
+          placeholder={t.conversa.textoLivre}
+          value={texto}
+          onChange={(e: ChangeEvent<HTMLInputElement>) => setTexto(e.target.value)}
+        />
+        <Button
+          type="submit"
+          kind="primary"
+          size="sm"
+          hasIconOnly
+          renderIcon={Send}
+          iconDescription={t.conversa.enviar}
+          disabled={enviando || !texto.trim()}
+        />
+      </form>
+    </div>
+  );
+}
+
+export function Conversa(props: {
+  viagem: EstadoDaViagem;
+  aoResponder: (texto: string) => Promise<void>;
+  embutida?: boolean; // dentro de uma aba do Raio-X: sem moldura própria e sem a resposta (fica no topo)
+}) {
+  const { viagem } = props;
+  return (
+    <aside
+      className={`mapa__conversa${props.embutida ? ' mapa__conversa--embutida' : ''}`}
+      aria-label={t.conversa.titulo}
+    >
+      {!props.embutida && <h2 className="mapa__cartao-titulo">{t.conversa.titulo}</h2>}
       {viagem.skill && (
         <div className="mapa__navegador">
           <span className="mapa__navegador-rotulo">{t.conversa.navegador}</span>
@@ -222,43 +276,8 @@ export function Conversa(props: { viagem: EstadoDaViagem; aoResponder: (texto: s
           </li>
         ))}
       </ol>
-      {viagem.pergunta && (
-        <div className="mapa__resposta">
-          <span className="mapa__navegador-rotulo">{t.conversa.respondaPelaAna}</span>
-          <div className="mapa__opcoes">
-            {viagem.pergunta.opcoes.map((opcao) => (
-              <Button key={opcao} kind="tertiary" size="sm" disabled={enviando} onClick={() => responder(opcao)}>
-                {opcao}
-              </Button>
-            ))}
-          </div>
-          <form
-            className="mapa__texto-livre"
-            onSubmit={(evento) => {
-              evento.preventDefault();
-              responder(texto);
-            }}
-          >
-            <TextInput
-              id="resposta-livre"
-              size="sm"
-              labelText={t.conversa.textoLivre}
-              hideLabel
-              placeholder={t.conversa.textoLivre}
-              value={texto}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => setTexto(e.target.value)}
-            />
-            <Button
-              type="submit"
-              kind="primary"
-              size="sm"
-              hasIconOnly
-              renderIcon={Send}
-              iconDescription={t.conversa.enviar}
-              disabled={enviando || !texto.trim()}
-            />
-          </form>
-        </div>
+      {viagem.pergunta && !props.embutida && (
+        <RespostaDaAna pergunta={viagem.pergunta} aoResponder={props.aoResponder} />
       )}
     </aside>
   );

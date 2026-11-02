@@ -1,0 +1,11 @@
+{
+  "fonte": "docs/experimentos/2026-11-01-modelos-opus-haiku.md",
+  "data": "2026-11-01",
+  "descricao": "6 casos (caminho feliz e 5 incidentes) × 3 repetições, no canal app, com os modelos reais no Microsoft Foundry.",
+  "linhas": [
+    {"modelo": "claude-opus-5-5", "modo": "com_skill", "cumpridas": 90, "total": 90, "execucoes": 18, "perfeitas": 18, "segundos_medio": 69, "custo_medio_usd": 0.5230},
+    {"modelo": "claude-opus-5-5", "modo": "sem_skill", "cumpridas": 80, "total": 90, "execucoes": 18, "perfeitas": 10, "segundos_medio": 47, "custo_medio_usd": 0.3481},
+    {"modelo": "claude-haiku-5-5", "modo": "com_skill", "cumpridas": 89, "total": 90, "execucoes": 18, "perfeitas": 17, "segundos_medio": 35, "custo_medio_usd": 0.0120},
+    {"modelo": "claude-haiku-5-5", "modo": "sem_skill", "cumpridas": 53, "total": 90, "execucoes": 18, "perfeitas": 0, "segundos_medio": 22, "custo_medio_usd": 0.0056}
+  ]
+}

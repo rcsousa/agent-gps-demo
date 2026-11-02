@@ -155,6 +155,40 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 
 Depois, volte o mundo ao normal com `./scripts/incidente.sh reset`.
 
+### O Modo Raio-X
+
+O seletor **Mapa / Raio-X**, na barra do mapa, troca a apresentação sem reiniciar a viagem: é a mesma execução, vista por dentro. O endereço ganha `?visao=raio-x`.
+
+![O Modo Raio-X: o log de chamadas MCP ao lado da cidade como grafo](assets/raio-x/chamadas.png)
+
+- **No mapa**, a cidade vira o grafo: todos os nós aparecem como prédios, com as relações entre eles. Passe o mouse numa relação para ver o tipo.
+- **Chamadas MCP:** cada `tools/list`, `skills/list`, `resources/read`, `prompts/get`, chamada de tool, passo do modelo e decisão de rota, na ordem em que aconteceram, com duração e status. Bloqueios do gateway aparecem com cadeado. Clique numa linha para ver o evento cru do barramento.
+- **Conversa:** a mesma do Modo Mapa. Quando o agente pergunta algo, as opções da Ana aparecem no topo do painel, em qualquer aba.
+- **Proveniência:** as decisões do agente (rota, recálculo e incidente), com motivo e regra, e os sistemas e dados que ele tocou. Clique num deles para ver fonte, data, responsável e confiança.
+- **Métricas:** tokens (com o que veio do cache), tempo no modelo e nas tools, custo, as regras do banco conferidas no fim e as tabelas por passo do modelo e por tool.
+- **Placar:** a última viagem de cada modo nesta sessão, o agregado por modo × modelo e a referência do experimento Opus × Haiku.
+
+![O placar: a sessão e a referência com os modelos reais](assets/raio-x/placar.png)
+
+### O painel do apresentador
+
+No mapa, a tecla **P** (ou o botão **Apresentador**) abre a gaveta do apresentador:
+
+- **Cenas 1 a 8**, com o tempo-alvo e o filtro "versão curta" (1, 4, 5, 6 e 8). **Ao vivo** limpa o mundo e prepara o mapa para a cena; a viagem começa no **Iniciar viagem**. **Replay** toca a gravação da cena. A cena 8 abre o Raio-X na última viagem com skill.
+- **Falas da Ana**, nas cenas 3 e 7: a do estorno e a da coleção de arte. Elas são enviadas como resposta quando o agente pergunta algo.
+- **Pedágio:** as aprovações pendentes, com aprovar e recusar e a contagem até a especialista Marina aprovar sozinha (30 s).
+- **Incidentes:** cada um com liga/desliga; o da cena atual aparece em destaque. Na cena 6, derrube a Âncora **durante** a viagem, para o recálculo acontecer ao vivo.
+- **Tools desligadas** e **Mundo limpo**, que volta tudo ao estado-base.
+
+![A gaveta do apresentador](assets/raio-x/apresentador.png)
+
+### Gravar e tocar (replay offline)
+
+- No fim de uma viagem ao vivo, **Gravar esta viagem** salva a execução em `gravacoes/cena-<n>.jsonl` (ou com o id da execução, fora de uma cena). Grave de novo para substituir.
+- `/mapa?gravacao=cena-6`, ou o botão **Replay** da gaveta, toca a gravação: sem rede, sem chave e sem LLM. O selo "Replay" fica visível o tempo todo.
+- As gravações versionadas foram feitas com o Haiku de verdade. As cenas 4 e 8 usam a gravação da cena 5, que é a mesma viagem.
+- Para regravar todas as cenas com o modelo do `.env` (gasta tokens, cerca de US$ 0,06 com o Haiku), use o roteiro de gravação descrito no capítulo 4.
+
 ### O dashboard de status
 
 Em <http://localhost:8080/status> fica o console de quem monta e apresenta a demo:

@@ -32,6 +32,7 @@ from mcp_gateway.catalogo import Catalogo
 CHAVE_PROVENIENCIA = "bussola/proveniencia"
 PARAMETROS_INVALIDOS = -32602
 ERRO_INTERNO = -32603
+LIMITE_DO_RESULTADO = 2000  # caracteres do resultado de uma tool no evento tool.called
 
 
 def _erro(texto: str) -> types.CallToolResult:
@@ -47,7 +48,10 @@ def _meta_de(params: types.RequestParams, chave: str) -> str | None:
 
 def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: EstadoVivo) -> Server:
     async def listar_tools(ctx, params) -> types.ListToolsResult:
-        return types.ListToolsResult(tools=[t.tool for _, t in sorted(catalogo.tools.items())])
+        tools = [t.tool for _, t in sorted(catalogo.tools.items())]
+        if params is not None and (execucao := _meta_de(params, CHAVE_EXECUCAO)):
+            await publicador.publicar("tools.listed", {"execucao_id": execucao, "quantidade": len(tools)})
+        return types.ListToolsResult(tools=tools)
 
     async def governanca(nome: str, skill: str | None, execucao: str | None) -> tuple[str | None, str | None]:
         """(motivo, mensagem) de bloqueio, ou (None, None) se a chamada pode seguir."""
@@ -122,12 +126,15 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
             await estado.registrar_fato(
                 execucao, params.name, conteudo if isinstance(conteudo, dict) else None
             )
+        texto = getattr(resultado.content[0], "text", "") if resultado.content else ""
         await publicador.publicar(
             "tool.called",
             {
                 **proveniencia,
                 "argumentos": params.arguments or {},
-                "erro": resultado.content[0].text if resultado.is_error and resultado.content else None,
+                "erro": texto if resultado.is_error else None,
+                # O Raio-X mostra o que voltou (resumido): nada é escondido do público técnico.
+                "resultado": None if resultado.is_error else texto[:LIMITE_DO_RESULTADO],
             },
         )
         return resultado
@@ -180,10 +187,21 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
             alvo = (upstream, None) if upstream else None
         if alvo is None:
             raise MCPError(code=PARAMETROS_INVALIDOS, message=f"Resource desconhecido no gateway: '{uri}'.")
+        inicio = time.perf_counter()
         async with catalogo.conectar(alvo[0]) as cliente:
             resultado = await cliente.read_resource(uri)
         if uri.startswith("skill://"):
-            await publicador.publicar("resource.read", {"uri": uri, "servidor": alvo[0].nome})
+            await publicador.publicar(
+                "resource.read",
+                {
+                    "uri": uri,
+                    "servidor": alvo[0].nome,
+                    "execucao_id": _meta_de(params, CHAVE_EXECUCAO),
+                    "skill": _meta_de(params, CHAVE_SKILL_ATIVA),
+                    "duracao_ms": round((time.perf_counter() - inicio) * 1000),
+                    "tamanho": sum(len(getattr(c, "text", "") or "") for c in resultado.contents),
+                },
+            )
         return resultado
 
     # --- Extensão io.modelcontextprotocol/skills (SEP-2640) --------------------------
@@ -191,13 +209,19 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
 
     async def listar_skills(ctx, params: ParamsListar) -> ResultadoListar:
         entradas = [entrada for _, (_, entrada) in sorted(catalogo.skills.items())]
-        await publicador.publicar("skills.listed", {"skills": [e["uri"] for e in entradas]})
+        await publicador.publicar(
+            "skills.listed",
+            {"skills": [e["uri"] for e in entradas], "execucao_id": _meta_de(params, CHAVE_EXECUCAO)},
+        )
         return ResultadoListar(skills=entradas)
 
     async def obter_skill(ctx, params: ParamsObter) -> ResultadoObter:
         alvo = catalogo.skills.get(params.uri)
         if alvo is None:
             raise MCPError(code=PARAMETROS_INVALIDOS, message=f"Skill desconhecida: {params.uri}")
+        await publicador.publicar(
+            "skill.read", {"uri": params.uri, "execucao_id": _meta_de(params, CHAVE_EXECUCAO)}
+        )
         return ResultadoObter(skill=alvo[1])
 
     servidor = Server(

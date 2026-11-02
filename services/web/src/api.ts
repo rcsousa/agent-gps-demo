@@ -1,6 +1,18 @@
 // Chamadas do web. Dados vêm do agent (/api); ações sobre o mundo vão ao simulador (/simulador).
 
-import type { Catalogo, Chamada, Cidade, EstadoDoModelo, Fonte, RotaDaJornada, Status } from './tipos';
+import type {
+  Catalogo,
+  Chamada,
+  Cidade,
+  EstadoDoModelo,
+  Fonte,
+  Gravacao,
+  IncidenteDoSimulador,
+  Placar,
+  RotaDaJornada,
+  Status,
+  TicketDeAprovacao,
+} from './tipos';
 
 async function obter<T>(caminho: string): Promise<T> {
   const resposta = await fetch(caminho);
@@ -19,6 +31,8 @@ export const api = {
   previa: (nome: string) =>
     obter<{ texto: string; cliente_id: string }>(`/api/catalogo/prompt/${encodeURIComponent(nome)}/previa`),
   modelo: () => obter<EstadoDoModelo>('/api/llm/modelo'),
+  placar: () => obter<Placar>('/api/placar'),
+  gravacoes: () => obter<Gravacao[]>('/api/gravacoes'),
   cidade: () => obter<Cidade>('/api/mapa'),
   rotas: () => obter<{ rotas: RotaDaJornada[] }>('/api/mapa/rotas'),
   entidade: (id: string) => obter<Record<string, unknown>>(`/api/mapa/entidade/${encodeURIComponent(id)}`),
@@ -52,7 +66,11 @@ export interface PedidoDeViagem {
   canal?: string;
   modelo?: string;
   provedor?: string;
+  incidentes?: string[]; // ativos no mundo ao iniciar: o caso do placar
 }
+
+export const gravar = (pedido: { execucao: string; cena?: string | null; incidentes: string[] }) =>
+  enviar<Gravacao>('/api/gravacoes', pedido);
 
 // Uma viagem do agente e a resposta da Ana (o apresentador responde por ela).
 export const viagem = {
@@ -64,6 +82,25 @@ export const viagem = {
 export async function aplicarIncidente(id: string): Promise<void> {
   const resposta = await fetch(`/simulador/incidentes/${id}/aplicar`, { method: 'POST' });
   if (!resposta.ok) throw new Error(String(resposta.status));
+}
+
+// O painel do apresentador: o estado do mundo e as ações sobre ele, sempre pelo simulador.
+export const simulador = {
+  incidentes: () => obter<IncidenteDoSimulador[]>('/simulador/incidentes'),
+  aprovacoes: () => obter<TicketDeAprovacao[]>('/simulador/aprovacoes'),
+  toolsFora: () => obter<{ fora: string[] }>('/simulador/tools'),
+  acao: async (caminho: string) => {
+    const resposta = await fetch(`/simulador${caminho}`, { method: 'POST' });
+    if (!resposta.ok) throw new Error((await resposta.text()) || String(resposta.status));
+  },
+};
+
+export async function incidentesAtivos(): Promise<string[]> {
+  try {
+    return (await simulador.incidentes()).filter((i) => i.ativo).map((i) => i.id);
+  } catch {
+    return [];
+  }
 }
 
 // Ligar e desligar é ação do apresentador sobre o mundo: vai ao simulador, nunca ao agente.

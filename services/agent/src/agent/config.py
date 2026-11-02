@@ -10,6 +10,8 @@ class Config(ConfigBase):
     gateway_url: str = "http://mcp-gateway:8000"
     gateway_token: str = ""
     bus_url: str = "redis://bus:6379/0"
+    # Gravações das cenas para o replay offline (pasta versionada, montada como volume).
+    gravacoes_dir: str = "/gravacoes"
 
     llm_provider: Literal["anthropic", "azure_openai"] = "anthropic"
     # Onde o Claude roda: na API da Anthropic ("api") ou no Microsoft Foundry, na Azure ("foundry").

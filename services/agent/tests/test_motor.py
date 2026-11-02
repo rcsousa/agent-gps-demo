@@ -221,6 +221,11 @@ async def test_com_skill_so_libera_as_tools_depois_de_carregar_e_envia_meta():
     assert parada["nome"] == "Parada 1" and parada["execucao_id"] == execucao.id
     final = await motor.obter(execucao.id)
     assert final["status"] == "concluida" and final["metricas"]["tokens"]["entrada"] == 40
+    # Um model.step por chamada ao modelo, com os tokens que somam o total do run.finished.
+    passos = [d for t, d in publicador.eventos if t == "model.step"]
+    assert [p["passo"] for p in passos] == [1, 2, 3, 4, 5]
+    assert sum(p["tokens"]["entrada"] for p in passos) == 40
+    assert passos[3]["tools_pedidas"] == ["navegacao.iniciar_parada", "cliente.obter_perfil"]
 
 
 async def test_sem_skill_mede_tools_irrelevantes_e_nao_envia_skill():

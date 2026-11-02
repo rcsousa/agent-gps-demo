@@ -17,5 +17,5 @@ Este site explica o que acontece por trás de cada cena da demo do Banco Bússol
 7. [Como reproduzir](07-como-reproduzir.md): subir a demo e rodar cada cena.
 8. [Glossário e perguntas frequentes](08-glossario-e-faq.md).
 
-!!! info "Estado atual: Fase 6 · Mapa"
-    A demo abre no infográfico navegável e a viagem do agente aparece no Modo Mapa, uma cidade em 3D desenhada a partir do grafo, com o robô percorrendo a rota evento a evento. O mapa existe, o gateway reúne 41 tools, 4 skills e 3 prompts de 9 servidores MCP e aplica a governança por skill, inclusive a ordem do workflow, e o simulador muda o mundo de verdade. O agente dirige a jornada nos três modos (sem contexto, sem skill e com skill) e publica cada passo no barramento. A persona do agente vem do banco, por canal (app, agência e central). O dashboard de status mostra cada tool, skill e prompt por dentro, com contrato, código e uso. Os capítulos 1, 2, 3, 5, 6 e 7 descrevem o que já funciona, e o capítulo 8 já traz a tabela da metáfora; os outros ganham conteúdo nas próximas fases.
+!!! info "Estado atual: Fase 7 · Raio-X e apresentador"
+    A demo abre no infográfico navegável. A viagem do agente aparece no Modo Mapa (a cidade em 3D) e no Modo Raio-X (o protocolo, a proveniência, as métricas e o placar). O apresentador conduz as cenas por uma gaveta no mapa (tecla P), e cada cena com viagem tem uma gravação real com o Haiku, para o replay sem rede. Os capítulos 1 a 7 descrevem o que já funciona; o 8 ganha o glossário completo na Fase 8.

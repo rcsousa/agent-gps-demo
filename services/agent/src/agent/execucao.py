@@ -30,7 +30,8 @@ from agent.incidentes import detectar
 from agent.llm.base import ChamadaTool, DefinicaoTool, ErroProvedor, ResultadoTool, SessaoLLM, Uso
 from agent.llm.fabrica import criar_sessao, modelo_de
 from bussola_comum.dominio import agora
-from bussola_comum.eventos import STREAM, Publicador
+from bussola_comum.eventos import STREAM, Publicador, decodificar
+from bussola_comum.regras import caso_de, regras, resumo
 from bussola_comum.skills import (
     CHAVE_EXECUCAO,
     CHAVE_SKILL_ATIVA,
@@ -42,6 +43,9 @@ from bussola_comum.skills import (
 )
 
 log = logging.getLogger("agent.execucao")
+
+# O registro das ações do simulador (incidentes aplicados e removidos) no barramento.
+STREAM_SIMULACAO = "bussola:simulacao"
 
 Modo = Literal["sem_contexto", "sem_skill", "com_skill"]
 MODOS: tuple[str, ...] = ("sem_contexto", "sem_skill", "com_skill")
@@ -71,6 +75,9 @@ class Metricas:
     duracao_s: float = 0.0
     # Custo em US$ pelos preços do modelo (None se o modelo não tem preço configurado).
     custo_usd: dict[str, Any] | None = None
+    # Regras do banco cumpridas no caso da execução (bussola_comum.regras): a base do placar.
+    caso: str = "caminho-feliz"
+    regras: dict[str, Any] | None = None
 
 
 @dataclass
@@ -125,6 +132,7 @@ class Motor:
         pedido: str | None = None,
         canal: str | None = None,
         modelo: str | None = None,
+        caso: str = "caminho-feliz",
     ) -> Execucao:
         if modo not in MODOS:
             raise ValueError(f"Modo desconhecido: {modo}. Use um de: {', '.join(MODOS)}.")
@@ -141,6 +149,7 @@ class Motor:
             modelo=modelo or "",
             cursor_eventos=ultimo[0][0] if ultimo else "0-0",
         )
+        execucao.metricas.caso = caso
         await self.salvar(execucao)
         await self.redis.lpush(LISTA, execucao.id)
         await self.redis.ltrim(LISTA, 0, 49)
@@ -188,6 +197,40 @@ class Motor:
         futuro.set_result(texto)
         return True
 
+    async def eventos_da_execucao(self, ident: str, cursor: str) -> list[dict[str, Any]]:
+        """Os eventos da execução no barramento (do agente e do gateway), em ordem, a partir do cursor."""
+        eventos: list[dict[str, Any]] = []
+        while True:
+            lote = await self.redis.xrange(STREAM, min=f"({cursor}", count=500)
+            if not lote:
+                return eventos
+            for entrada, campos in lote:
+                evento = decodificar(campos)
+                if evento["dados"].get("execucao_id") == ident:
+                    eventos.append(evento)
+                cursor = entrada
+
+    async def _conferir_regras(self, execucao: Execucao) -> dict[str, Any] | None:
+        try:
+            eventos = await self.eventos_da_execucao(execucao.id, execucao.cursor_eventos)
+        except Exception:  # noqa: BLE001
+            log.warning("Regras da execução %s não conferidas: barramento indisponível", execucao.id)
+            return None
+        if execucao.metricas.caso == "caminho-feliz":
+            # Um incidente aplicado durante a viagem (cena 6) também define o caso: o registro do
+            # simulador no barramento diz o que mudou no mundo, sem o agente falar com o simulador.
+            execucao.metricas.caso = caso_de(await self._incidentes_durante(execucao))
+        fim = {"tipo": "run.finished", "dados": {"apolice": execucao.apolice}}
+        return resumo(regras(execucao.metricas.caso, [*eventos, fim]))
+
+    async def _incidentes_durante(self, execucao: Execucao) -> list[str]:
+        inicio = execucao.cursor_eventos.split("-")[0]  # ids do Redis: milissegundos
+        aplicados = []
+        for _, campos in await self.redis.xrange(STREAM_SIMULACAO, min=f"{inicio}-0", count=1000):
+            if campos.get("acao") == "aplicado":
+                aplicados.append(json.loads(campos["dados"]).get("incidente"))
+        return [a for a in aplicados if a]
+
     async def aguardar(self, ident: str) -> None:
         if tarefa := self.tarefas.get(ident):
             await tarefa
@@ -210,6 +253,7 @@ class Motor:
             execucao.pergunta = None
             execucao.metricas.duracao_s = round(time.perf_counter() - inicio, 2)
             execucao.metricas.custo_usd = custo(self.config, execucao.modelo, execucao.metricas.tokens)
+            execucao.metricas.regras = await self._conferir_regras(execucao)
             await self.salvar(execucao)
             await viagem.publicar(
                 "run.finished",
@@ -241,6 +285,13 @@ class _Viagem:
     async def publicar(self, tipo: str, dados: dict[str, Any]) -> None:
         await self.motor.publicador.publicar(tipo, {"execucao_id": self.execucao.id, **dados})
 
+    def _meta(self) -> dict[str, str]:
+        """O `_meta` de toda requisição ao gateway: a execução e, se houver, a skill ativa."""
+        meta = {CHAVE_EXECUCAO: self.execucao.id}
+        if self.execucao.skill:
+            meta[CHAVE_SKILL_ATIVA] = self.execucao.skill
+        return meta
+
     async def dirigir(self) -> None:
         execucao, config = self.execucao, self.motor.config
         # run.started é sempre o primeiro evento da execução, antes de qualquer conversa com o gateway.
@@ -260,9 +311,9 @@ class _Viagem:
             self.gateway = gateway
             self.tools_gateway = {
                 t.name: DefinicaoTool(t.name, t.description or "", t.input_schema)
-                for t in (await gateway.list_tools()).tools
+                for t in (await gateway.list_tools(meta=self._meta())).tools
             }
-            self.skills = {e["uri"]: e for e in await listar_skills(gateway)}
+            self.skills = {e["uri"]: e for e in await listar_skills(gateway, self._meta())}
             # Tools de alguma skill; as demais são "irrelevantes" para a jornada (métrica do placar).
             self.relevantes = set().union(*(tools_permitidas(e["frontmatter"]) for e in self.skills.values()))
 
@@ -281,8 +332,21 @@ class _Viagem:
             execucao.modelo = sessao.modelo
             await self.motor.salvar(execucao)
 
-            for _ in range(config.max_passos):
+            for numero in range(1, config.max_passos + 1):
+                inicio = time.perf_counter()
                 passo = await sessao.passo(self._tools_disponiveis())
+                # Cada chamada ao modelo vira um evento: tokens e latência ao vivo no Raio-X.
+                await self.publicar(
+                    "model.step",
+                    {
+                        "passo": numero,
+                        "modelo": sessao.modelo,
+                        "tokens": asdict(passo.uso),
+                        "duracao_ms": round((time.perf_counter() - inicio) * 1000),
+                        "tools_pedidas": [c.nome for c in passo.chamadas],
+                        "motivo_parada": passo.motivo_parada,
+                    },
+                )
                 execucao.metricas.passos += 1
                 tokens = Uso(**execucao.metricas.tokens)
                 tokens.somar(passo.uso)
@@ -316,7 +380,7 @@ class _Viagem:
         else:
             try:
                 resultado = await self.gateway.get_prompt(
-                    nome, {"cliente_id": prompts.CLIENTE_PADRAO}, meta={CHAVE_EXECUCAO: execucao.id}
+                    nome, {"cliente_id": prompts.CLIENTE_PADRAO}, meta=self._meta()
                 )
                 persona = "\n\n".join(getattr(m.content, "text", "") for m in resultado.messages)
                 evento["origem"] = "gateway"
@@ -370,10 +434,7 @@ class _Viagem:
         if chamada.nome not in self.tools_gateway:
             metricas.erros += 1
             return ResultadoTool(chamada.id, f"Tool desconhecida: {chamada.nome}.", erro=True)
-        meta = {CHAVE_EXECUCAO: self.execucao.id}
-        if self.execucao.skill:
-            meta[CHAVE_SKILL_ATIVA] = self.execucao.skill
-        resultado = await self.gateway.call_tool(chamada.nome, chamada.argumentos, meta=meta)
+        resultado = await self.gateway.call_tool(chamada.nome, chamada.argumentos, meta=self._meta())
         texto = _texto_do_resultado(resultado)
         meta_resposta = resultado.meta or {}
 
@@ -432,7 +493,7 @@ class _Viagem:
         entrada = self.skills.get(uri)
         if entrada is None:
             raise ValueError(f"skill desconhecida: {uri}")
-        texto = await ler_arquivo(self.gateway, uri, entrada)
+        texto = await ler_arquivo(self.gateway, uri, entrada, self._meta())
         if self.execucao.skill is None:
             # A primeira skill carregada guia a viagem; as que ela reutiliza entram nas permissões.
             self.execucao.skill = uri
@@ -453,7 +514,7 @@ class _Viagem:
         entrada = self.skills.get(raiz)
         if entrada is None:
             raise ValueError(f"arquivo fora das skills conhecidas: {uri}")
-        return await ler_arquivo(self.gateway, uri, entrada)
+        return await ler_arquivo(self.gateway, uri, entrada, self._meta())
 
     # --- Navegação: o que o mapa desenha ----------------------------------------------------
 

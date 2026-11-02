@@ -1,16 +1,19 @@
 // Modo Mapa: a cidade do banco em 3D (o grafo) e a viagem do agente (os eventos), lado a lado.
 
-import { Add, ArrowLeft, Play, Subtract, ZoomFit } from '@carbon/icons-react';
-import { Button, Dropdown, IconButton, InlineNotification, Tag, Toggle } from '@carbon/react';
+import { Add, ArrowLeft, Play, PresentationFile, Subtract, ZoomFit } from '@carbon/icons-react';
+import { Button, ContentSwitcher, Dropdown, IconButton, InlineNotification, Switch, Tag, Toggle } from '@carbon/react';
 import { AmbientLight, DirectionalLight, LightingEffect, LinearInterpolator, OrbitView } from '@deck.gl/core';
 import DeckGL, { type DeckGLRef } from '@deck.gl/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { aplicarIncidente, api, viagem as apiViagem } from '../api';
+import { aplicarIncidente, api, gravar, incidentesAtivos, simulador, viagem as apiViagem } from '../api';
 import { mensagens } from '../mensagens/pt-BR';
 import { navegar, parametro, useMudancaDeEndereco } from '../navegacao';
+import { Apresentador } from '../apresentador/Apresentador';
+import { cena as presetDaCena } from '../apresentador/cenas';
+import { PainelRaioX } from '../raiox/PainelRaioX';
 import { PainelLateral } from '../status/Painel';
-import type { Cidade, EstadoDoModelo, NoDoMapa, RotaDaJornada } from '../tipos';
+import type { Cidade, EstadoDoModelo, Gravacao, NoDoMapa, RotaDaJornada } from '../tipos';
 import {
   ALTURA_DO_ROBO,
   camadas,
@@ -34,7 +37,7 @@ import { DESLOCAMENTO_MS, useDiretor } from './diretor';
 import { LinhaDoTempo } from './LinhaDoTempo';
 import { CartaoDeRotas, Conversa, DetalheDoNo, Legenda } from './Paineis';
 import { type Rotulo, Rotulos } from './rotulos';
-import { useViagem } from './viagem';
+import { ehReplay, PREFIXO_GRAVACAO, useViagem } from './viagem';
 
 const t = mensagens.mapa;
 const INTERVALO_TRANSITO_MS = 5000;
@@ -77,16 +80,6 @@ const PONTO_DE_PARTIDA: Record<string, string> = {
   central: 'canal-central',
 };
 
-// Presets das cenas (vindas da tela de abertura). O que acontece depois é sempre real.
-const CENAS: Record<string, { modo?: string; incidente?: string }> = {
-  '1': {},
-  '2': { modo: 'sem_contexto' },
-  '3': { modo: 'sem_skill' },
-  '4': { modo: 'com_skill' },
-  '5': { modo: 'com_skill' },
-  '6': { modo: 'com_skill', incidente: 'cotacao-ancora-fora' },
-  '7': { modo: 'com_skill', incidente: 'alcada-ana-excedida' },
-};
 
 interface Visao {
   target: [number, number, number];
@@ -119,6 +112,17 @@ function espacoDoRobo(robo: Robo | null, projetar: (p: Ponto3) => [number, numbe
   return [[x - 34, y - 84, x + 34, y + 4] as [number, number, number, number]];
 }
 
+// Cena → gravação para o replay. As cenas 4 (o destino) e 8 (o Raio-X) são a mesma viagem da 5.
+const MESMA_VIAGEM_DA: Record<string, string> = { '4': '5', '8': '5' };
+function gravacoesPorCena(gravacoes: Gravacao[]): Record<string, string> {
+  const porCena: Record<string, string> = Object.fromEntries(
+    gravacoes.filter((g) => g.cena).map((g) => [g.cena as string, g.nome]),
+  );
+  for (const [cena, origem] of Object.entries(MESMA_VIAGEM_DA))
+    if (!porCena[cena] && porCena[origem]) porCena[cena] = porCena[origem];
+  return porCena;
+}
+
 const chaveDaGeometria = (cidade: Cidade | null, rotas: RotaDaJornada[]) =>
   cidade
     ? `${cidade.bairros.map((b) => b.id).join()}|${cidade.nos.length}|${rotas.map((r) => r.paradas.map((p) => p.id).join()).join('/')}`
@@ -127,14 +131,52 @@ const chaveDaGeometria = (cidade: Cidade | null, rotas: RotaDaJornada[]) =>
 export function PaginaMapa() {
   const [execucao, setExecucao] = useState<string | null>(() => parametro('execucao'));
   const [cena, setCena] = useState<string | null>(() => parametro('cena'));
+  // Mapa (executivo) ou Raio-X (técnico): a mesma viagem, só muda a apresentação.
+  const [raioX, setRaioX] = useState(() => parametro('visao') === 'raio-x');
+  const [gravacao, setGravacao] = useState<string | null>(() => parametro('gravacao'));
   useMudancaDeEndereco(
     useCallback(() => {
+      setGravacao(parametro('gravacao'));
       setExecucao(parametro('execucao'));
       setCena(parametro('cena'));
+      setRaioX(parametro('visao') === 'raio-x');
     }, []),
   );
+  const trocarVisao = useCallback((paraRaioX: boolean) => {
+    const busca = new URLSearchParams(window.location.search);
+    if (paraRaioX) busca.set('visao', 'raio-x');
+    else busca.delete('visao');
+    const consulta = busca.toString();
+    navegar(`/mapa${consulta ? `?${consulta}` : ''}`, true);
+  }, []);
+  // Replay offline: antes de tocar, o mundo volta ao que era na gravação (os incidentes ativos).
+  const [gravacoes, setGravacoes] = useState<Gravacao[]>([]);
+  const [replayPronto, setReplayPronto] = useState<string | null>(null);
+  useEffect(() => {
+    api.gravacoes().then(setGravacoes, () => setGravacoes([]));
+  }, []);
+  const cabecalho = gravacoes.find((g) => g.nome === gravacao) ?? null;
+  useEffect(() => {
+    setReplayPronto(null);
+    if (!gravacao || !cabecalho) return;
+    let cancelado = false;
+    (async () => {
+      try {
+        await simulador.acao('/reset');
+        for (const incidente of cabecalho.incidentes ?? []) await simulador.acao(`/incidentes/${incidente}/aplicar`);
+      } catch {
+        // Sem simulador, o replay toca do mesmo jeito: só o trânsito do mapa não acompanha.
+      }
+      if (!cancelado) setReplayPronto(gravacao);
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [gravacao, cabecalho]);
+
   // A conversa usa o estado real; o mapa, o que o diretor já exibiu.
-  const real = useViagem(execucao);
+  const real = useViagem(gravacao ? (replayPronto ? PREFIXO_GRAVACAO + replayPronto : null) : execucao);
+  const replay = ehReplay(real.id);
   const direcao = useDiretor(real);
   const exibido = direcao.exibido;
 
@@ -323,12 +365,13 @@ export function PaginaMapa() {
             exibido,
             agora,
             bairroAberto,
+            raioX,
             destacada,
             selecionado,
             robo,
           })
         : [],
-    [cena3d, cidade, rotas, caminhos, exibido, agora, bairroAberto, destacada, selecionado, robo],
+    [cena3d, cidade, rotas, caminhos, exibido, agora, bairroAberto, raioX, destacada, selecionado, robo],
   );
 
   // --- Rótulos em HTML ----------------------------------------------------------------------
@@ -415,7 +458,7 @@ export function PaginaMapa() {
   ]);
 
   // --- Barra de viagem ----------------------------------------------------------------
-  const preset = (cena && CENAS[cena]) || {};
+  const preset: { modo?: string; incidente?: string } = presetDaCena(cena) ?? {};
   const [modo, setModo] = useState<string>(preset.modo ?? 'com_skill');
   const [canal, setCanal] = useState('app');
   const [escolhaDeModelo, setEscolhaDeModelo] = useState<string | null>(null);
@@ -433,11 +476,19 @@ export function PaginaMapa() {
 
   async function iniciar() {
     try {
+      // Os incidentes ativos dizem qual é o caso da viagem: é por ele que o placar confere as regras.
+      const incidentes = await incidentesAtivos();
+      setIncidentesDaViagem(incidentes);
       const pedido =
-        modeloEscolhido === ROTEIRO ? { modo, canal, provedor: ROTEIRO } : { modo, canal, modelo: modeloEscolhido };
+        modeloEscolhido === ROTEIRO
+          ? { modo, canal, provedor: ROTEIRO, incidentes }
+          : { modo, canal, modelo: modeloEscolhido, incidentes };
       const { id } = await apiViagem.iniciar(pedido);
       voltarACidade();
-      navegar(`/mapa?execucao=${id}${cena ? `&cena=${cena}` : ''}`);
+      const busca = new URLSearchParams({ execucao: id });
+      if (cena) busca.set('cena', cena);
+      if (raioX) busca.set('visao', 'raio-x');
+      navegar(`/mapa?${busca.toString()}`);
     } catch {
       setErro(t.erroIniciar);
     }
@@ -454,7 +505,33 @@ export function PaginaMapa() {
     }
   }
 
-  const emAndamento = Boolean(real.id && !real.fim);
+  // A gaveta do apresentador: tecla P (fora de campos de texto) ou o botão da barra.
+  const [apresentador, setApresentador] = useState(false);
+  useEffect(() => {
+    const aoTeclar = (evento: KeyboardEvent) => {
+      const alvo = evento.target as HTMLElement;
+      if (alvo.closest('input, textarea, [contenteditable="true"]')) return;
+      if (evento.key === 'p' || evento.key === 'P') setApresentador((a) => !a);
+    };
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, []);
+
+  const [incidentesDaViagem, setIncidentesDaViagem] = useState<string[]>([]);
+  const [gravada, setGravada] = useState<string | null>(null);
+  useEffect(() => setGravada(null), [real.id]);
+  async function gravarViagem() {
+    if (!real.id) return;
+    try {
+      const salva = await gravar({ execucao: real.id, cena, incidentes: incidentesDaViagem });
+      setGravada(salva.nome);
+      api.gravacoes().then(setGravacoes, () => undefined);
+    } catch {
+      setErro(t.erroGravar);
+    }
+  }
+
+  const emAndamento = Boolean(real.id && !real.fim && !replay);
   const ultimoIncidente = exibido.incidentes.at(-1);
   const ultimoRecalculo = exibido.recalculos.at(-1);
   const noSelecionado = selecionado ? nos.get(selecionado) : undefined;
@@ -473,8 +550,18 @@ export function PaginaMapa() {
     >
       <div className="mapa__barra">
         <h1 id="titulo-mapa" className="mapa__titulo">
-          {t.titulo}
+          {raioX ? mensagens.raioX.raioX : t.titulo}
         </h1>
+        <ContentSwitcher
+          className="mapa__visao"
+          size="md"
+          selectedIndex={raioX ? 1 : 0}
+          onChange={({ index }: { index?: number }) => trocarVisao(index === 1)}
+          aria-label={mensagens.raioX.alternar}
+        >
+          <Switch name="mapa" text={mensagens.raioX.mapa} />
+          <Switch name="raio-x" text={mensagens.raioX.raioX} />
+        </ContentSwitcher>
         <Dropdown
           id="viagem-modo"
           size="md"
@@ -512,6 +599,16 @@ export function PaginaMapa() {
         />
         <Button id="iniciar-viagem" size="md" renderIcon={Play} onClick={iniciar} disabled={emAndamento}>
           {emAndamento ? t.barra.emViagem : t.barra.iniciar}
+        </Button>
+        <Button
+          id="abrir-apresentador"
+          kind={apresentador ? 'secondary' : 'ghost'}
+          size="md"
+          renderIcon={PresentationFile}
+          onClick={() => setApresentador((a) => !a)}
+          aria-pressed={apresentador}
+        >
+          {mensagens.apresentador.abrir}
         </Button>
         {cena && (
           <div className="mapa__cena">
@@ -590,9 +687,30 @@ export function PaginaMapa() {
           )}
 
           <CartaoDeRotas rotas={rotas} ativa={exibido.rota} aoDestacar={setDestacada} />
+          <Apresentador
+            aberto={apresentador}
+            aoFechar={() => setApresentador(false)}
+            cenaAtual={cena}
+            real={real}
+            aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
+            gravacoes={gravacoesPorCena(gravacoes)}
+          />
 
           <div className="mapa__estado">
-            {real.id && (
+            {replay && cabecalho && (
+              <Tag type="purple" size="md" title={t.replayAjuda} className="mapa__selo-replay">
+                {t.replay(
+                  new Date(cabecalho.gravado_em).toLocaleDateString('pt-BR'),
+                  t.barra.modelo(cabecalho.modelo),
+                )}
+              </Tag>
+            )}
+            {real.fim && !replay && real.id && (
+              <Button kind="tertiary" size="sm" onClick={gravarViagem} disabled={Boolean(gravada)}>
+                {gravada ? t.gravada(gravada) : t.gravar}
+              </Button>
+            )}
+            {real.id && !replay && (
               <Tag type={direcao.fila > 0 ? 'warm-gray' : 'green'} size="md">
                 {direcao.fila > 0 ? t.reproduzindo(direcao.fila) : real.fim ? t.encerrada : t.aoVivo}
               </Tag>
@@ -683,10 +801,24 @@ export function PaginaMapa() {
           <LinhaDoTempo paradas={paradas} viagem={exibido} />
         </div>
 
-        <Conversa
-          viagem={real}
-          aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
-        />
+        {raioX ? (
+          <PainelRaioX
+            viagem={exibido}
+            conversa={replay ? { ...real, pergunta: null } : real}
+            nos={nos}
+            aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
+            aoEscolherNo={(id) => {
+              setSelecionado(id);
+              const ponto = pontoDoNo(id);
+              if (ponto) voar(ponto, ZOOM_NO_BAIRRO + 0.2);
+            }}
+          />
+        ) : (
+          <Conversa
+            viagem={replay ? { ...real, pergunta: null } : real}
+            aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
+          />
+        )}
       </div>
 
       {noSelecionado && (

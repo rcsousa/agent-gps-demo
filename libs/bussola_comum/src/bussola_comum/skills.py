@@ -54,12 +54,17 @@ def anuncia_skills(cliente: Client) -> bool:
     return IDENTIFICADOR in (cliente.server_capabilities.extensions or {})
 
 
-async def listar_skills(cliente: Client) -> list[dict[str, Any]]:
+def _params(classe: type[types.RequestParams], meta: dict[str, Any] | None, **campos: Any):
+    """Params com o `_meta` do host (execução e skill), quando houver: o gateway correlaciona os eventos."""
+    return classe.model_validate({**campos, **({"_meta": meta} if meta else {})})
+
+
+async def listar_skills(cliente: Client, meta: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Todas as entradas de skills/list, seguindo a paginação."""
     entradas, cursor = [], None
     while True:
         resultado = await cliente.session.send_request(
-            RequisicaoListar(params=ParamsListar(cursor=cursor)), ResultadoListar
+            RequisicaoListar(params=_params(ParamsListar, meta, cursor=cursor)), ResultadoListar
         )
         entradas.extend(resultado.skills)
         cursor = resultado.next_cursor
@@ -67,9 +72,9 @@ async def listar_skills(cliente: Client) -> list[dict[str, Any]]:
             return entradas
 
 
-async def obter_skill(cliente: Client, uri: str) -> dict[str, Any]:
+async def obter_skill(cliente: Client, uri: str, meta: dict[str, Any] | None = None) -> dict[str, Any]:
     resultado = await cliente.session.send_request(
-        RequisicaoObter(params=ParamsObter(uri=uri)), ResultadoObter
+        RequisicaoObter(params=_params(ParamsObter, meta, uri=uri)), ResultadoObter
     )
     return resultado.skill
 
@@ -79,12 +84,14 @@ def ler_frontmatter(texto: str) -> dict[str, Any]:
     return yaml.safe_load(texto[4:fim]) if texto.startswith("---\n") and fim > 0 else {}
 
 
-async def ler_arquivo(cliente: Client, uri: str, entrada: dict[str, Any]) -> str:
+async def ler_arquivo(
+    cliente: Client, uri: str, entrada: dict[str, Any], meta: dict[str, Any] | None = None
+) -> str:
     """Lê um arquivo da skill e verifica tamanho, digest e (no SKILL.md) o frontmatter."""
     descritor = next((r for r in entrada["resources"] if r["uri"] == uri), None)
     if descritor is None:
         raise SkillNaoConfere(f"{uri} não está entre os arquivos listados da skill.")
-    texto = (await cliente.read_resource(uri)).contents[0].text
+    texto = (await cliente.read_resource(uri, meta=meta)).contents[0].text
     conteudo = texto.encode("utf-8")
     if len(conteudo) != descritor["size"]:
         raise SkillNaoConfere(f"{uri}: tamanho {len(conteudo)} diferente do listado ({descritor['size']}).")

@@ -62,6 +62,9 @@ services:
   agent:
     <<: *python-servico
     build: { <<: *build-python, args: { SERVICE: agent, MODULE: agent } }
+    # As gravações das cenas (replay offline) ficam versionadas no repositório.
+    volumes:
+      - ./gravacoes:/gravacoes
     environment:
       <<: *python-env
       # O agente conhece só o gateway e o barramento.

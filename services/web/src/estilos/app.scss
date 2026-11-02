@@ -1045,3 +1045,421 @@ $altura-linha-do-tempo: 5.75rem;
     white-space: nowrap;
   }
 }
+
+// --- Modo Raio-X: o painel técnico ----------------------------------------------------------
+.mapa__visao {
+  inline-size: 13rem;
+  align-self: flex-end;
+}
+
+.mapa__conversa--embutida {
+  inline-size: auto;
+  padding: $spacing-04 0 0;
+  border: 0;
+  background: transparent;
+}
+
+.raiox {
+  inline-size: 32rem;
+  display: flex;
+  flex-direction: column;
+  min-block-size: 0;
+  background: theme.$layer-01;
+  border-inline-start: 1px solid theme.$border-subtle-01;
+
+  .cds--tabs {
+    flex: none;
+  }
+
+  &__aba.cds--tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-04 $spacing-05;
+    max-block-size: calc(100vh - 3rem - 6rem - 3rem);
+  }
+
+  &__log {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  &__linha {
+    all: unset;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-columns: 1rem 1fr auto;
+    column-gap: $spacing-03;
+    inline-size: 100%;
+    padding: $spacing-02 $spacing-03;
+    cursor: pointer;
+    border-inline-start: 3px solid transparent;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8125rem;
+    line-height: 1.25rem;
+
+    &:hover,
+    &:focus-visible {
+      background: theme.$layer-hover-01;
+    }
+
+    &:focus-visible {
+      outline: 2px solid theme.$focus;
+      outline-offset: -2px;
+    }
+
+    &--protocolo {
+      border-inline-start-color: #78a9ff;
+    }
+
+    &--tool {
+      border-inline-start-color: $laranja-bussola;
+    }
+
+    &--modelo {
+      border-inline-start-color: #a56eff;
+    }
+
+    &--navegacao {
+      border-inline-start-color: #42be65;
+    }
+
+    &--incidente,
+    &--bloqueio {
+      border-inline-start-color: #fa4d56;
+      background: rgb(250 77 86 / 10%);
+    }
+
+    &--conversa {
+      border-inline-start-color: #8d8d8d;
+    }
+  }
+
+  &__titulo {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__duracao {
+    color: theme.$text-secondary;
+  }
+
+  &__detalhe {
+    grid-column: 2 / -1;
+    color: theme.$text-secondary;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 0.75rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__icone {
+    inline-size: 1rem;
+    block-size: 1rem;
+    margin-block-start: 0.125rem;
+
+    &--ok {
+      color: #42be65;
+    }
+
+    &--erro {
+      color: #fa4d56;
+    }
+
+    &--bloqueio {
+      color: #f1c21b;
+    }
+  }
+
+  &__secoes {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-05;
+  }
+
+  &__secao {
+    @include type-style('heading-compact-01');
+    margin-block-end: $spacing-03;
+  }
+
+  &__mono {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+  }
+
+  &__decisoes,
+  &__tocados,
+  &__regras {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-03;
+  }
+
+  &__decisao {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-01;
+    padding: $spacing-03;
+    background: theme.$layer-02;
+    border-inline-start: 3px solid $laranja-bussola;
+
+    &--detected {
+      border-inline-start-color: #fa4d56;
+    }
+
+    &--recalculated {
+      border-inline-start-color: #f1c21b;
+    }
+  }
+
+  &__regras li {
+    display: flex;
+    align-items: center;
+    gap: $spacing-03;
+  }
+
+  &__numeros {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $spacing-03;
+
+    div {
+      padding: $spacing-03;
+      background: theme.$layer-02;
+    }
+
+    dt {
+      @include type-style('label-01');
+      color: theme.$text-secondary;
+    }
+
+    dd {
+      @include type-style('heading-03');
+
+      small {
+        @include type-style('label-01');
+        color: theme.$text-secondary;
+      }
+    }
+  }
+
+  &__tabela {
+    inline-size: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+
+    th,
+    td {
+      padding: $spacing-02 $spacing-03;
+      text-align: start;
+      border-block-end: 1px solid theme.$border-subtle-01;
+    }
+
+    th {
+      @include type-style('label-01');
+      color: theme.$text-secondary;
+    }
+  }
+}
+
+// --- Placar ------------------------------------------------------------------------------
+.placar {
+  &__subtitulo {
+    @include type-style('heading-compact-02');
+    margin-block-end: $spacing-02;
+  }
+
+  &__cartoes {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: $spacing-03;
+    margin-block: $spacing-04;
+  }
+
+  &__cartao {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-02;
+    padding: $spacing-03;
+    background: theme.$layer-02;
+    border-block-start: 3px solid #8d8d8d;
+    font-size: 0.75rem;
+
+    &--com_skill {
+      border-block-start-color: $laranja-bussola;
+    }
+  }
+
+  &__modo {
+    @include type-style('heading-compact-01');
+  }
+
+  &__barra {
+    position: relative;
+    display: block;
+    min-inline-size: 7rem;
+    block-size: 1.5rem;
+    background: theme.$layer-accent-01;
+  }
+
+  &__preenchido {
+    position: absolute;
+    inset-block: 0;
+    inset-inline-start: 0;
+
+    &--alta {
+      background: rgb(242 101 34 / 85%);
+    }
+
+    &--media {
+      background: rgb(241 194 27 / 70%);
+    }
+
+    &--baixa {
+      background: rgb(250 77 86 / 65%);
+    }
+  }
+
+  &__rotulo {
+    position: relative;
+    padding-inline: $spacing-02;
+    font-weight: 600;
+    line-height: 1.5rem;
+    white-space: nowrap;
+
+    small {
+      font-weight: 400;
+    }
+  }
+
+  &__destaque td {
+    font-weight: 600;
+  }
+}
+
+.mapa__resposta--compacta {
+  padding: $spacing-04 $spacing-05;
+  background: rgb(242 101 34 / 12%);
+  border-block-end: 1px solid theme.$border-subtle-01;
+}
+
+.mapa__pergunta {
+  @include type-style('body-compact-01');
+}
+
+// --- Painel do apresentador (gaveta no mapa) ----------------------------------------------
+.apresentador {
+  position: absolute;
+  z-index: 5;
+  inset-block: 0 $altura-linha-do-tempo;
+  inset-inline-start: 0;
+  inline-size: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-05;
+  padding: $spacing-05;
+  background: theme.$layer-01;
+  color: theme.$text-primary;
+  box-shadow: 4px 0 12px rgb(0 0 0 / 40%);
+
+  h3 {
+    @include type-style('heading-compact-01');
+  }
+
+  &__cabecalho,
+  &__linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-03;
+  }
+
+  &__titulo {
+    @include type-style('heading-03');
+  }
+
+  &__secao {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-03;
+    padding-block-start: $spacing-04;
+    border-block-start: 1px solid theme.$border-subtle-01;
+  }
+
+  &__cenas li {
+    display: grid;
+    grid-template-columns: 1.75rem 1fr auto auto;
+    align-items: center;
+    gap: $spacing-03;
+    padding: $spacing-02 $spacing-03;
+    border-inline-start: 3px solid transparent;
+
+    &.apresentador__cena--atual {
+      border-inline-start-color: $laranja-bussola;
+      background: theme.$layer-02;
+    }
+  }
+
+  &__numero {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    border-radius: 50%;
+    background: $laranja-bussola;
+    color: #fff;
+    font-weight: 700;
+  }
+
+  &__nome {
+    display: flex;
+    flex-direction: column;
+
+    small {
+      color: theme.$text-secondary;
+    }
+  }
+
+  &__fala {
+    max-inline-size: none;
+    inline-size: 100%;
+    white-space: normal;
+  }
+
+  &__ticket {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-02;
+    padding: $spacing-03;
+    background: theme.$layer-02;
+    border-inline-start: 3px solid #1d3557;
+  }
+
+  &__botoes {
+    display: flex;
+    gap: $spacing-03;
+  }
+
+  &__incidentes li {
+    display: flex;
+    align-items: center;
+    gap: $spacing-03;
+    padding: $spacing-02 $spacing-03;
+
+    &.apresentador__incidente--sugerido {
+      background: rgb(242 101 34 / 14%);
+      border-inline-start: 3px solid $laranja-bussola;
+    }
+  }
+
+  &__incidente {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-01;
+    font-size: 0.8125rem;
+  }
+}
