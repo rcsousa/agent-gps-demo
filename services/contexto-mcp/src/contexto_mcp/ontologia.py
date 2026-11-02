@@ -80,13 +80,15 @@ class Bairro(BaseModel):
     id: str
     nome: str
     cor: str
-    poligono: list[tuple[float, float]]
+    # Região de quadras da grade: [coluna inicial, linha inicial, coluna final, linha final).
+    quadras: tuple[int, int, int, int]
 
 
 class Ontologia(BaseModel):
     tipos: dict[str, TipoEntidade]
     tipos_relacao: dict[str, TipoRelacao]
     mundo: dict[str, int]
+    cidade: dict
     bairros: list[Bairro]
     rio: list[tuple[float, float]]
     entidades: dict[str, Entidade]
@@ -213,6 +215,7 @@ def carregar_ontologia(
         tipos=tipos,
         tipos_relacao=tipos_relacao,
         mundo=cidade.get("mundo", {"largura": 1000, "altura": 700}),
+        cidade=cidade.get("cidade", {}),
         bairros=bairros,
         rio=cidade.get("rio", []),
         entidades=entidades,

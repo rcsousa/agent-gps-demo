@@ -14,7 +14,7 @@ from bussola_comum.saude import Checagem
 from contexto_mcp import modelos as m
 from contexto_mcp.config import NOME, Config
 from contexto_mcp.grafo import EntidadeNaoEncontrada, RepositorioGrafo
-from contexto_mcp.layout import carregar_layout
+from contexto_mcp.layout import carregar_layout, estilo
 from contexto_mcp.ontologia import carregar_ontologia
 from contexto_mcp.seed import aplicar_seed
 
@@ -104,23 +104,33 @@ def criar_servidor(checagens: dict[str, Checagem] | None = None, config: Config 
     async def consultar_rota(jornada: str = JORNADA_PADRAO, rota: str | None = None) -> m.RespostaRota:
         return await _executar(repo.rotas(jornada, rota))
 
+    def _bairro(b) -> dict:
+        x0, y0, x1, y1 = layout["regioes"][b.id]
+        return {**b.model_dump(), "poligono": [[x0, y0], [x1, y0], [x1, y1], [x0, y1]]}
+
     @mcp.resource(
         "contexto://mapa",
         name="mapa",
         description=(
-            "Mapa completo da cidade para desenho: bairros, rio, avenidas, nós com posição e estado, arestas."
+            "Mapa completo da cidade para desenho: a grade de ruas e quadras, os bairros, o rio, "
+            "cada lugar com posição, porta na rua, estilo de construção e estado, e as arestas."
         ),
         mime_type="application/json",
     )
     async def mapa() -> str:
         grafo = await repo.mapa()
+        nos = [
+            {**n, "porta": layout["portas"].get(n["id"]), "estilo": estilo(n["id"], n["tipo"], n["bairro"])}
+            for n in grafo["nos"]
+        ]
         return json.dumps(
             {
                 "mundo": ontologia.mundo,
-                "bairros": [b.model_dump() for b in ontologia.bairros],
+                "cidade": {**layout["cidade"], "quadras": layout["quadras"]},
+                "bairros": [_bairro(b) for b in ontologia.bairros],
                 "rio": ontologia.rio,
-                "avenidas": layout["avenidas"],
                 **grafo,
+                "nos": nos,
             },
             ensure_ascii=False,
         )
