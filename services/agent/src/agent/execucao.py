@@ -31,7 +31,7 @@ from agent.llm.base import ChamadaTool, DefinicaoTool, ErroProvedor, ResultadoTo
 from agent.llm.fabrica import criar_sessao, modelo_de
 from bussola_comum.dominio import agora
 from bussola_comum.eventos import STREAM, Publicador, decodificar
-from bussola_comum.regras import regras, resumo
+from bussola_comum.regras import caso_de, regras, resumo
 from bussola_comum.skills import (
     CHAVE_EXECUCAO,
     CHAVE_SKILL_ATIVA,
@@ -43,6 +43,9 @@ from bussola_comum.skills import (
 )
 
 log = logging.getLogger("agent.execucao")
+
+# O registro das ações do simulador (incidentes aplicados e removidos) no barramento.
+STREAM_SIMULACAO = "bussola:simulacao"
 
 Modo = Literal["sem_contexto", "sem_skill", "com_skill"]
 MODOS: tuple[str, ...] = ("sem_contexto", "sem_skill", "com_skill")
@@ -213,8 +216,20 @@ class Motor:
         except Exception:  # noqa: BLE001
             log.warning("Regras da execução %s não conferidas: barramento indisponível", execucao.id)
             return None
+        if execucao.metricas.caso == "caminho-feliz":
+            # Um incidente aplicado durante a viagem (cena 6) também define o caso: o registro do
+            # simulador no barramento diz o que mudou no mundo, sem o agente falar com o simulador.
+            execucao.metricas.caso = caso_de(await self._incidentes_durante(execucao))
         fim = {"tipo": "run.finished", "dados": {"apolice": execucao.apolice}}
         return resumo(regras(execucao.metricas.caso, [*eventos, fim]))
+
+    async def _incidentes_durante(self, execucao: Execucao) -> list[str]:
+        inicio = execucao.cursor_eventos.split("-")[0]  # ids do Redis: milissegundos
+        aplicados = []
+        for _, campos in await self.redis.xrange(STREAM_SIMULACAO, min=f"{inicio}-0", count=1000):
+            if campos.get("acao") == "aplicado":
+                aplicados.append(json.loads(campos["dados"]).get("incidente"))
+        return [a for a in aplicados if a]
 
     async def aguardar(self, ident: str) -> None:
         if tarefa := self.tarefas.get(ident):

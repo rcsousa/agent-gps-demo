@@ -89,3 +89,27 @@ async def test_run_finished_leva_as_regras_do_caso():
     # Os eventos da execução vêm do barramento, só os dela e em ordem.
     eventos = await motor.eventos_da_execucao(execucao.id, "0-0")
     assert eventos[0]["tipo"] == "run.started" and eventos[-1]["tipo"] == "run.finished"
+
+
+async def test_incidente_aplicado_durante_a_viagem_define_o_caso():
+    redis = FakeAsyncRedis(decode_responses=True)
+
+    class SessaoComIncidente(SessaoFalsa):
+        async def passo(self, tools):
+            # O apresentador derruba a Âncora no meio da viagem (registro do simulador).
+            await redis.xadd(
+                "bussola:simulacao", {"acao": "aplicado", "dados": '{"incidente": "cotacao-ancora-fora"}'}
+            )
+            return await super().passo(tools)
+
+    sessao = SessaoComIncidente([Passo(texto="Pronto.", fim=True)])
+    motor = Motor(
+        Config(max_passos=5),
+        redis,
+        PublicadorRedis(redis, "agent"),
+        lambda: Client(_gateway([])),
+        fabrica_sessao=lambda *a, **k: sessao,
+    )
+    execucao = await motor.iniciar("com_skill", "falso")
+    await motor.aguardar(execucao.id)
+    assert (await motor.obter(execucao.id))["metricas"]["caso"] == "cotacao-ancora-fora"
