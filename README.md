@@ -85,4 +85,4 @@ docs/                           spec e infográfico
 
 ## Fases
 
-O desenvolvimento segue as fases da spec. Fase atual: **7 · Raio-X e apresentador**.
+O desenvolvimento segue as fases da spec. Fase atual: **8 · Bastidores**.

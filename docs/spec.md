@@ -438,6 +438,28 @@ Além do software, a demo entrega uma documentação rica que explica o conceito
 - Capturas e GIFs de cada cena.
 - Linguagem do dia a dia, sem tom professoral.
 
+**Como cada requisito é atendido (Fase 8):**
+
+- **O botão "Bastidores":**
+  - um painel lateral no web mostra o próprio site (iframe, mesma origem) na seção certa: no capítulo 4, uma âncora fixa por cena (`#cena-N`);
+  - ele aparece na barra do mapa ("Bastidores da cena"), na gaveta do apresentador e nas Métricas do Raio-X;
+  - na tela de abertura, as áreas de bastidores abrem o painel sem sair do infográfico;
+  - Esc fecha, e a viagem continua por baixo;
+  - no capítulo 4, cada cena tem "Tocar esta cena (replay)" e "Preparar ao vivo".
+- **Diagramas gerados do repositório:**
+  - no build do `docs`, um estágio com Graphviz gera SVGs a partir de:
+    - o `docker-compose.yml` e os servidores do gateway (arquitetura);
+    - o `esquema.yaml` (a ontologia por bairro);
+    - o `workflow.yaml` (a ordem da skill);
+    - as instâncias da jornada (as rotas);
+  - um teste do gerador roda antes, no próprio build.
+- **Trechos de código reais:** marcadores `--8<--` no próprio código (a governança do gateway, o verificador de regras e o diretor de animações) e `pymdownx.snippets` no build.
+- **Capturas e vídeos:**
+  - `./scripts/capturar-cenas.sh` toca as gravações no Playwright e gera, para cada cena com viagem, um WebM acelerado de cerca de 22 s com capa;
+  - as cenas 1, 4 e 8 ganham capturas paradas;
+  - nada disso gasta tokens.
+- **Dois níveis de leitura** em todos os capítulos. O capítulo 8 traz o glossário e as objeções técnicas com respostas curtas.
+
 ## Entregáveis, critérios de aceite e fases para o Claude Code
 
 O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo limpa via `docker compose up`.
@@ -463,7 +485,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [ ] O placar mostra diferença mensurável entre sem contexto, sem skill e com skill, em regras do banco cumpridas
 - [ ] O Modo Mapa é entendido sem narração por alguém não técnico
 - [ ] Toda animação corresponde a um evento real do agente
-- [ ] A doc de bastidores cobre todas as cenas, nos dois níveis de leitura
+- [x] A doc de bastidores cobre todas as cenas, nos dois níveis de leitura
 
 ## Riscos e decisões em aberto
 
@@ -494,6 +516,8 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Painel do apresentador como gaveta no próprio mapa (tecla P), numa tela só
 - [x] Placar: as viagens da sessão, com as regras conferidas pelo agente, e a referência do experimento com os modelos reais
 - [x] Replay offline por gravações versionadas no repositório, tocadas com selo "Replay" visível
+- [x] Bastidores num painel lateral com o próprio site (iframe), aberto na seção da cena
+- [x] Animações das cenas em WebM curto com capa, gravadas do replay real; diagramas em SVG gerados no build com Graphviz (funcionam offline)
 - [x] Pedágio: o apresentador aprova pelo simulador, e a especialista aprova sozinha depois de 30 s
 - [x] Cenas de falha sob medida: desligar tools pelo painel de status, via simulador
 - [x] Cerca de 15 tools de distração no gateway para a cena 3 (ver Incidentes)
