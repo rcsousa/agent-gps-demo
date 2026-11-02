@@ -75,3 +75,11 @@
   border-radius: 4px;
   box-shadow: 0 1px 6px rgb(0 0 0 / 30%);
 }
+
+/* Impressão do roteiro (capítulo 9): só o conteúdo, uma cena por página. */
+@media print {
+  .md-header, .md-sidebar, .md-footer, .md-tabs, .md-top { display: none !important; }
+  .md-content { margin: 0 !important; }
+  .cena-impressa { break-before: page; }
+  body { font-size: 12pt; }
+}
