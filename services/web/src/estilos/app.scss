@@ -1348,3 +1348,118 @@ $altura-linha-do-tempo: 5.75rem;
 .mapa__pergunta {
   @include type-style('body-compact-01');
 }
+
+// --- Painel do apresentador (gaveta no mapa) ----------------------------------------------
+.apresentador {
+  position: absolute;
+  z-index: 5;
+  inset-block: 0 $altura-linha-do-tempo;
+  inset-inline-start: 0;
+  inline-size: 26rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-05;
+  padding: $spacing-05;
+  background: theme.$layer-01;
+  color: theme.$text-primary;
+  box-shadow: 4px 0 12px rgb(0 0 0 / 40%);
+
+  h3 {
+    @include type-style('heading-compact-01');
+  }
+
+  &__cabecalho,
+  &__linha {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-03;
+  }
+
+  &__titulo {
+    @include type-style('heading-03');
+  }
+
+  &__secao {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-03;
+    padding-block-start: $spacing-04;
+    border-block-start: 1px solid theme.$border-subtle-01;
+  }
+
+  &__cenas li {
+    display: grid;
+    grid-template-columns: 1.75rem 1fr auto auto;
+    align-items: center;
+    gap: $spacing-03;
+    padding: $spacing-02 $spacing-03;
+    border-inline-start: 3px solid transparent;
+
+    &.apresentador__cena--atual {
+      border-inline-start-color: $laranja-bussola;
+      background: theme.$layer-02;
+    }
+  }
+
+  &__numero {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1.5rem;
+    block-size: 1.5rem;
+    border-radius: 50%;
+    background: $laranja-bussola;
+    color: #fff;
+    font-weight: 700;
+  }
+
+  &__nome {
+    display: flex;
+    flex-direction: column;
+
+    small {
+      color: theme.$text-secondary;
+    }
+  }
+
+  &__fala {
+    max-inline-size: none;
+    inline-size: 100%;
+    white-space: normal;
+  }
+
+  &__ticket {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-02;
+    padding: $spacing-03;
+    background: theme.$layer-02;
+    border-inline-start: 3px solid #1d3557;
+  }
+
+  &__botoes {
+    display: flex;
+    gap: $spacing-03;
+  }
+
+  &__incidentes li {
+    display: flex;
+    align-items: center;
+    gap: $spacing-03;
+    padding: $spacing-02 $spacing-03;
+
+    &.apresentador__incidente--sugerido {
+      background: rgb(242 101 34 / 14%);
+      border-inline-start: 3px solid $laranja-bussola;
+    }
+  }
+
+  &__incidente {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-01;
+    font-size: 0.8125rem;
+  }
+}

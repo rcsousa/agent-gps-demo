@@ -1,6 +1,6 @@
 // Modo Mapa: a cidade do banco em 3D (o grafo) e a viagem do agente (os eventos), lado a lado.
 
-import { Add, ArrowLeft, Play, Subtract, ZoomFit } from '@carbon/icons-react';
+import { Add, ArrowLeft, Play, PresentationFile, Subtract, ZoomFit } from '@carbon/icons-react';
 import { Button, ContentSwitcher, Dropdown, IconButton, InlineNotification, Switch, Tag, Toggle } from '@carbon/react';
 import { AmbientLight, DirectionalLight, LightingEffect, LinearInterpolator, OrbitView } from '@deck.gl/core';
 import DeckGL, { type DeckGLRef } from '@deck.gl/react';
@@ -9,6 +9,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { aplicarIncidente, api, incidentesAtivos, viagem as apiViagem } from '../api';
 import { mensagens } from '../mensagens/pt-BR';
 import { navegar, parametro, useMudancaDeEndereco } from '../navegacao';
+import { Apresentador } from '../apresentador/Apresentador';
+import { cena as presetDaCena } from '../apresentador/cenas';
 import { PainelRaioX } from '../raiox/PainelRaioX';
 import { PainelLateral } from '../status/Painel';
 import type { Cidade, EstadoDoModelo, NoDoMapa, RotaDaJornada } from '../tipos';
@@ -78,16 +80,6 @@ const PONTO_DE_PARTIDA: Record<string, string> = {
   central: 'canal-central',
 };
 
-// Presets das cenas (vindas da tela de abertura). O que acontece depois é sempre real.
-const CENAS: Record<string, { modo?: string; incidente?: string }> = {
-  '1': {},
-  '2': { modo: 'sem_contexto' },
-  '3': { modo: 'sem_skill' },
-  '4': { modo: 'com_skill' },
-  '5': { modo: 'com_skill' },
-  '6': { modo: 'com_skill', incidente: 'cotacao-ancora-fora' },
-  '7': { modo: 'com_skill', incidente: 'alcada-ana-excedida' },
-};
 
 interface Visao {
   target: [number, number, number];
@@ -427,7 +419,7 @@ export function PaginaMapa() {
   ]);
 
   // --- Barra de viagem ----------------------------------------------------------------
-  const preset = (cena && CENAS[cena]) || {};
+  const preset: { modo?: string; incidente?: string } = presetDaCena(cena) ?? {};
   const [modo, setModo] = useState<string>(preset.modo ?? 'com_skill');
   const [canal, setCanal] = useState('app');
   const [escolhaDeModelo, setEscolhaDeModelo] = useState<string | null>(null);
@@ -472,6 +464,18 @@ export function PaginaMapa() {
       setErro(t.erroIncidente);
     }
   }
+
+  // A gaveta do apresentador: tecla P (fora de campos de texto) ou o botão da barra.
+  const [apresentador, setApresentador] = useState(false);
+  useEffect(() => {
+    const aoTeclar = (evento: KeyboardEvent) => {
+      const alvo = evento.target as HTMLElement;
+      if (alvo.closest('input, textarea, [contenteditable="true"]')) return;
+      if (evento.key === 'p' || evento.key === 'P') setApresentador((a) => !a);
+    };
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, []);
 
   const emAndamento = Boolean(real.id && !real.fim);
   const ultimoIncidente = exibido.incidentes.at(-1);
@@ -541,6 +545,16 @@ export function PaginaMapa() {
         />
         <Button id="iniciar-viagem" size="md" renderIcon={Play} onClick={iniciar} disabled={emAndamento}>
           {emAndamento ? t.barra.emViagem : t.barra.iniciar}
+        </Button>
+        <Button
+          id="abrir-apresentador"
+          kind={apresentador ? 'secondary' : 'ghost'}
+          size="md"
+          renderIcon={PresentationFile}
+          onClick={() => setApresentador((a) => !a)}
+          aria-pressed={apresentador}
+        >
+          {mensagens.apresentador.abrir}
         </Button>
         {cena && (
           <div className="mapa__cena">
@@ -619,6 +633,14 @@ export function PaginaMapa() {
           )}
 
           <CartaoDeRotas rotas={rotas} ativa={exibido.rota} aoDestacar={setDestacada} />
+          <Apresentador
+            aberto={apresentador}
+            aoFechar={() => setApresentador(false)}
+            cenaAtual={cena}
+            real={real}
+            aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
+            gravacoes={{}}
+          />
 
           <div className="mapa__estado">
             {real.id && (
