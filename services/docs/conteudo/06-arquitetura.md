@@ -7,22 +7,14 @@
 
 ### Fluxo
 
-```
-web ──► agent ──► mcp-gateway ──► skills-mcp
- │                    │          ├─► contexto-mcp ──► graph (Neo4j)
- │                    │          ├─► cliente-mcp
- │                    │          ├─► consentimento-mcp
- │                    │          ├─► risco-mcp
- │                    │          ├─► seguradoras-mcp
- │                    │          ├─► pagamentos-mcp
- │                    │          ├─► atendimento-mcp
- │                    │          └─► canais-mcp (prompts)
- │                    ▼
- │                   bus (Redis Streams) ◄── agent, simulator
- └─► /bastidores ──► docs
+Quem fala com quem. O diagrama é gerado no build a partir do `docker-compose.yml` e da lista de servidores do gateway (`mcp-gateway/config/upstreams.yaml`): um serviço novo aparece aqui sem ninguém editar a doc.
 
-simulator ──► contexto-mcp /interno (grafo) e bus (domínios) · fora do alcance do agente
-```
+![Os serviços da demo e quem fala com quem](assets/diagramas/arquitetura.svg)
+
+- O **agente** só conhece o **gateway** (MCP) e o **barramento** (eventos).
+- Cada área do banco é um **servidor MCP** atrás do gateway.
+- O **simulador** muda o mundo (o grafo e os domínios) e fica fora do alcance do agente.
+- O **web** fala com o agente (`/api`), com o simulador (`/simulador`, só o apresentador) e serve estes bastidores (`/bastidores`).
 
 ### Serviços
 

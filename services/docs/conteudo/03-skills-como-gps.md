@@ -87,6 +87,10 @@ Uma skill é um workflow, e workflow tem ordem. Até aqui o gateway sabia *quais
 --8<-- "contratacao-seguro-residencial/workflow.yaml"
 ```
 
+O mesmo arquivo, desenhado. Cada seta é "precisa ter acontecido antes"; as vermelhas, "impede". O diagrama é gerado no build a partir do `workflow.yaml`.
+
+![A ordem da skill de contratação](assets/diagramas/skill-contratacao-seguro-residencial.svg)
+
 Com essa skill ativa, o gateway:
 
 1. **exige a execução** em `_meta["bussola/execucao"]`, porque a ordem só existe dentro de uma execução (`motivo: execucao_nao_identificada`);

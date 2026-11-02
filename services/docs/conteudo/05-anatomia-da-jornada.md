@@ -40,6 +40,10 @@ A **vistoria** e a **aprovação do especialista** são paradas opcionais. Elas 
 
 ### As rotas
 
+As três rotas passam pelas mesmas nove paradas. A assistida entra pela aprovação do especialista antes do pagamento. Diagrama gerado das instâncias da ontologia:
+
+![As 9 paradas e as 3 rotas](assets/diagramas/rotas.svg)
+
 ```yaml
 --8<-- "instancias/jornada.yaml:rotas"
 ```
