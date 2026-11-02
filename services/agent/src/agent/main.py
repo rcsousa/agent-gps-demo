@@ -14,6 +14,7 @@ from pydantic import BaseModel
 from redis.asyncio import Redis
 from sse_starlette.sse import EventSourceResponse
 
+from agent import placar
 from agent.catalogo import Catalogo, NaoEncontrado
 from agent.config import Config
 from agent.custos import precos_por_milhao
@@ -255,6 +256,11 @@ def criar_app(
     @app.get("/api/execucoes")
     async def listar() -> list[dict]:
         return await motor.listar()
+
+    @app.get("/api/placar")
+    async def ver_placar() -> dict:
+        """Regras cumpridas, tempo e custo: a sessão da demo e a referência do experimento."""
+        return placar.montar(await motor.listar())
 
     @app.get("/api/execucoes/{ident}")
     async def obter(ident: str) -> dict:
