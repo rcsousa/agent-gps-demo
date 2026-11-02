@@ -194,23 +194,22 @@ class Motor:
         futuro.set_result(texto)
         return True
 
-    async def eventos_da_execucao(self, execucao: Execucao) -> list[dict[str, Any]]:
-        """Os eventos da execução no barramento (do agente e do gateway), em ordem."""
+    async def eventos_da_execucao(self, ident: str, cursor: str) -> list[dict[str, Any]]:
+        """Os eventos da execução no barramento (do agente e do gateway), em ordem, a partir do cursor."""
         eventos: list[dict[str, Any]] = []
-        cursor = execucao.cursor_eventos
         while True:
             lote = await self.redis.xrange(STREAM, min=f"({cursor}", count=500)
             if not lote:
                 return eventos
-            for ident, campos in lote:
+            for entrada, campos in lote:
                 evento = decodificar(campos)
-                if evento["dados"].get("execucao_id") == execucao.id:
+                if evento["dados"].get("execucao_id") == ident:
                     eventos.append(evento)
-                cursor = ident
+                cursor = entrada
 
     async def _conferir_regras(self, execucao: Execucao) -> dict[str, Any] | None:
         try:
-            eventos = await self.eventos_da_execucao(execucao)
+            eventos = await self.eventos_da_execucao(execucao.id, execucao.cursor_eventos)
         except Exception:  # noqa: BLE001
             log.warning("Regras da execução %s não conferidas: barramento indisponível", execucao.id)
             return None

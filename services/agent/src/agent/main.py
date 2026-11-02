@@ -4,8 +4,10 @@ Regra de arquitetura: o agente conhece apenas o mcp-gateway (GATEWAY_URL)
 e o barramento de eventos (BUS_URL). Nenhum servidor de domínio aparece aqui.
 """
 
+import asyncio
 import json
 import logging
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -19,6 +21,7 @@ from agent.catalogo import Catalogo, NaoEncontrado
 from agent.config import Config
 from agent.custos import precos_por_milhao
 from agent.execucao import MODOS, Motor
+from agent.gravacoes import GravacaoInvalida, Gravacoes, esperas
 from agent.llm.fabrica import PROVEDORES
 from agent.mapa import EntidadeNaoEncontrada, Mapa
 from bussola_comum.barramento import checar_barramento
@@ -37,6 +40,14 @@ class PedidoExecucao(BaseModel):
     canal: str | None = None
     modelo: str | None = None
     # Incidentes ativos no mundo quando a viagem começou (o web sabe pelo simulador): o caso do placar.
+    incidentes: list[str] = []
+
+
+class PedidoDeGravacao(BaseModel):
+    execucao: str
+    nome: str | None = None  # padrão: cena-<n> ou o id da execução
+    cena: str | None = None
+    # Incidentes ativos durante a viagem: o replay os reaplica pelo simulador, para o mapa bater.
     incidentes: list[str] = []
 
 
@@ -275,6 +286,53 @@ def criar_app(
         if not motor.responder(ident, resposta.texto):
             raise HTTPException(409, "Não há pergunta pendente para esta execução.")
         return {"ok": True}
+
+    gravacoes = Gravacoes(Path(config.gravacoes_dir))
+
+    @app.get("/api/gravacoes")
+    async def listar_gravacoes() -> list[dict]:
+        return gravacoes.listar()
+
+    @app.post("/api/gravacoes")
+    async def gravar(pedido: PedidoDeGravacao) -> dict:
+        """Grava os eventos de uma execução terminada, para tocar depois sem rede nem LLM."""
+        execucao = await motor.obter(pedido.execucao)
+        if execucao is None:
+            raise HTTPException(404, "Execução não encontrada.")
+        eventos = await motor.eventos_da_execucao(execucao["id"], execucao["cursor_eventos"])
+        nome = pedido.nome or (f"cena-{pedido.cena}" if pedido.cena else execucao["id"])
+        try:
+            return gravacoes.salvar(nome, execucao, eventos, cena=pedido.cena, incidentes=pedido.incidentes)
+        except GravacaoInvalida as erro:
+            raise HTTPException(409, str(erro)) from erro
+
+    @app.delete("/api/gravacoes/{nome}")
+    async def apagar_gravacao(nome: str) -> dict:
+        try:
+            gravacoes.apagar(nome)
+        except (GravacaoInvalida, FileNotFoundError) as erro:
+            raise HTTPException(404, "Gravação não encontrada.") from erro
+        return {"apagada": nome}
+
+    @app.get("/api/gravacoes/{nome}/eventos")
+    async def tocar(nome: str) -> EventSourceResponse:
+        """O replay: os eventos gravados, no ritmo original (com teto), no mesmo formato do ao vivo."""
+        try:
+            _, eventos = gravacoes.carregar(nome)
+        except (GravacaoInvalida, FileNotFoundError) as erro:
+            raise HTTPException(404, "Gravação não encontrada.") from erro
+
+        async def fluxo() -> Any:
+            for indice, (evento, espera) in enumerate(zip(eventos, esperas(eventos), strict=True)):
+                if espera:
+                    await asyncio.sleep(espera)
+                yield {
+                    "event": evento["tipo"],
+                    "id": str(indice),
+                    "data": json.dumps(evento, ensure_ascii=False),
+                }
+
+        return EventSourceResponse(fluxo())
 
     @app.get("/api/execucoes/{ident}/eventos")
     async def eventos(ident: str) -> EventSourceResponse:

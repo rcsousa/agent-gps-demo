@@ -6,6 +6,7 @@ import type {
   Cidade,
   EstadoDoModelo,
   Fonte,
+  Gravacao,
   IncidenteDoSimulador,
   Placar,
   RotaDaJornada,
@@ -31,6 +32,7 @@ export const api = {
     obter<{ texto: string; cliente_id: string }>(`/api/catalogo/prompt/${encodeURIComponent(nome)}/previa`),
   modelo: () => obter<EstadoDoModelo>('/api/llm/modelo'),
   placar: () => obter<Placar>('/api/placar'),
+  gravacoes: () => obter<Gravacao[]>('/api/gravacoes'),
   cidade: () => obter<Cidade>('/api/mapa'),
   rotas: () => obter<{ rotas: RotaDaJornada[] }>('/api/mapa/rotas'),
   entidade: (id: string) => obter<Record<string, unknown>>(`/api/mapa/entidade/${encodeURIComponent(id)}`),
@@ -66,6 +68,9 @@ export interface PedidoDeViagem {
   provedor?: string;
   incidentes?: string[]; // ativos no mundo ao iniciar: o caso do placar
 }
+
+export const gravar = (pedido: { execucao: string; cena?: string | null; incidentes: string[] }) =>
+  enviar<Gravacao>('/api/gravacoes', pedido);
 
 // Uma viagem do agente e a resposta da Ana (o apresentador responde por ela).
 export const viagem = {

@@ -6,14 +6,14 @@ import { AmbientLight, DirectionalLight, LightingEffect, LinearInterpolator, Orb
 import DeckGL, { type DeckGLRef } from '@deck.gl/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { aplicarIncidente, api, incidentesAtivos, viagem as apiViagem } from '../api';
+import { aplicarIncidente, api, gravar, incidentesAtivos, simulador, viagem as apiViagem } from '../api';
 import { mensagens } from '../mensagens/pt-BR';
 import { navegar, parametro, useMudancaDeEndereco } from '../navegacao';
 import { Apresentador } from '../apresentador/Apresentador';
 import { cena as presetDaCena } from '../apresentador/cenas';
 import { PainelRaioX } from '../raiox/PainelRaioX';
 import { PainelLateral } from '../status/Painel';
-import type { Cidade, EstadoDoModelo, NoDoMapa, RotaDaJornada } from '../tipos';
+import type { Cidade, EstadoDoModelo, Gravacao, NoDoMapa, RotaDaJornada } from '../tipos';
 import {
   ALTURA_DO_ROBO,
   camadas,
@@ -37,7 +37,7 @@ import { DESLOCAMENTO_MS, useDiretor } from './diretor';
 import { LinhaDoTempo } from './LinhaDoTempo';
 import { CartaoDeRotas, Conversa, DetalheDoNo, Legenda } from './Paineis';
 import { type Rotulo, Rotulos } from './rotulos';
-import { useViagem } from './viagem';
+import { ehReplay, PREFIXO_GRAVACAO, useViagem } from './viagem';
 
 const t = mensagens.mapa;
 const INTERVALO_TRANSITO_MS = 5000;
@@ -122,8 +122,10 @@ export function PaginaMapa() {
   const [cena, setCena] = useState<string | null>(() => parametro('cena'));
   // Mapa (executivo) ou Raio-X (técnico): a mesma viagem, só muda a apresentação.
   const [raioX, setRaioX] = useState(() => parametro('visao') === 'raio-x');
+  const [gravacao, setGravacao] = useState<string | null>(() => parametro('gravacao'));
   useMudancaDeEndereco(
     useCallback(() => {
+      setGravacao(parametro('gravacao'));
       setExecucao(parametro('execucao'));
       setCena(parametro('cena'));
       setRaioX(parametro('visao') === 'raio-x');
@@ -136,8 +138,34 @@ export function PaginaMapa() {
     const consulta = busca.toString();
     navegar(`/mapa${consulta ? `?${consulta}` : ''}`, true);
   }, []);
+  // Replay offline: antes de tocar, o mundo volta ao que era na gravação (os incidentes ativos).
+  const [gravacoes, setGravacoes] = useState<Gravacao[]>([]);
+  const [replayPronto, setReplayPronto] = useState<string | null>(null);
+  useEffect(() => {
+    api.gravacoes().then(setGravacoes, () => setGravacoes([]));
+  }, []);
+  const cabecalho = gravacoes.find((g) => g.nome === gravacao) ?? null;
+  useEffect(() => {
+    setReplayPronto(null);
+    if (!gravacao || !cabecalho) return;
+    let cancelado = false;
+    (async () => {
+      try {
+        await simulador.acao('/reset');
+        for (const incidente of cabecalho.incidentes ?? []) await simulador.acao(`/incidentes/${incidente}/aplicar`);
+      } catch {
+        // Sem simulador, o replay toca do mesmo jeito: só o trânsito do mapa não acompanha.
+      }
+      if (!cancelado) setReplayPronto(gravacao);
+    })();
+    return () => {
+      cancelado = true;
+    };
+  }, [gravacao, cabecalho]);
+
   // A conversa usa o estado real; o mapa, o que o diretor já exibiu.
-  const real = useViagem(execucao);
+  const real = useViagem(gravacao ? (replayPronto ? PREFIXO_GRAVACAO + replayPronto : null) : execucao);
+  const replay = ehReplay(real.id);
   const direcao = useDiretor(real);
   const exibido = direcao.exibido;
 
@@ -439,6 +467,7 @@ export function PaginaMapa() {
     try {
       // Os incidentes ativos dizem qual é o caso da viagem: é por ele que o placar confere as regras.
       const incidentes = await incidentesAtivos();
+      setIncidentesDaViagem(incidentes);
       const pedido =
         modeloEscolhido === ROTEIRO
           ? { modo, canal, provedor: ROTEIRO, incidentes }
@@ -477,7 +506,21 @@ export function PaginaMapa() {
     return () => window.removeEventListener('keydown', aoTeclar);
   }, []);
 
-  const emAndamento = Boolean(real.id && !real.fim);
+  const [incidentesDaViagem, setIncidentesDaViagem] = useState<string[]>([]);
+  const [gravada, setGravada] = useState<string | null>(null);
+  useEffect(() => setGravada(null), [real.id]);
+  async function gravarViagem() {
+    if (!real.id) return;
+    try {
+      const salva = await gravar({ execucao: real.id, cena, incidentes: incidentesDaViagem });
+      setGravada(salva.nome);
+      api.gravacoes().then(setGravacoes, () => undefined);
+    } catch {
+      setErro(t.erroGravar);
+    }
+  }
+
+  const emAndamento = Boolean(real.id && !real.fim && !replay);
   const ultimoIncidente = exibido.incidentes.at(-1);
   const ultimoRecalculo = exibido.recalculos.at(-1);
   const noSelecionado = selecionado ? nos.get(selecionado) : undefined;
@@ -639,11 +682,24 @@ export function PaginaMapa() {
             cenaAtual={cena}
             real={real}
             aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
-            gravacoes={{}}
+            gravacoes={Object.fromEntries(gravacoes.filter((g) => g.cena).map((g) => [g.cena as string, g.nome]))}
           />
 
           <div className="mapa__estado">
-            {real.id && (
+            {replay && cabecalho && (
+              <Tag type="purple" size="md" title={t.replayAjuda} className="mapa__selo-replay">
+                {t.replay(
+                  new Date(cabecalho.gravado_em).toLocaleDateString('pt-BR'),
+                  t.barra.modelo(cabecalho.modelo),
+                )}
+              </Tag>
+            )}
+            {real.fim && !replay && real.id && (
+              <Button kind="tertiary" size="sm" onClick={gravarViagem} disabled={Boolean(gravada)}>
+                {gravada ? t.gravada(gravada) : t.gravar}
+              </Button>
+            )}
+            {real.id && !replay && (
               <Tag type={direcao.fila > 0 ? 'warm-gray' : 'green'} size="md">
                 {direcao.fila > 0 ? t.reproduzindo(direcao.fila) : real.fim ? t.encerrada : t.aoVivo}
               </Tag>
@@ -737,7 +793,7 @@ export function PaginaMapa() {
         {raioX ? (
           <PainelRaioX
             viagem={exibido}
-            conversa={real}
+            conversa={replay ? { ...real, pergunta: null } : real}
             nos={nos}
             aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
             aoEscolherNo={(id) => {
@@ -748,7 +804,7 @@ export function PaginaMapa() {
           />
         ) : (
           <Conversa
-            viagem={real}
+            viagem={replay ? { ...real, pergunta: null } : real}
             aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
           />
         )}

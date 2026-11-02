@@ -40,6 +40,11 @@ export const mensagens = {
     encerrada: 'Viagem encerrada',
     reproduzindo: (n: number) => `Reproduzindo · +${n} ${n === 1 ? 'evento' : 'eventos'}`,
     pularParaOFim: 'Pular para o fim',
+    replay: (data: string, modelo: string) => `Replay · gravado em ${data} com ${modelo}`,
+    replayAjuda: 'Viagem gravada, tocada sem rede e sem LLM. Não é ao vivo.',
+    gravar: 'Gravar esta viagem',
+    gravada: (nome: string) => `Gravada como ${nome}`,
+    erroGravar: 'Não foi possível gravar a viagem.',
     voltarACidade: (bairro: string) => `Voltar à cidade${bairro ? ` (sair de ${bairro})` : ''}`,
     pedagio: 'Pedágio: aprovação de especialista',
     linhaDoTempo: {

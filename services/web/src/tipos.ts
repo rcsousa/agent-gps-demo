@@ -250,3 +250,18 @@ export interface TicketDeAprovacao {
   criado_em: string;
   decidido_por?: string;
 }
+
+export interface Gravacao {
+  nome: string;
+  execucao_id: string;
+  cena: string | null;
+  modo: string;
+  canal: string;
+  provedor: string;
+  modelo: string;
+  status: string;
+  apolice: string | null;
+  gravado_em: string;
+  eventos: number;
+  incidentes: string[];
+}

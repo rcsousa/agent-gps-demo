@@ -188,14 +188,22 @@ const TIPOS = [
   'model.step',
 ];
 
+// Prefixo do id de uma viagem tocada de uma gravação (replay offline).
+export const PREFIXO_GRAVACAO = 'gravacao:';
+export const ehReplay = (id: string | null) => Boolean(id?.startsWith(PREFIXO_GRAVACAO));
+
 // Acompanha uma execução: os eventos desde o início e, depois, ao vivo, até o run.finished.
+// Com o id "gravacao:<nome>", toca a gravação no mesmo formato (replay offline).
 export function useViagem(id: string | null): EstadoDaViagem {
   const [estado, despachar] = useReducer(reduzir, VIAGEM_VAZIA);
 
   useEffect(() => {
     despachar({ tipo: 'reiniciar', id });
     if (!id) return;
-    const fonte = new EventSource(`/api/execucoes/${id}/eventos`);
+    const url = ehReplay(id)
+      ? `/api/gravacoes/${encodeURIComponent(id.slice(PREFIXO_GRAVACAO.length))}/eventos`
+      : `/api/execucoes/${id}/eventos`;
+    const fonte = new EventSource(url);
     // Numa reconexão, o servidor reenvia desde o início: cada evento (id do stream) vale uma vez só.
     const vistos = new Set<string>();
     for (const tipo of TIPOS) {

@@ -86,3 +86,6 @@ async def test_run_finished_leva_as_regras_do_caso():
     assert metricas["regras"]["total"] == 5  # 2 gerais e 3 do incidente
     assert metricas["regras"]["regras"]["não pediu o dossiê completo"] is True
     assert metricas["regras"]["regras"]["seguiu com outra seguradora"] is False
+    # Os eventos da execução vêm do barramento, só os dela e em ordem.
+    eventos = await motor.eventos_da_execucao(execucao.id, "0-0")
+    assert eventos[0]["tipo"] == "run.started" and eventos[-1]["tipo"] == "run.finished"
