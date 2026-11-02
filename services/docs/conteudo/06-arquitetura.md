@@ -182,7 +182,13 @@ O Foundry é a mesma API do Claude, com outro cliente do SDK (`AsyncAnthropicFou
 
 ### Modelo por execução
 
-`ANTHROPIC_MODEL` é o padrão. `ANTHROPIC_MODELOS` lista outros deployments que uma execução pode pedir (`"modelo"` na API, `--modelo` nos scripts), por exemplo `claude-haiku-5-5`. O `run.started` registra o modelo usado, e o experimento compara os modelos nas mesmas condições.
+`ANTHROPIC_MODEL` é o padrão de fábrica: o Claude Haiku 5.5. `ANTHROPIC_MODELOS` lista outros deployments que podem ser escolhidos, como o Opus 5.5.
+
+- **No painel:** o seletor do indicador de LLM troca o modelo das próximas execuções sem reiniciar nada. A escolha fica no barramento (`bussola:llm:modelo`), por `PUT /api/llm/modelo`.
+- **Por execução:** `"modelo"` na API, ou `--modelo` nos scripts.
+- **No evento:** o `run.started` registra o modelo usado.
+
+**Custo por execução.** `LLM_PRECOS` traz o preço por token de cada modelo, e `CACHE_LEITURA_FATOR` e `CACHE_ESCRITA_FATOR` trazem o desconto do cache de prompt. Ao fim de cada execução, o agente calcula o custo em US$ (`agent.custos`) e o publica em `run.finished.metricas.custo_usd`, por componente, com e sem cache. É o dado do placar.
 
 **A lista de tools não muda durante a conversa.** Os modelos atuais vinculam o raciocínio já feito ao prefixo exato da conversa (pensamento preservado), e acrescentar tools no meio invalida esse vínculo: a API recusa a chamada seguinte. Por isso, no modo com skill, o modelo vê desde o primeiro passo as tools de alguma skill, e o host as recusa até a skill ser carregada. Depois, o gateway aplica a skill e a ordem.
 

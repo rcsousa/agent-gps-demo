@@ -84,3 +84,18 @@ def test_na_alcada_a_ana_quer_a_arte_ou_o_especialista():
         == "Cotar com R$ 1.800.000 e enviar ao especialista"
     )
     assert _resposta_da_ana("caminho-feliz", ["Sim", "Não"]) == "Sim"
+
+
+def test_custo_com_e_sem_cache_pela_tabela_de_precos():
+    from smoke.experimento import _usd, custo_usd
+
+    tabela = {
+        "modelos": {"claude-opus-5-5": {"entrada": 4.0, "saida": 20.0}},
+        "cache": {"leitura": 0.1, "escrita": 1.25},
+    }
+    tokens = {"entrada": 1_000, "cache_leitura": 100_000, "cache_escrita": 10_000, "saida": 5_000}
+    c = custo_usd("claude-opus-5-5", tokens, tabela)
+    assert round(c["total"], 6) == round(0.004 + 0.04 + 0.05 + 0.1, 6)
+    assert round(c["sem_cache"], 6) == round(111_000 * 0.000004 + 0.1, 6)
+    assert custo_usd("outro", tokens, tabela) is None
+    assert _usd(1234.5, 2) == "US$ 1.234,50"

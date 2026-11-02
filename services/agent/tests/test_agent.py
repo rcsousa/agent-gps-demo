@@ -118,7 +118,11 @@ def test_gateway_fora_nao_impede_a_execucao():
 
 def test_modelo_por_execucao_so_entre_os_permitidos():
     motor = MotorFalso(["app"])
-    config = Config(llm_provider="anthropic", anthropic_modelos="claude-haiku-5-5, claude-opus-5-5")
+    config = Config(
+        llm_provider="anthropic",
+        anthropic_model="claude-opus-5-5",
+        anthropic_modelos="claude-haiku-5-5, claude-opus-5-5",
+    )
     assert config.modelos_anthropic == ["claude-opus-5-5", "claude-haiku-5-5"]
     with TestClient(criar_app(config, checagens={"bus": _ok}, motor=motor, redis=object())) as api:
         ok = api.post("/api/execucoes", json={"modo": "com_skill", "modelo": "claude-haiku-5-5"})
