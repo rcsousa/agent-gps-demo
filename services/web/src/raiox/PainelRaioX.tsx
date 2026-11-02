@@ -5,6 +5,7 @@ import { CheckmarkFilled, ErrorFilled, Locked } from '@carbon/icons-react';
 import { CodeSnippet, Link, Tab, TabList, TabPanel, TabPanels, Tabs } from '@carbon/react';
 import { type MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 
+import { abrirBastidores } from '../bastidores/PainelDeBastidores';
 import { mensagens } from '../mensagens/pt-BR';
 import { Conversa, RespostaDaAna } from '../mapa/Paineis';
 import { type EstadoDaViagem, noDaTool } from '../mapa/viagem';
@@ -152,6 +153,21 @@ function Metricas({ viagem }: { viagem: EstadoDaViagem }) {
         </div>
       </dl>
       {m.caso && <p className="apagado">{tm.caso(m.caso)}</p>}
+      {m.regras && (
+        <Link
+          href="#"
+          onClick={(evento: MouseEvent) => {
+            evento.preventDefault();
+            abrirBastidores({
+              capitulo: '06-arquitetura',
+              ancora: 'o-placar-regras-conferidas-nos-eventos',
+              titulo: mensagens.bastidores.placar,
+            });
+          }}
+        >
+          {mensagens.bastidores.porQueRegras}
+        </Link>
+      )}
       {m.regras && (
         <ul className="raiox__regras">
           {Object.entries(m.regras.regras).map(([nome, ok]) => (

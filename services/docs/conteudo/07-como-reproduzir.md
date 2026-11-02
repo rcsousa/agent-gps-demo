@@ -141,6 +141,7 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 ![O detalhe de um sistema, com a proveniência](assets/mapa/no.png)
 
 **Fazer uma viagem:**
+
 1. Na barra de viagem, escolha o **modo** (com skill, sem skill ou sem contexto), o **canal** e o **modelo**. A opção "Roteiro (ensaio sem LLM)" não gasta tokens.
 2. Clique em **Iniciar viagem**. O endereço muda para `/mapa?execucao=<id>`, e dá para abrir o mesmo link em outra tela.
 3. O robô percorre a estrada parada a parada. Com "Seguir o agente" ligado, a câmera vai junto e abre o bairro de cada parada. A linha do tempo no rodapé e a narração mostram em que passo ele está.

@@ -1,6 +1,6 @@
 // Modo Mapa: a cidade do banco em 3D (o grafo) e a viagem do agente (os eventos), lado a lado.
 
-import { Add, ArrowLeft, Play, PresentationFile, Subtract, ZoomFit } from '@carbon/icons-react';
+import { Add, ArrowLeft, Book, Play, PresentationFile, Subtract, ZoomFit } from '@carbon/icons-react';
 import { Button, ContentSwitcher, Dropdown, IconButton, InlineNotification, Switch, Tag, Toggle } from '@carbon/react';
 import { AmbientLight, DirectionalLight, LightingEffect, LinearInterpolator, OrbitView } from '@deck.gl/core';
 import DeckGL, { type DeckGLRef } from '@deck.gl/react';
@@ -10,7 +10,8 @@ import { aplicarIncidente, api, gravar, incidentesAtivos, simulador, viagem as a
 import { mensagens } from '../mensagens/pt-BR';
 import { navegar, parametro, useMudancaDeEndereco } from '../navegacao';
 import { Apresentador } from '../apresentador/Apresentador';
-import { cena as presetDaCena } from '../apresentador/cenas';
+import { CAPITULO_DAS_CENAS, cena as presetDaCena } from '../apresentador/cenas';
+import { abrirBastidores } from '../bastidores/PainelDeBastidores';
 import { PainelRaioX } from '../raiox/PainelRaioX';
 import { PainelLateral } from '../status/Painel';
 import type { Cidade, EstadoDoModelo, Gravacao, NoDoMapa, RotaDaJornada } from '../tipos';
@@ -615,6 +616,21 @@ export function PaginaMapa() {
             <Tag type="warm-gray" size="md">
               {t.cena(cena)}
             </Tag>
+            <Button
+              id="bastidores-da-cena"
+              kind="ghost"
+              size="md"
+              renderIcon={Book}
+              onClick={() =>
+                abrirBastidores({
+                  capitulo: CAPITULO_DAS_CENAS,
+                  ancora: `cena-${cena}`,
+                  titulo: mensagens.bastidores.cena(cena, mensagens.apresentador.nomes[cena] ?? ''),
+                })
+              }
+            >
+              {mensagens.bastidores.daCena}
+            </Button>
             {preset.incidente && (
               <Button kind="danger--tertiary" size="md" onClick={derrubar} disabled={incidenteAplicado}>
                 {incidenteAplicado ? t.incidenteAplicado : t.incidentes[preset.incidente]}

@@ -108,14 +108,14 @@
     {
       "id": "modo-raio-x",
       "rotulo": "Modo Raio-X",
-      "descricao": "O Modo Raio-X chega na Fase 7.",
+      "descricao": "Abre a demo no Modo Raio-X: a mesma viagem, por dentro.",
       "x": 81.4,
       "y": 20.21,
       "largura": 8.6,
       "altura": 3.34,
       "destino": {
-        "tipo": "em-breve",
-        "fase": 7
+        "tipo": "mapa",
+        "visao": "raio-x"
       }
     },
     {
@@ -238,14 +238,15 @@
     {
       "id": "raio-x",
       "rotulo": "Modo Raio-X: transparência total",
-      "descricao": "Cena 8: o Modo Raio-X chega na Fase 7.",
+      "descricao": "Cena 8: o Raio-X da viagem, com o placar.",
       "x": 48.75,
       "y": 65.35,
       "largura": 24.25,
       "altura": 28.88,
       "destino": {
-        "tipo": "em-breve",
-        "fase": 7
+        "tipo": "mapa",
+        "cena": 8,
+        "visao": "raio-x"
       }
     },
     {

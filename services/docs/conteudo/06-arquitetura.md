@@ -217,6 +217,7 @@ web ──► agent /api/execucoes/{id}/eventos  (SSE)    ──► a viagem
 A cidade e as rotas são relidas a cada 5 s: esse é o **trânsito**. Quando o simulador derruba a API da Âncora, um **farol** vermelho, com o ícone ✕ e o nome do sistema, sobe do bairro Parceiros. As rotas que passam por ele aparecem como interditadas, antes mesmo de qualquer viagem. Os faróis valem só para infraestrutura: sistemas, APIs, filas, canais e regras. O estado de um dado de cliente, como um consentimento revogado, aparece só dentro do bairro.
 
 **Uma cidade em 3D, sem MapLibre:**
+
 - A cidade usa coordenadas próprias (1000 × 700, gravadas no grafo pelo seed), não latitude e longitude. Um mapa geográfico pediria uma projeção falsa e um mapa-base vazio.
 - O deck.gl, com `OrbitView`, desenha essas coordenadas em WebGL, com a câmera inclinada (cerca de 50°) e alinhada ao norte, sem giro: o 3D vem só da perspectiva. Tem luz ambiente e direcional, pan, zoom e seleção por clique.
 - Os prédios genéricos são decoração gerada com semente fixa (`cidade3d.ts`): sempre os mesmos, na cor de cada bairro, fora das avenidas, das estradas e dos nós.
@@ -265,6 +266,7 @@ No código (`web/src/mapa/diretor.ts`):
 ```
 
 **Por que isso é honesto:**
+
 - nenhum evento é criado e a ordem não muda;
 - o mapa só fica alguns segundos **atrás** do agente, e o selo mostra "Reproduzindo · +N eventos" até alcançar e passar a "Ao vivo";
 - "Pular para o fim" alcança o presente de uma vez;
@@ -296,6 +298,7 @@ Nos modos sem contexto e sem skill, o agente não planeja rota. O robô fica no 
 Em `/`, o infográfico oficial (`docs/assets/infografico_horizontal.jpeg`, 2198 × 1446) abre com zoom e pan do OpenSeadragon. Os tiles são gerados no build do Docker do `web`, com `vips dzsave`, num estágio Debian.
 
 As 38 áreas clicáveis estão em `services/web/src/abertura/hotspots.json`, em porcentagem da imagem, e acompanham o pan e o zoom. Cada área leva a um de três destinos:
+
 - uma cena do mapa (`/mapa?cena=N`);
 - uma parada (`/mapa?parada=N`, que abre o bairro da parada);
 - um capítulo destes bastidores. A tabela "A metáfora", por exemplo, leva ao capítulo 8.
@@ -330,6 +333,7 @@ O agente não sabe o que o simulador fez. O `incident.detected` vem do que as to
 ### O placar: regras conferidas nos eventos
 
 O verificador de regras (`bussola_comum.regras`) é o mesmo do experimento com o modelo real (`./scripts/experimento.sh`).
+
 - **O caso da viagem** vem dos incidentes ativos quando ela começa: o web pergunta ao simulador e os envia no pedido. Sem incidente, o caso é o caminho feliz.
 - **No fim de cada execução**, o agente lê os eventos dela no barramento (os dele e os do gateway) e confere as regras do caso. O resultado vai em `run.finished.metricas.regras`.
 - **Só conta o que trafegou:** uma tentativa barrada pelo gateway (fora de ordem ou contramão) não aconteceu.

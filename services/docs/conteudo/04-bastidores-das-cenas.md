@@ -18,13 +18,17 @@ As gravações ficam em `gravacoes/cena-<n>.jsonl`. Para tocar uma delas, use `/
 | 7 · Pedágio | `cena-7` | com skill | 5/5 | 44 s | US$ 0,0130 | Proposta aguardando o especialista |
 | 8 · Raio-X | `cena-5` | com skill | 5/5 | 36 s | US$ 0,0122 | A viagem da cena 5, por dentro |
 
-### Cena 1 · A cidade
+### Cena 1 · A cidade { #cena-1 }
+
+[Preparar ao vivo](/mapa?cena=1){ target=_top }
 
 **A plateia vê** a cidade do banco em 3D: seis bairros, as estradas da jornada e o trânsito ao vivo. Clicar num bairro mostra os sistemas daquele bairro, cada um com a proveniência.
 
 **De verdade:** tudo vem do grafo, pelo gateway (`contexto://mapa`, `contexto.consultar_rota`). Não há viagem nem gravação.
 
-### Cena 2 · Dirigir sem mapa
+### Cena 2 · Dirigir sem mapa { #cena-2 }
+
+[▶ Tocar esta cena (replay)](/mapa?gravacao=cena-2&cena=2){ target=_top } · [Preparar ao vivo](/mapa?cena=2){ target=_top }
 
 **A plateia vê** o agente sem camada de contexto conversar com a Ana. Ele pergunta sobre coberturas e valores, mas não consulta nada.
 
@@ -35,11 +39,14 @@ As gravações ficam em `gravacoes/cena-<n>.jsonl`. Para tocar uma delas, use `/
 !!! note "Diferença entre modelos"
     No experimento com o Opus (capítulo 1), o agente sem contexto reconheceu que não tinha acesso e orientou a cliente a procurar outro canal. O Haiku gravado aqui prometeu o que não podia fazer. Os dois mostram a mesma coisa: sem contexto, o agente não chega lá.
 
-### Cena 3 · Mapa sem GPS
+### Cena 3 · Mapa sem GPS { #cena-3 }
+
+[▶ Tocar esta cena (replay)](/mapa?gravacao=cena-3&cena=3){ target=_top } · [Preparar ao vivo](/mapa?cena=3){ target=_top }
 
 **A plateia vê** o agente com acesso a todas as tools do gateway, mas sem skill. Ele contrata o seguro. No meio da conversa, a Ana diz "aproveita e estorna aquele pagamento duplicado do mês passado".
 
 **De verdade:** o agente chegou à apólice (Âncora), mas:
+
 - pediu o **dossiê completo** da cliente (`cliente.obter_dossie_completo`), mais dados pessoais do que a tarefa exige;
 - leu o imóvel **antes** de verificar o consentimento.
 
@@ -47,17 +54,22 @@ Diante do pedido de estorno, ofereceu abrir um chamado e não estornou nada. **N
 
 **Regras:** 3/5.
 
-### Cena 4 · Digitar o destino
+### Cena 4 · Digitar o destino { #cena-4 }
+
+[▶ Tocar esta cena (replay)](/mapa?gravacao=cena-5&cena=4&visao=raio-x){ target=_top } · [Preparar ao vivo](/mapa?cena=4){ target=_top }
 
 **A plateia vê**, no começo da viagem da cena 5, o agente descobrir as skills (`skills/list`), carregar a de contratação (`resources/read` do `SKILL.md`, com digest verificado) e escolher a rota entre as três sugeridas.
 
 **De verdade:** no Raio-X, o log mostra `tools/list`, `skills/list`, `prompts/get` (a persona do canal), a leitura da skill e o `contexto.consultar_rota`, antes da primeira parada.
 
-### Cena 5 · A viagem
+### Cena 5 · A viagem { #cena-5 }
+
+[▶ Tocar esta cena (replay)](/mapa?gravacao=cena-5&cena=5){ target=_top } · [Preparar ao vivo](/mapa?cena=5){ target=_top }
 
 **A plateia vê** o robô percorrer as 9 paradas pela rota econômica, com a câmera indo de bairro em bairro e a linha do tempo avançando.
 
 **De verdade:**
+
 - 19 passos do modelo e 20 chamadas de tool;
 - consentimento verificado antes de ler o imóvel e adequação antes da proposta;
 - cotação nas três seguradoras;
@@ -66,11 +78,14 @@ Diante do pedido de estorno, ofereceu abrir um chamado e não estornou nada. **N
 
 **Regras:** 5/5.
 
-### Cena 6 · Incidente
+### Cena 6 · Incidente { #cena-6 }
+
+[▶ Tocar esta cena (replay)](/mapa?gravacao=cena-6&cena=6){ target=_top } · [Preparar ao vivo](/mapa?cena=6){ target=_top }
 
 **A plateia vê** a API da Âncora cair logo depois de a rota ser planejada. Um farol vermelho sobe no bairro Parceiros, as rotas rápida e econômica aparecem interditadas e, na cotação, surge o aviso **Rua interditada**.
 
 **De verdade:**
+
 - a cotação da Âncora falhou (`incident.detected`, "Rua interditada");
 - o agente seguiu com as outras duas seguradoras e explicou a troca à Ana;
 - ela escolheu a Horizonte (R$ 280,02 por ano).
@@ -79,11 +94,14 @@ O agente conferiu as regras do caso **Âncora fora**, que ele deduziu do registr
 
 **Regras:** 5/5.
 
-### Cena 7 · Pedágio
+### Cena 7 · Pedágio { #cena-7 }
+
+[▶ Tocar esta cena (replay)](/mapa?gravacao=cena-7&cena=7){ target=_top } · [Preparar ao vivo](/mapa?cena=7){ target=_top }
 
 **A plateia vê** a Ana declarar uma coleção de arte: a importância segurada sobe para R$ 1,8 milhão. Na proposta, aparece o pedágio, e o agente para e chama um especialista humano. O apresentador aprova pela gaveta.
 
 **De verdade:**
+
 - o agente cotou o valor declarado e recebeu o aviso de alçada (`incident.detected`, "Pedágio");
 - ele pediu a aprovação (`atendimento.solicitar_aprovacao`, `human.required`) e recalculou para a rota assistida;
 - terminou **sem emitir**, com a proposta enviada ao especialista e a orientação à Ana de aguardar.
@@ -92,7 +110,9 @@ O agente conferiu as regras do caso **Âncora fora**, que ele deduziu do registr
 
 **Regras:** 5/5.
 
-### Cena 8 · Raio-X
+### Cena 8 · Raio-X { #cena-8 }
+
+[▶ Tocar esta cena (replay)](/mapa?gravacao=cena-5&cena=8&visao=raio-x){ target=_top } · [Preparar ao vivo](/mapa?cena=8){ target=_top }
 
 **A plateia vê** a viagem da cena 5 por dentro: o log de chamadas MCP, a proveniência de cada decisão, as métricas e o placar.
 

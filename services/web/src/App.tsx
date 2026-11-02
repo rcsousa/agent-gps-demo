@@ -1,6 +1,7 @@
 import { Content, Header, HeaderMenuItem, HeaderName, HeaderNavigation, Theme } from '@carbon/react';
 
 import { Abertura } from './abertura/Abertura';
+import { PainelDeBastidores } from './bastidores/PainelDeBastidores';
 import { SimboloBussola } from './componentes/SimboloBussola';
 import { PaginaMapa } from './mapa/PaginaMapa';
 import { mensagens } from './mensagens/pt-BR';
@@ -41,6 +42,7 @@ export function App() {
           <PaginaMapa />
         </main>
       )}
+      <PainelDeBastidores />
       {pagina === 'status' && (
         <Content className="pagina">
           <PaginaStatus />
