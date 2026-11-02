@@ -847,6 +847,7 @@ export function PaginaMapa() {
       data-nivel={nivel.toFixed(1)}
       data-giro={giroAtual}
       data-balao={direcao.balao?.tipo ?? ''}
+      data-balao-n={direcao.balao?.indice ?? ''}
       data-aguardando={direcao.aguardando ? 'sim' : 'nao'}
     >
       {barra}

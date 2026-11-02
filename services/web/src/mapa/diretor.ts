@@ -152,7 +152,8 @@ export function useDiretor(
     }
     // O balão abre quando o robô chega. No passo a passo, o diretor espera o apresentador.
     const lugar = para ?? lugarAtual.current;
-    const fala = balaoDoEvento(evento, lugar ? nome.current(lugar) : null);
+    const texto = balaoDoEvento(evento, lugar ? nome.current(lugar) : null);
+    const fala = texto && { ...texto, indice: cursor };
     timerDoBalao.current = window.setTimeout(() => {
       setBalao(fala);
       if (passo.current) setAguardando(true);

@@ -21,6 +21,8 @@ SAIDA = Path("/saida")
 TAMANHO = {"width": 1920, "height": 1080}
 EVENTOS_COM_BALAO = {"tool.called", "incident.detected", "route.recalculated", "human.required"}
 LIMITE_S = 420
+# Cenas em que o incidente cai no meio da viagem (o recálculo ao vivo da cena 6).
+INCIDENTE_NO_MEIO = {"6"}
 
 
 def _post(caminho: str) -> None:
@@ -56,7 +58,10 @@ def viagem_ao_vivo(pg: Page, cena: str, pasta: Path) -> dict:
     pg.click("#viagem-modelo")
     pg.get_by_role("option", name="Roteiro (ensaio sem LLM)").click()
     incidente = pg.locator(".mapa__cena button.cds--btn--danger--tertiary")
-    if incidente.count():
+    # A Âncora cai com a viagem em curso (na 1ª pergunta à Ana, antes da resposta): é assim que o
+    # agente recalcula ao vivo. Aplicada antes da viagem, ele planejaria já desviando.
+    no_meio = cena in INCIDENTE_NO_MEIO
+    if incidente.count() and not no_meio:
         incidente.click()  # o incidente da cena, pelo botão da barra (o mesmo do painel do apresentador)
         pg.wait_for_timeout(1500)
     inicio = time.time()
@@ -71,6 +76,9 @@ def viagem_ao_vivo(pg: Page, cena: str, pasta: Path) -> dict:
         pg.wait_for_timeout(250)
         opcoes = pg.locator(".mapa__opcoes button:not([disabled])")
         if opcoes.count():
+            if no_meio and incidente.is_enabled():
+                incidente.click()
+                pg.wait_for_timeout(1500)
             opcoes.first.click()
             perguntas += 1
         if _mapa(pg, "aguardando") == "sim":
@@ -78,9 +86,15 @@ def viagem_ao_vivo(pg: Page, cena: str, pasta: Path) -> dict:
             if print_balao is None:
                 print_balao = pasta / f"cena-{cena}-balao.png"
                 pg.screenshot(path=str(print_balao))
+            atual = _mapa(pg, "balao-n")
             pg.evaluate("document.activeElement && document.activeElement.blur()")
             pg.keyboard.press("Space")
-            pg.wait_for_function("document.querySelector('.mapa').dataset.aguardando === 'nao'", timeout=10_000)
+            pg.wait_for_function(
+                "([n]) => { const m = document.querySelector('.mapa').dataset;"
+                " return m.aguardando === 'nao' || m.balaoN !== n; }",
+                arg=[atual],
+                timeout=10_000,
+            )
         # O pedágio: o apresentador aprova pelo painel (tecla P).
         if _mapa(pg, "balao") == "" and pg.locator(".apresentador__ticket").count() == 0 and cena == "7":
             if pg.locator(".apresentador").count() == 0:

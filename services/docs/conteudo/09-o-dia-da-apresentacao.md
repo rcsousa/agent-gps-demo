@@ -65,7 +65,10 @@
 
 #### Cena 6 · Incidente · 2 min { .cena-impressa }
 
-**Clique:** cena 6, **Derrubar a API da Âncora** e **Iniciar viagem**.
+**Clique:** cena 6 e **Iniciar viagem**. Quando o agente fizer a primeira pergunta à Ana, **antes de responder**, clique em **Derrubar a API da Âncora**. Depois, responda.
+
+!!! warning "Derrube a API com a viagem em curso"
+    Se a API cair antes de a viagem começar, o agente já planeja a rota sem a Âncora, e a plateia não vê o recálculo. Com a viagem em curso, ele percebe a interdição na cotação e recalcula ao vivo, citando a regra.
 
 **Diga:** "Vou derrubar a API de uma seguradora. Repare no farol vermelho subindo do prédio dela. O agente percebe a rua interditada, recalcula com a regra do banco, segue com as outras seguradoras e explica a troca para a Ana."
 

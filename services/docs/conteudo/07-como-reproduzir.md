@@ -161,7 +161,7 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 
 ![O passo a passo: o balão de fala do robô espera o apresentador mandar seguir](assets/mapa/balao.png)
 
-**Cenas prontas.** `/mapa?cena=6` deixa a barra pronta para a cena 6 e mostra o botão **Derrubar a API da Âncora**. Derrube a API e o farol vermelho sobe do prédio dela. Depois, inicie a viagem: o robô vai até a Âncora, o prédio pulsa em vermelho e o agente segue com as outras seguradoras.
+**Cenas prontas.** `/mapa?cena=6` deixa a barra pronta para a cena 6 e mostra o botão **Derrubar a API da Âncora**. Inicie a viagem e, na primeira pergunta do agente à Ana, derrube a API: o farol vermelho sobe do prédio dela. Na cotação, o agente percebe a rua interditada, recalcula citando a regra e segue com as outras seguradoras. Se a API cair antes da viagem, ele já planeja sem a Âncora, e não há recálculo para mostrar.
 
 ![A cena 6: o farol da Âncora](assets/mapa/incidente.png)
 
@@ -341,12 +341,32 @@ curl -s -X POST localhost:8080/api/execucoes/<id>/resposta -H 'Content-Type: app
   -d '{"texto": "Aceito"}'
 ```
 
+### Ensaiar a apresentação
+
+`./scripts/ensaiar.sh` é o ensaio de palco. **Não gasta tokens.**
+
+1. Derruba a demo, sobe de novo e mede o tempo até tudo ficar saudável.
+2. Toca as 8 cenas no navegador, em 1920 × 1080, pelo roteiro:
+   - no passo a passo, com Espaço em cada balão;
+   - a Ana responde pela primeira opção;
+   - na cena 6, a API da Âncora cai na primeira pergunta à Ana;
+   - na cena 7, o pedágio é aprovado no painel do apresentador.
+3. Toca os replays das gravações.
+4. Escreve `ensaios/<data>.md`, com os critérios de aceite (✔/✘ e a evidência) e as capturas de cada cena.
+
+```bash
+./scripts/ensaiar.sh            # com a subida a frio
+./scripts/ensaiar.sh --quente   # com a demo já no ar
+```
+
+O roteiro de fala e o checklist do dia estão no capítulo 9.
+
 ### Medir com o modelo real
 
 `experimento.sh` roda cada incidente nos modos `sem_skill` e `com_skill`, com o modelo do `.env`, e confere pelo barramento se o agente seguiu a regra do banco. **Gasta tokens de verdade.**
 
 ```bash
-./scripts/experimento.sh rodar                       # 5 incidentes x 2 modos (~15 min)
+./scripts/experimento.sh rodar                       # o caminho feliz e os 6 incidentes x 2 modos (~12 min)
 ./scripts/experimento.sh rodar vistoria-zona-sul     # só um incidente
 ./scripts/experimento.sh analisar 2026-11-01-claude-opus-5-5   # regras por caso, somando as repetições
 
@@ -357,7 +377,7 @@ curl -s -X POST localhost:8080/api/execucoes/<id>/resposta -H 'Content-Type: app
 
 O `comparar` mostra também o custo, pelos preços do `.env`. Mudar os preços ou os fatores de cache e comparar de novo não gasta tokens: o custo é recalculado a partir dos tokens gravados.
 
-Os eventos completos ficam em `experimentos/<data>/`, fora do git. O relatório da primeira rodada está em `docs/experimentos/`.
+Os eventos completos ficam em `experimentos/<data>/`, fora do git. Os relatórios ficam em `docs/experimentos/`; o mais recente cobre os 6 incidentes com o Haiku.
 
 ### Escrever a persona de um canal novo
 
