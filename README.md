@@ -18,6 +18,8 @@ docker compose ps             # todos os serviços "healthy"
 
 | Endereço | O que é |
 | --- | --- |
+| <http://localhost:8080> | Tela de abertura: o infográfico navegável |
+| <http://localhost:8080/mapa> | Modo Mapa: a cidade do banco e a viagem do agente |
 | <http://localhost:8080/status> | Dashboard de status: serviços, tools, skills e prompts por dentro |
 | <http://localhost:8080/bastidores/> | Bastidores (documentação) |
 | <http://localhost:7474> | Neo4j Browser |
@@ -27,6 +29,7 @@ docker compose ps             # todos os serviços "healthy"
 ```bash
 ./scripts/testar.sh                           # lint e testes de unidade de todos os serviços
 docker compose --profile test run --rm --build smoke  # ponta a ponta, com a demo no ar
+docker compose --profile test run --rm --build e2e    # no navegador (roteiro, sem tokens)
 ```
 
 Dependências Python ficam travadas num `uv.lock` por serviço. Depois de mudar um `pyproject.toml`, rode `./scripts/travar-dependencias.sh <serviço>`.
@@ -52,7 +55,7 @@ Sem chave de API, o provedor `roteiro` faz um ensaio determinístico pelas mesma
 ./scripts/agente.sh executar --modo com_skill --provedor roteiro --canal agencia --auto
 ```
 
-O modelo padrão é o Claude Haiku 5.5. O Opus 5.5 pode ser escolhido no seletor do painel (`/status`). Cada execução mostra o custo em US$.
+O modelo padrão é o Claude Haiku 5.5. O Opus 5.5 pode ser escolhido no seletor do painel (`/status`) ou na barra de viagem do mapa. Cada execução mostra o custo em US$.
 
 Para medir com o modelo real (gasta tokens): `./scripts/experimento.sh rodar [--modelo claude-haiku-5-5] [--repeticoes 3]`, depois `comparar`. Relatórios em [`docs/experimentos/`](docs/experimentos/).
 
@@ -72,11 +75,12 @@ services/
   canais-mcp/                   persona do agente por canal (prompts MCP em prompts/*.md)
   simulator/                    injeta incidentes (fora do alcance do agente)
   smoke/                        checagem ponta a ponta (perfil test)
-  web/                          React + Carbon, servido por nginx
+  e2e/                          testes no navegador com Playwright (perfil test)
+  web/                          React + Carbon + deck.gl, servido por nginx (abertura, mapa, status)
   docs/                         site de bastidores (MkDocs Material)
 docs/                           spec e infográfico
 ```
 
 ## Fases
 
-O desenvolvimento segue as fases da spec. Fase atual: **5.2 · Dashboard de status**.
+O desenvolvimento segue as fases da spec. Fase atual: **6 · Mapa**.

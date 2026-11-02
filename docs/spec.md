@@ -35,7 +35,7 @@ O infográfico abaixo é o grande navegador da demo. Ele abre o site na rota `/`
 | 2. Com mapa e GPS, o agente escolhe rotas | Cena 3 seguida da cena 5 (o contraste) |
 | 3. A skill é a porta de entrada | Cena 4 |
 | Placa (Skills, Contexto, Regras, Resultados) | Capítulos de bastidores correspondentes |
-| Seletor Modo Mapa / Modo Raio-X | Demo aberta no modo escolhido |
+| Seletor Modo Mapa / Modo Raio-X | Demo aberta no modo escolhido (o Raio-X chega na Fase 7) |
 | Paradas 1 a 9 no mapa e na faixa "As 9 paradas" | Demo posicionada naquela parada |
 | Ana e o celular | Início da jornada (cena 1) |
 | Rotas disponíveis | Cena 4, na escolha de rota |
@@ -232,7 +232,7 @@ Tudo roda em Docker e sobe com um único `docker compose up`. Todo o backend é 
 
 | Serviço | Papel | Expõe via gateway | Stack |
 | --- | --- | --- | --- |
-| `web` | Modo Mapa, Modo Raio-X, painel do apresentador, bastidores | — | React + TypeScript, IBM Carbon, MapLibre GL, deck.gl |
+| `web` | Modo Mapa, Modo Raio-X, painel do apresentador, bastidores | — | React + TypeScript, IBM Carbon, deck.gl (vista ortográfica), OpenSeadragon |
 | `agent` | Host MCP: descobre skills, planeja, executa e emite eventos para o `web` | — | Python, FastAPI, SDK MCP; Anthropic ou Azure OpenAI |
 | `mcp-gateway` | Ponto único de acesso: agrega tools e skills de todos os servidores, aplica políticas, autentica, registra proveniência e telemetria | Tudo, com nomes qualificados por servidor | Python, SDK MCP, FastAPI |
 | `skills-mcp` | Catálogo de skills-workflow (`io.modelcontextprotocol/skills`) | `skills/list`, `skills/get`, `resources/read` | Python, SDK MCP |
@@ -305,7 +305,7 @@ A moldura é IBM Carbon, sóbria e profissional. O mapa é a área lúdica, onde
 
 **Painel de status (bastidores da operação)**
 
-Um dashboard de apoio ao apresentador e a quem monta a demo, em `/status` (até a tela de abertura existir, a raiz leva para lá). Ele mostra:
+Um dashboard de apoio ao apresentador e a quem monta a demo, em `/status`. Ele mostra:
 
 - **Indicadores:** serviços no ar, tools (e quantas estão fora), skills, prompts, o provedor de LLM (com a chave configurada ou ausente) e o barramento.
 - **Abas com tabelas, busca e filtro:**
@@ -331,6 +331,24 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
 - Zoom semântico: longe mostra bairros, perto mostra nós e arestas do grafo com rótulos.
 - Navegação livre: arrastar, zoom, clicar em nó para ver detalhes e proveniência, e "seguir o agente" ligado ou desligado.
 - Animações de 200 a 600 ms, nunca bloqueando a leitura.
+
+**Como o Modo Mapa é feito (Fase 6)**
+
+- **Rotas do site:**
+  - `/` é a tela de abertura;
+  - `/mapa` é o Modo Mapa, que aceita `?execucao=<id>` para acompanhar uma viagem, `?cena=N` para o preset de uma cena e `?parada=N` para abrir numa parada;
+  - `/status` é o dashboard.
+- **A cidade é o grafo:**
+  - `contexto://mapa`, `contexto.consultar_rota` e `contexto.consultar_entidade`, pelo caminho `web` → `agent` (`/api/mapa`, `/api/mapa/rotas`, `/api/mapa/entidade/{id}`) → `mcp-gateway`;
+  - o web relê a cidade e as rotas a cada 5 s, e isso é o trânsito.
+- **deck.gl em vista ortográfica**, sobre as coordenadas próprias da cidade (1000 × 700), sem mapa-base geográfico.
+- **A viagem é dirigida só pelo SSE da execução:** cada evento tem uma animação correspondente, documentada nos bastidores (capítulo 6). Os modos sem contexto e sem skill não planejam rota, então o mapa mostra só os pulsos nos sistemas chamados.
+- **Barra de viagem no próprio mapa:**
+  - modo, canal e modelo, com o roteiro como ensaio sem LLM, e o botão "Iniciar viagem";
+  - o painel **Conversa**, para responder pela Ana.
+
+  É uma antecipação do painel do apresentador da Fase 7.
+- **Testes e2e no navegador** (serviço `e2e`, perfil `test`), sempre pelo roteiro, sem gastar tokens.
 
 **Acessibilidade:** contraste WCAG AA, foco de teclado visível e textos legíveis a 5 metros do telão.
 
@@ -428,6 +446,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Barramento de eventos: Redis Streams (serviço `bus`)
 - [x] Grafo recarregado com o estado-base a cada subida (serviço `seed`)
 - [x] Personagens: a Ana em todos os incidentes ao vivo; sete clientes-cenário para testes e placar
+- [x] Modo Mapa em deck.gl com vista ortográfica, sem MapLibre: a cidade usa as coordenadas próprias do grafo, não geográficas
 - [x] Pedágio: o apresentador aprova pelo simulador, e a especialista aprova sozinha depois de 30 s
 - [x] Cenas de falha sob medida: desligar tools pelo painel de status, via simulador
 - [x] Cerca de 15 tools de distração no gateway para a cena 3 (ver Incidentes)

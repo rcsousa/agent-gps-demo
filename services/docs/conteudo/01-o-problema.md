@@ -5,6 +5,8 @@
 
     A demo roda **a mesma tarefa** nos três jeitos, com a mesma cliente: "Quero contratar um seguro residencial para meu apartamento."
 
+![A viagem com skill no Modo Mapa: a rota planejada, as 9 paradas e a apólice emitida](assets/mapa/viagem.png)
+
 ## Aprofundamento técnico
 
 ### Três agentes, um pedido
@@ -121,4 +123,4 @@ Os exemplos acima são do roteiro. Com o Claude Opus 5.5 real, testado em 01/11/
 ./scripts/agente.sh executar --modo com_skill    --provedor roteiro --auto
 ```
 
-Com o modelo configurado no `.env`, tire o `--provedor roteiro` e compare com um modelo de verdade. Para repetir o experimento dos incidentes (gasta tokens): `./scripts/experimento.sh rodar`.
+Ou pelo navegador: em <http://localhost:8080/mapa>, escolha o modo e o modelo na barra de viagem e clique em **Iniciar viagem**. Com o modelo configurado no `.env`, tire o `--provedor roteiro` e compare com um modelo de verdade. Para repetir o experimento dos incidentes (gasta tokens): `./scripts/experimento.sh rodar`.

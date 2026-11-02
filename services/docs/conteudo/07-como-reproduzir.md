@@ -15,7 +15,9 @@ docker compose ps           # todos os serviços devem aparecer como "healthy"
 
 | Endereço | O que é |
 | --- | --- |
-| <http://localhost:8080> | Demo (por enquanto, leva ao dashboard de status em `/status`) |
+| <http://localhost:8080> | Tela de abertura: o infográfico navegável |
+| <http://localhost:8080/mapa> | Modo Mapa: a cidade e a viagem do agente |
+| <http://localhost:8080/status> | Dashboard de status |
 | <http://localhost:8080/bastidores/> | Este site |
 | <http://localhost:7474> | Neo4j Browser (usuário e senha do `.env`) |
 
@@ -32,6 +34,9 @@ docker compose run --rm --no-deps agent pytest
 
 # Checagem ponta a ponta, com a demo no ar
 docker compose --profile test run --rm --build smoke
+
+# No navegador (Chromium): abertura, mapa, viagem e incidente. Usa o roteiro, sem tokens
+docker compose --profile test run --rm --build e2e
 ```
 
 ### Atualizar dependências
@@ -109,6 +114,36 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 | `vistoria-zona-sul` | Desvio por obra |
 | `alcada-ana-excedida` | Pedágio |
 | `proveniencia-fraca-ana` | Ponte interditada |
+
+### A tela de abertura
+
+<http://localhost:8080> abre o infográfico da demo. Para aproximar, arraste e use a roda do mouse ou os botões `+` e `−`. Ao passar o mouse, cada área acende e mostra para onde leva:
+
+- as mensagens 1, 2 e 3, a Ana, as rotas e as seguradoras levam à cena correspondente, já no mapa;
+- as paradas 1 a 9 abrem o mapa naquela parada;
+- a placa, a camada de contexto, a skill e a proveniência levam ao capítulo destes bastidores;
+- o Modo Raio-X chega na Fase 7.
+
+**Atalhos:** `Enter` inicia a demo, `M` abre o mapa, `S` abre o status e `B` abre os bastidores. `Tab` percorre as áreas.
+
+### O Modo Mapa
+
+<http://localhost:8080/mapa> mostra a cidade do banco, desenhada a partir do grafo, com as três rotas da jornada e o trânsito ao vivo.
+
+![O Modo Mapa no fim de uma viagem com skill](assets/mapa/viagem.png)
+
+1. Na barra de viagem, escolha o **modo** (com skill, sem skill ou sem contexto), o **canal** e o **modelo**. A opção "Roteiro (ensaio sem LLM)" não gasta tokens.
+2. Clique em **Iniciar viagem**. O endereço muda para `/mapa?execucao=<id>`, e dá para abrir o mesmo link em outra tela para acompanhar a viagem. Ela é reproduzida desde o início e segue ao vivo.
+3. Quando o agente perguntar algo à Ana, a pergunta aparece no painel **Conversa**. Responda com um dos botões ou escreva a resposta.
+4. Clique em qualquer nó para ver os atributos, o estado vivo, a **proveniência** e os vizinhos. Clicar num vizinho leva até ele.
+
+![O detalhe de um nó, com a proveniência](assets/mapa/no.png)
+
+**Cenas prontas.** `/mapa?cena=6` deixa a barra pronta para a cena 6 e mostra o botão **Derrubar a API da Âncora**. Derrube a API, inicie a viagem e veja o trecho interditado e o desvio:
+
+![A cena 6: a Âncora fora do ar e a viagem desviando](assets/mapa/incidente.png)
+
+Depois, volte o mundo ao normal com `./scripts/incidente.sh reset`.
 
 ### O dashboard de status
 

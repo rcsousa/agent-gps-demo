@@ -211,6 +211,70 @@ web ──► agent /api/catalogo ──► mcp-gateway (tools/list, prompts/lis
 web ──► /simulador ──► simulator   (só o liga/desliga das tools)
 ```
 
+### O Modo Mapa: a cidade é o grafo
+
+O mapa não é desenhado à mão. Tudo o que aparece nele vem de três consultas, sempre pelo gateway:
+
+```
+web ──► agent /api/mapa                ──► gateway ──► contexto://mapa              (bairros, rio, avenidas, nós com x/y e status, arestas)
+web ──► agent /api/mapa/rotas          ──► gateway ──► contexto.consultar_rota      (as 3 rotas, paradas, tempo, custo, risco, alertas)
+web ──► agent /api/mapa/entidade/{id}  ──► gateway ──► contexto.consultar_entidade  (atributos, estado, proveniência, vizinhos)
+web ──► agent /api/execucoes/{id}/eventos  (SSE)    ──► a viagem
+```
+
+A cidade e as rotas são relidas a cada 5 s: esse é o **trânsito**. Quando o simulador derruba a API da Âncora, o nó fica vermelho, com o ícone ✕. As rotas que passam por ele aparecem como interditadas, antes mesmo de qualquer viagem.
+
+**Por que deck.gl em vista ortográfica, e não MapLibre:**
+- A cidade usa coordenadas próprias (1000 × 700, gravadas no grafo pelo seed), não latitude e longitude.
+- Um mapa geográfico pediria uma projeção falsa e um mapa-base vazio.
+- O deck.gl, com `OrthographicView`, desenha direto essas coordenadas em WebGL, com pan, zoom, seleção por clique e transições.
+
+**As camadas, de baixo para cima:**
+
+| Camada | deck.gl | De onde vem |
+| --- | --- | --- |
+| Bairros, rio e avenidas | `PolygonLayer`, `PathLayer`, `LineLayer` | `contexto://mapa` |
+| Arestas do grafo | `LineLayer` (a partir de um certo zoom) | `contexto://mapa` |
+| Rotas disponíveis, tracejadas | `PathLayer` + `PathStyleExtension` | `contexto.consultar_rota` |
+| Rota da viagem e o rastro animado | `PathLayer` + `TripsLayer` | `route.planned` / `route.recalculated` |
+| Nós com semáforo e ícone de status | `ScatterplotLayer` + `TextLayer` | status do nó no grafo |
+| Paradas numeradas | `ScatterplotLayer` + `TextLayer` | paradas da rota |
+| Pulsos nos sistemas chamados | `ScatterplotLayer` | `tool.called` |
+| Robô e pino de chegada | `IconLayer` (SVG próprio) | `step.started` / `run.finished` |
+
+**Zoom semântico:**
+- de longe, aparecem os bairros e seus nomes;
+- ao aproximar, surgem as arestas e depois os nomes dos nós;
+- bem perto, aparece o tipo de cada relação.
+
+Os nomes que se sobreporiam ficam de fora até haver espaço. As paradas e os nós com problema têm prioridade.
+
+**Toda animação é um evento.** O mapa não anima nada por conta própria:
+
+| Evento (SSE) | O que acontece no mapa |
+| --- | --- |
+| `run.started` | O robô aparece no ponto de partida do canal (app, agência ou central) |
+| `skill.loaded` | O painel Conversa mostra o navegador, isto é, a skill ativa |
+| `route.planned` | A rota escolhida vira a linha laranja com rastro animado, e um aviso mostra o motivo da escolha |
+| `step.started` | O robô anda até a parada em 600 ms e ela fica laranja. Com "Seguir o agente", a câmera vai junto |
+| `tool.called` | Um pulso no nó do sistema chamado: laranja se deu certo, vermelho se falhou |
+| `incident.detected` | Um aviso vermelho com ícone e a metáfora (Rua interditada, Contramão...) e um anel no nó |
+| `route.recalculated` | Um aviso de recálculo, com motivo e regra, e a troca da linha da rota |
+| `human.required` | O pedágio aparece na parada de aprovação |
+| `client.asked` / `agent.message` | A pergunta e as opções aparecem no painel Conversa, para responder pela Ana |
+| `run.finished` | O pino de chegada com o número da apólice, ou o motivo da parada, com duração, custo e modelo |
+
+Nos modos sem contexto e sem skill, o agente não planeja rota. Por isso, o mapa mostra só os pulsos nos sistemas e a conversa. A ausência da linha laranja é o próprio argumento: **sem GPS, não há rota**.
+
+### A tela de abertura: o infográfico navegável
+
+Em `/`, o infográfico oficial (`docs/assets/mapa-da-demo.png`, 4096 × 6144) abre em deep zoom com o OpenSeadragon. Os tiles são gerados no build do Docker do `web`, com `vips dzsave`, num estágio Debian. O PNG original fica só no repositório.
+
+As 36 áreas clicáveis estão em `services/web/src/abertura/hotspots.json`, em porcentagem da imagem, e acompanham o pan e o zoom. Cada área leva a um de três destinos:
+- uma cena do mapa (`/mapa?cena=N`);
+- uma parada (`/mapa?parada=N`);
+- um capítulo destes bastidores.
+
 ### Catálogo de eventos
 
 Tudo vai para o stream `bussola:eventos`, no formato `{tipo, origem, instante, dados}`, sempre com `execucao_id`:

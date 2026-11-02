@@ -10,7 +10,7 @@ A especificação completa está em `docs/spec.md`. Ela é a fonte da verdade: l
 - **Modelos:** Anthropic ou Azure OpenAI, escolhidos por `LLM_PROVIDER=anthropic|azure_openai`. Uma interface única no `agent`; trocar de provedor não muda nenhum fluxo.
 - **Backend 100% Python** (FastAPI e SDK oficial do MCP). Front em React + TypeScript.
 - **UI em IBM Carbon** (`@carbon/react`), cores neutras e aparência profissional. Tipografia IBM Plex.
-- **Mapas e grafos engajadores, bonitos e navegáveis** (MapLibre GL, deck.gl): pan, zoom, clique em nós, zoom semântico.
+- **Mapas e grafos engajadores, bonitos e navegáveis** (deck.gl em vista ortográfica, sobre as coordenadas do grafo; OpenSeadragon no infográfico de abertura): pan, zoom, clique em nós, zoom semântico.
 - **Idioma: somente português do Brasil** em tudo que o usuário vê (UI, skills, ontologia, narração, bastidores). Textos da UI centralizados num arquivo de mensagens. Identificadores de código podem ficar em inglês.
 - **Segredos só em `.env`**, nunca no código. Manter `.env.example` atualizado.
 
