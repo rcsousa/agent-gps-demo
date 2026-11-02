@@ -28,5 +28,13 @@ Cada elemento da navegação tem um equivalente técnico. É a mesma tabela do i
 
 O mapa pode mostrar um evento alguns segundos **depois** de ele acontecer. O diretor de animações reproduz os eventos na ordem, com um tempo mínimo para cada um, para que a plateia consiga acompanhar. **Ele nunca cria um evento nem muda a ordem.** O selo "Reproduzindo" indica quando o mapa está atrás do agente, e "Pular para o fim" alcança o presente.
 
+### E se a rede cair, ou a chave do modelo não funcionar no dia?
+
+**As cenas tocam em replay.** Cada uma foi gravada de uma execução real com o Haiku (`gravacoes/`, no repositório). O replay não usa rede, chave nem LLM: o agente serve os eventos gravados, no ritmo original, e o mapa e o Raio-X os desenham como numa viagem ao vivo. A diferença fica sempre visível no selo "Replay · gravado em … com …".
+
+### Como o placar sabe que uma regra foi cumprida?
+
+**Pelos eventos, não pelo que o agente diz.** No fim de cada viagem, o agente lê do barramento tudo o que ela fez, inclusive o que o gateway registrou, e confere as regras do caso. Por exemplo: o consentimento foi verificado antes de ler o imóvel? Houve aprovação humana antes de emitir? Uma tentativa barrada pelo gateway não conta como feita. É o mesmo verificador do experimento com o modelo real.
+
 !!! note "Em construção"
     O glossário completo e as demais perguntas frequentes vão ser escritos na Fase 8 (bastidores).

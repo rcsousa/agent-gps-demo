@@ -282,7 +282,7 @@ Decisões de arquitetura:
   - do mapa: `route.planned`, `step.started`, `incident.detected`, `route.recalculated`, `human.required`;
   - da execução: `run.started` (sempre o primeiro) e `run.finished` (com as métricas do placar), `prompt.loaded`, `skill.loaded`, `client.asked`, `client.answered` e `agent.message`;
   - do gateway: `tool.called`, `prompt.read`, `skills.listed` e `resource.read`.
-- **Replay offline** de execuções reais, para apresentar sem rede ou sem chave de API.
+- **Replay offline** de execuções reais, para apresentar sem rede ou sem chave de API. As gravações (`gravacoes/<nome>.jsonl`, um cabeçalho e os eventos da execução) ficam versionadas no repositório; o agente as toca num SSE no formato do ao vivo e no ritmo original, e o mapa mostra o selo "Replay" o tempo todo.
 - **Segredos** em `.env` (com `.env.example` versionado), nunca no código.
 - **Barramento em Redis Streams.** O serviço `bus` guarda os eventos em ordem (stream `bussola:eventos`), o que sustenta o replay e o Raio-X.
 - **Proveniência carimbada pelo gateway.** Toda resposta de tool traz `_meta["bussola/proveniencia"]` com `chamada_id`, `servidor`, `tool`, `instante`, `duracao_ms` e `status`. Cada chamada também vira um evento `tool.called` no barramento, com os argumentos usados.
@@ -364,6 +364,34 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
   É uma antecipação do painel do apresentador da Fase 7.
 - **Testes e2e no navegador** (serviço `e2e`, perfil `test`), sempre pelo roteiro, sem gastar tokens.
 
+**Como o Raio-X e o apresentador são feitos (Fase 7)**
+
+- **Seletor Mapa / Raio-X na barra** (`?visao=raio-x`): a mesma execução, o mesmo diretor de animações e o mesmo SSE. Trocar de modo não reinicia a viagem.
+- **No Raio-X, a cidade é o grafo:**
+  - todos os nós aparecem como prédios-sistema, mais baixos fora do bairro aberto;
+  - todas as relações aparecem, com o tipo ao passar o mouse.
+- **O painel do Raio-X tem as abas do infográfico:**
+  - Chamadas MCP: o log de `tools/list`, `skills/list`, `skills/get`, `resources/read`, `prompts/get`, tools, passos do modelo e decisões, com o evento cru ao clicar;
+  - Conversa;
+  - Proveniência: decisões e sistemas tocados;
+  - Métricas: tokens, latência, custo e regras;
+  - Placar.
+
+  A pergunta pendente da Ana fica no topo do painel, em qualquer aba.
+- **Eventos completos por execução:**
+  - o agente envia o `_meta` da execução em todas as requisições ao gateway, e o gateway publica `tools.listed`, `skills.listed`, `skill.read` e `resource.read` com `execucao_id`;
+  - o agente publica `model.step` a cada chamada ao modelo;
+  - o `tool.called` leva o resultado resumido.
+- **Placar:** as regras do banco são conferidas pelo agente no fim de cada execução (`bussola_comum.regras`, o mesmo verificador do experimento), no caso dado pelos incidentes ativos no início. `GET /api/placar` traz a sessão e a referência versionada do experimento.
+- **Painel do apresentador:** uma gaveta no mapa (tecla P), com:
+  - as cenas e a versão curta;
+  - os incidentes (aplicar e remover);
+  - as tools desligadas e o "mundo limpo";
+  - o pedágio (aprovar ou recusar, com a contagem até a Marina);
+  - as falas roteirizadas da Ana.
+
+  As ações vão ao simulador. As falas vão como resposta da Ana.
+
 **Acessibilidade:** contraste WCAG AA, foco de teclado visível e textos legíveis a 5 metros do telão.
 
 ### Identidade visual do Banco Bússola
@@ -430,7 +458,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 
 - [ ] `docker compose up` sobe tudo do zero em menos de 3 minutos, sem passos manuais além do `.env`
 - [ ] A demo roda com Anthropic e com Azure OpenAI, mudando só variável de ambiente
-- [ ] As 8 cenas rodam ao vivo e em replay offline
+- [x] As 8 cenas rodam ao vivo e em replay offline (as cenas 2, 3, 5, 6 e 7 gravadas com o Haiku; a 4 e a 8 tocam a gravação da 5; a 1 é a cidade, sem viagem)
 - [ ] Cada incidente provoca recálculo real, com motivo e regra exibidos
 - [ ] O placar mostra diferença mensurável entre sem contexto, sem skill e com skill, em regras do banco cumpridas
 - [ ] O Modo Mapa é entendido sem narração por alguém não técnico
@@ -463,6 +491,9 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Modo Mapa em deck.gl, sem MapLibre: cidade 3D (`OrbitView`) sobre as coordenadas próprias do grafo, não geográficas, com os sistemas só no bairro aberto
 - [x] Ritmo do mapa: fila de animações com tempo mínimo por evento, sem criar nem reordenar eventos
 - [x] Infográfico de abertura: a versão horizontal (`docs/assets/infografico_horizontal.jpeg`)
+- [x] Painel do apresentador como gaveta no próprio mapa (tecla P), numa tela só
+- [x] Placar: as viagens da sessão, com as regras conferidas pelo agente, e a referência do experimento com os modelos reais
+- [x] Replay offline por gravações versionadas no repositório, tocadas com selo "Replay" visível
 - [x] Pedágio: o apresentador aprova pelo simulador, e a especialista aprova sozinha depois de 30 s
 - [x] Cenas de falha sob medida: desligar tools pelo painel de status, via simulador
 - [x] Cerca de 15 tools de distração no gateway para a cena 3 (ver Incidentes)

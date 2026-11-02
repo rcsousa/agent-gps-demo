@@ -19,7 +19,8 @@ docker compose ps             # todos os serviços "healthy"
 | Endereço | O que é |
 | --- | --- |
 | <http://localhost:8080> | Tela de abertura: o infográfico navegável |
-| <http://localhost:8080/mapa> | Modo Mapa: a cidade do banco e a viagem do agente |
+| <http://localhost:8080/mapa> | Modo Mapa: a cidade do banco e a viagem do agente (tecla P: painel do apresentador) |
+| <http://localhost:8080/mapa?visao=raio-x> | Modo Raio-X: a mesma viagem por dentro, com o placar |
 | <http://localhost:8080/status> | Dashboard de status: serviços, tools, skills e prompts por dentro |
 | <http://localhost:8080/bastidores/> | Bastidores (documentação) |
 | <http://localhost:7474> | Neo4j Browser |
@@ -76,6 +77,7 @@ services/
   simulator/                    injeta incidentes (fora do alcance do agente)
   smoke/                        checagem ponta a ponta (perfil test)
   e2e/                          testes no navegador com Playwright (perfil test)
+gravacoes/                      viagens reais gravadas, para o replay offline das cenas
   web/                          React + Carbon + deck.gl, servido por nginx (abertura, mapa, status)
   docs/                         site de bastidores (MkDocs Material)
 docs/                           spec e infográfico
@@ -83,4 +85,4 @@ docs/                           spec e infográfico
 
 ## Fases
 
-O desenvolvimento segue as fases da spec. Fase atual: **6 · Mapa**.
+O desenvolvimento segue as fases da spec. Fase atual: **7 · Raio-X e apresentador**.
