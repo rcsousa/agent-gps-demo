@@ -136,6 +136,7 @@ export function Legenda() {
           </li>
         ))}
         <li className="apagado">{t.legenda.zoom}</li>
+        <li className="apagado">{t.legenda.girar}</li>
       </ul>
     </details>
   );

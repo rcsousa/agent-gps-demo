@@ -243,8 +243,12 @@ O sol vem baixo, do sudeste, para marcar as fachadas que a câmera vê. Os lotes
 **Câmera e rótulos:**
 
 - O deck.gl, com `OrbitView`, desenha as coordenadas próprias da cidade (1000 × 700) em WebGL, sem mapa-base geográfico. O norte fica sempre para cima.
-- **Câmera de GPS:** durante a viagem, a câmera fica baixa (34°) e próxima, e segue o robô **a cada quadro**, com o robô no centro. Ao fim da viagem, ela sobe uma vez para a vista aérea da cidade inteira (55°) e fica livre para o apresentador.
-- Mexer na câmera (arrastar, dar zoom ou girar) pausa o seguimento até "Seguir o agente" ser religado. A cidade é relida a cada 5 s, e nada disso move a câmera.
+- **Câmera de GPS, com visão traseira:** durante a viagem, a câmera fica baixa (34°) e próxima e segue o robô **a cada quadro**.
+  - O mapa gira para a direção da viagem ficar para cima, como num GPS de carro. O rumo vem do trecho atual, e o giro é suave, pelo menor ângulo.
+  - A câmera mira um pouco à frente do robô, que aparece abaixo do centro.
+  - Ao fim da viagem, ela sobe uma vez para a vista aérea da cidade inteira (55°), com o norte para cima, e fica livre para o apresentador.
+- **Câmera livre:** o apresentador gira e inclina o mapa com o botão direito (ou Ctrl + arrastar) e com os botões de girar e inclinar. A bússola mostra o rumo e, ao clicar, volta o norte para cima.
+- Mexer na câmera (arrastar, dar zoom, girar ou inclinar) pausa o seguimento até "Seguir o agente" ser religado. A cidade é relida a cada 5 s, e nada disso move a câmera.
 - De longe, aparecem os nomes dos bairros, as placas das paradas e os faróis. De perto, os nomes das construções. No GPS, só os nomes dos lugares da viagem.
 - Os nomes são **chips em HTML** (IBM Plex, a partir de 14 px). Os que se sobreporiam ficam de fora, por prioridade, e nenhum cobre o robô.
 - Clicar numa construção mostra a proveniência daquele lugar.
@@ -277,6 +281,31 @@ No código (`web/src/mapa/diretor.ts`):
 --8<-- "web/diretor.ts:retencao"
 ```
 
+### Os balões de fala e o passo a passo
+
+A cada interação, o robô diz o que está fazendo num **balão de fala**, preso acima do pino. O balão nasce de um evento real do barramento, e o texto vem da tool, dos argumentos e do status desse evento (`mapa/baloes.ts`; as frases ficam no arquivo de mensagens), nunca de um roteiro:
+
+| Evento | Balão |
+| --- | --- |
+| `tool.called`, ok | A frase da tool em pt-BR ("Consultando o perfil da cliente no CRM", "Cotando com a Farol"), com a tool e a duração em mono embaixo |
+| `tool.called`, com erro | "API de cotação da Âncora não respondeu" ou "… recusou: <motivo>", em vermelho e com ícone |
+| `tool.called`, barrada pelo gateway | "O gateway barrou a chamada: fora da rota da skill", em vermelho e com ícone |
+| `incident.detected` | A metáfora e a descrição ("Rua interditada: …"), em vermelho e com ícone |
+| `route.recalculated` | "Recalculando: <motivo>", com a regra embaixo |
+| `human.required` | "Pedágio: <motivo>" |
+
+As tools de `contexto.*` também falam ("Consultando o mapa: quais rotas levam ao destino"), mas o robô fica onde está, porque elas não têm prédio. Os passos do modelo, o protocolo e a conversa não têm balão.
+
+**Passo a passo** (toggle na barra, ligado por padrão e guardado no navegador):
+
+- o robô chega ao lugar, o balão abre e o diretor **espera o apresentador**;
+- "Seguir", no balão ou no painel do apresentador, ou as teclas Espaço, Enter e →, fazem o balão sumir e a jornada continuar;
+- o selo mostra "Aguardando o apresentador".
+
+**O que fica parado é só o mapa.** O agente segue trabalhando de verdade, então os tempos, os custos e o Raio-X não mudam. O mapa só mostra o próximo evento real quando o apresentador pede.
+
+Desligado, a viagem corre sozinha, e o balão fica cerca de 1 s na tela e some. "Pular para o fim" fecha o balão e alcança o presente. Os testes e os vídeos destes bastidores usam o passo a passo desligado.
+
 **Por que isso é honesto:**
 
 - nenhum evento é criado e a ordem não muda;
@@ -296,7 +325,7 @@ Abrir um link `/mapa?execucao=<id>` antigo reproduz a viagem inteira desde o in�
 | `run.started` | O robô aparece na porta do canal (o app, a agência ou a central) |
 | `skill.loaded` | O painel Conversa mostra o navegador, isto é, a skill ativa |
 | `step.started` | O robô anda pelas ruas até a placa da parada, e o caminho acende em laranja atrás dele. A placa fica laranja, e a linha do tempo avança. Com "Seguir o agente", a câmera de GPS vai junto |
-| `tool.called` | O robô anda até o prédio do sistema chamado, que pulsa: laranja se deu certo, vermelho se falhou |
+| `tool.called` | O robô anda até o prédio do sistema chamado, que pulsa (laranja se deu certo, vermelho se falhou), e abre o balão de fala. No passo a passo, o mapa espera o apresentador |
 | `incident.detected` | Um aviso vermelho com ícone e a metáfora (Rua interditada, Contramão...), e a parada fica vermelha na linha do tempo |
 | `route.recalculated` | Um aviso de recálculo, com o motivo e a regra |
 | `human.required` | O pedágio aparece na placa da aprovação |

@@ -58,9 +58,11 @@ def test_o_robo_anda_por_cada_lugar_e_a_conversa_vem_no_ritmo_dele(pagina, mundo
     paradas_das_perguntas = []
     parada_da_apolice = None
     camera_durante = set()
+    giros = set()
     for _ in range(360):
         pagina.wait_for_timeout(500)
         camera_durante.add(mapa.get_attribute("data-camera"))
+        giros.add(int(mapa.get_attribute("data-giro")))
         botoes = pagina.locator(".mapa__opcoes button:not([disabled])")
         if botoes.count():
             paradas_das_perguntas.append(mapa.get_attribute("data-parada"))
@@ -73,12 +75,21 @@ def test_o_robo_anda_por_cada_lugar_e_a_conversa_vem_no_ritmo_dele(pagina, mundo
     assert paradas_das_perguntas[:1] == ["parada-intencao"], paradas_das_perguntas
     assert "parada-proposta" in paradas_das_perguntas, paradas_das_perguntas
     assert parada_da_apolice == "parada-emissao"
-    # Durante a viagem, a câmera seguiu o robô; ao fim, ela sobe para a cidade inteira e fica livre.
+    # Durante a viagem, a câmera seguiu o robô e o mapa girou com ele (visão traseira);
+    # ao fim, ela sobe para a cidade inteira, com o norte para cima, e fica livre.
     assert "seguindo" in camera_durante
+    assert any(abs(g) >= 45 for g in giros), giros
     pagina.wait_for_function("document.querySelector('.mapa').dataset.camera === 'livre'")
     pagina.wait_for_function("document.querySelector('.mapa').dataset.nivel === '0.0'", timeout=10_000)
     pagina.wait_for_timeout(6000)
     assert mapa.get_attribute("data-nivel") == "0.0"
+    assert mapa.get_attribute("data-giro") == "0"
+
+    # Câmera livre: o apresentador gira o mapa, e a bússola volta o norte para cima.
+    pagina.get_by_role("button", name="Girar o mapa para a direita").click()
+    pagina.wait_for_function("document.querySelector('.mapa').dataset.giro === '15'")
+    pagina.locator(".mapa__bussola").click()
+    pagina.wait_for_function("document.querySelector('.mapa').dataset.giro === '0'")
 
     # Cada trecho é um evento real: as placas das paradas e os prédios dos sistemas chamados.
     assert int(mapa.get_attribute("data-lugares-visitados")) >= 10

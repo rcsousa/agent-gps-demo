@@ -1,6 +1,18 @@
 // Modo Mapa: a cidade do banco (o grafo, em ruas e quadras) e a viagem do agente (os eventos).
 
-import { Add, Book, Play, PresentationFile, Subtract, ZoomFit } from '@carbon/icons-react';
+import {
+  Add,
+  Book,
+  ChevronDown,
+  ChevronUp,
+  Compass,
+  Play,
+  PresentationFile,
+  RotateClockwise,
+  RotateCounterclockwise,
+  Subtract,
+  ZoomFit,
+} from '@carbon/icons-react';
 import { Button, ContentSwitcher, Dropdown, IconButton, InlineNotification, Switch, Tag, Toggle } from '@carbon/react';
 import { AmbientLight, DirectionalLight, LightingEffect, LinearInterpolator, OrbitView } from '@deck.gl/core';
 import DeckGL, { type DeckGLRef } from '@deck.gl/react';
@@ -25,6 +37,7 @@ import {
 } from './camadas';
 import { ESTILOS } from './construcoes';
 import { montarCena, type Ponto3, pontoDaPorta, suave, Z_CHAO, Z_RUA } from './cidade3d';
+import { Balao } from './Balao';
 import { useDiretor } from './diretor';
 import { LinhaDoTempo } from './LinhaDoTempo';
 import { Conversa, DetalheDoNo, Legenda } from './Paineis';
@@ -48,6 +61,16 @@ const INCLINACAO_GPS = 34;
 const ZOOM_GPS = 1.45;
 // A câmera alcança o robô com essa constante de tempo: segue sem trancos, em qualquer taxa de quadros.
 const TEMPO_DA_CAMERA_MS = 220;
+// No GPS, a câmera mira esse tanto à frente do robô, na direção da viagem (visão traseira).
+const AVANCO_DA_CAMERA = 45;
+// O giro é mais lento que o resto da câmera: a cada esquina, o mapa vira sem dar tontura.
+const TEMPO_DO_GIRO_MS = 650;
+// rotationOrbit = SENTIDO_DO_GIRO × rumo deixa a direção da viagem para cima na tela.
+const SENTIDO_DO_GIRO = -1;
+const PASSO_DO_GIRO = 15;
+const PASSO_DA_INCLINACAO = 10;
+// Ângulo em (-180, 180]: o giro sempre pelo menor caminho.
+const normalizar = (graus: number) => ((((graus + 180) % 360) + 360) % 360) - 180;
 // Sem giro: o norte fica para cima e a profundidade vem só da inclinação da câmera.
 const GIRO = 0;
 // A partir desse zoom (relativo à cidade inteira), aparecem os nomes das construções.
@@ -73,6 +96,7 @@ const CANAIS: Opcao[] = [
   { id: 'central', texto: t.barra.canais.central },
 ];
 const ROTEIRO = 'roteiro';
+const CHAVE_PASSO_A_PASSO = 'bussola:passo-a-passo';
 
 interface Visao {
   target: [number, number, number];
@@ -227,8 +251,29 @@ export function PaginaMapa() {
   // No replay ninguém responde.
   const real = useViagem(gravacao ? (replayPronto ? PREFIXO_GRAVACAO + replayPronto : null) : execucao);
   const replay = ehReplay(real.id);
-  const direcao = useDiretor(real, tempoDoTrecho);
+  // Passo a passo: o mapa para em cada balão até o apresentador mandar seguir. A escolha fica guardada.
+  const [passoAPasso, setPassoAPasso] = useState(() => localStorage.getItem(CHAVE_PASSO_A_PASSO) !== 'nao');
+  useEffect(() => localStorage.setItem(CHAVE_PASSO_A_PASSO, passoAPasso ? 'sim' : 'nao'), [passoAPasso]);
+  const nomeDoLugar = useCallback((id: string) => nos.get(id)?.nome ?? null, [nos]);
+  const direcao = useDiretor(real, tempoDoTrecho, passoAPasso, nomeDoLugar);
   const exibido = direcao.exibido;
+
+  // Responder pela Ana, uma vez por pergunta: a pergunta exibida pelo diretor pode continuar na tela
+  // depois de respondida (o mapa está atrás do agente), e há mais de um lugar para responder.
+  const respondendo = useRef<string | null>(null);
+  const responderPelaAna = useCallback(
+    async (texto: string) => {
+      const chave = `${real.id}:${exibido.mensagens.filter((m) => m.tipo === 'pergunta').length}`;
+      if (!real.id || !real.pergunta || respondendo.current === chave) return;
+      respondendo.current = chave;
+      try {
+        await apiViagem.responder(real.id, texto);
+      } catch {
+        respondendo.current = null;
+      }
+    },
+    [real.id, real.pergunta, exibido.mensagens],
+  );
 
   // --- Câmera -------------------------------------------------------------------------
   const area = useRef<HTMLDivElement>(null);
@@ -284,16 +329,33 @@ export function PaginaMapa() {
   );
   const voltarACidade = useCallback(
     (duracao = 900) => {
-      if (base)
-        setVisao({
-          ...base,
-          transitionDuration: duracao,
-          transitionInterpolator: new LinearInterpolator(['target', 'zoom', 'rotationX', 'rotationOrbit']),
-        });
+      if (!base) return;
+      // O norte volta para cima pelo menor giro (o mapa pode ter dado voltas com o GPS ou os botões).
+      setVisao((v) => ({
+        ...base,
+        rotationOrbit: v ? v.rotationOrbit - normalizar(v.rotationOrbit) : base.rotationOrbit,
+        transitionDuration: duracao,
+        transitionInterpolator: new LinearInterpolator(['target', 'zoom', 'rotationX', 'rotationOrbit']),
+      }));
     },
     [base],
   );
   const nivel = visao && base ? visao.zoom - base.zoom : 0;
+  const giroAtual = Math.round(normalizar(visao?.rotationOrbit ?? 0));
+  // Girar e inclinar pelos botões (a câmera fica livre: o seguimento pausa).
+  const girar = useCallback((graus: number, inclinacao: number) => {
+    setSeguir(false);
+    setVisao(
+      (v) =>
+        v && {
+          ...v,
+          rotationOrbit: v.rotationOrbit + graus,
+          rotationX: Math.min(Math.max(v.rotationX + inclinacao, v.minRotationX ?? 25), v.maxRotationX ?? 88),
+          transitionDuration: 400,
+          transitionInterpolator: new LinearInterpolator(['rotationOrbit', 'rotationX']),
+        },
+    );
+  }, []);
 
   // ?parada=N (da tela de abertura): o mapa abre naquela parada.
   // Só uma vez: a cidade é relida a cada 5 s (o trânsito), e a câmera não pode voltar sozinha.
@@ -327,14 +389,15 @@ export function PaginaMapa() {
   }, [animando]);
 
   // --- O robô e o rastro: o caminho real, trecho a trecho --------------------------------------
-  const { robo, rastro } = useMemo(() => {
-    if (!exibido.modo || !cena3d || !direcao.partida) return { robo: null, rastro: null };
+  const { robo, rastro, rumo } = useMemo(() => {
+    if (!exibido.modo || !cena3d || !direcao.partida) return { robo: null, rastro: null, rumo: null };
     const naCena = ([x, y]: Ponto): Ponto3 => cena3d.ponto(x, y, Z_RUA + 0.3);
     const inicio = nos.get(direcao.partida);
     const pontos: Ponto3[] = inicio ? [naCena(pontoDaPorta(inicio))] : [];
     const tempos: number[] = [0];
     let percorrido = 0;
     let posicao: Ponto3 | null = pontos[0] ?? null;
+    let rumo: number | null = null; // graus, no sentido horário a partir do norte da cena
     for (const tr of direcao.trechos) {
       const t2 = trajetoEntre(tr.de, tr.para);
       if (!t2) continue;
@@ -347,9 +410,15 @@ export function PaginaMapa() {
       const s = suave(Math.max(progresso, 0)) * t2.total;
       percorrido = base0 + s;
       posicao = naCena(pontoNoTrajeto(t2, s));
+      // O rumo: de um pouco atrás a um pouco à frente do robô. Parado, fica o da chegada.
+      if (t2.total > 0) {
+        const fim = Math.min(Math.max(s + 6, 8), t2.total);
+        const [a, b] = [naCena(pontoNoTrajeto(t2, Math.max(fim - 8, 0))), naCena(pontoNoTrajeto(t2, fim))];
+        if (Math.hypot(b[0] - a[0], b[1] - a[1]) > 0.5) rumo = (Math.atan2(b[0] - a[0], b[1] - a[1]) * 180) / Math.PI;
+      }
     }
     const r: Rastro = { pontos, tempos, percorrido };
-    return { robo: posicao, rastro: r };
+    return { robo: posicao, rastro: r, rumo };
   }, [exibido.modo, cena3d, direcao.partida, direcao.trechos, agora, nos, trajetoEntre]);
 
   // --- Câmera de GPS -------------------------------------------------------------------------
@@ -360,19 +429,26 @@ export function PaginaMapa() {
     const passo = Math.min(agora - (quadroDaCamera.current || agora - 16), 500);
     quadroDaCamera.current = agora;
     const k = 1 - Math.exp(-Math.max(passo, 0) / TEMPO_DA_CAMERA_MS);
+    const kGiro = 1 - Math.exp(-Math.max(passo, 0) / TEMPO_DO_GIRO_MS);
     const perto = (a: number, b: number) => a + (b - a) * k;
     setVisao((v) => {
       const atual = v ?? base;
+      // Visão traseira: o mapa gira para a direção da viagem ficar para cima, pelo menor ângulo,
+      // e o alvo fica um pouco à frente do robô (ele aparece no terço de baixo da tela).
+      const giroAlvo = rumo == null ? atual.rotationOrbit : SENTIDO_DO_GIRO * rumo;
+      const giro = normalizar(atual.rotationOrbit + normalizar(giroAlvo - atual.rotationOrbit) * kGiro);
+      const frente = (SENTIDO_DO_GIRO * giro * Math.PI) / 180;
+      const alvo = [robo[0] + Math.sin(frente) * AVANCO_DA_CAMERA, robo[1] + Math.cos(frente) * AVANCO_DA_CAMERA];
       return {
         ...atual,
-        target: [perto(atual.target[0], robo[0]), perto(atual.target[1], robo[1]), 0],
+        target: [perto(atual.target[0], alvo[0]), perto(atual.target[1], alvo[1]), 0],
         zoom: perto(atual.zoom, base.zoom + ZOOM_GPS),
         rotationX: perto(atual.rotationX, INCLINACAO_GPS),
-        rotationOrbit: perto(atual.rotationOrbit, GIRO),
+        rotationOrbit: giro,
         transitionDuration: 0,
       };
     });
-  }, [cameraSeguindo, robo, base, agora]);
+  }, [cameraSeguindo, robo, rumo, base, agora]);
 
   // Ao fim da viagem (o diretor já mostrou a chegada), a câmera sobe para a cidade inteira, uma vez,
   // e fica livre para o apresentador explorar.
@@ -545,6 +621,22 @@ export function PaginaMapa() {
     return () => window.removeEventListener('keydown', aoTeclar);
   }, []);
 
+  // Seguir com a jornada pelo teclado: Espaço, Enter ou →, quando o robô espera num balão.
+  const { aguardando, seguir: seguirJornada } = direcao;
+  useEffect(() => {
+    if (!aguardando) return;
+    const aoTeclar = (evento: KeyboardEvent) => {
+      const alvo = evento.target as HTMLElement;
+      if (alvo.closest('input, textarea, select, button, [role="tab"], [contenteditable="true"]')) return;
+      if (evento.key === ' ' || evento.key === 'Enter' || evento.key === 'ArrowRight') {
+        evento.preventDefault();
+        seguirJornada();
+      }
+    };
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, [aguardando, seguirJornada]);
+
   const [incidentesDaViagem, setIncidentesDaViagem] = useState<string[]>([]);
   const [gravada, setGravada] = useState<string | null>(null);
   useEffect(() => setGravada(null), [real.id]);
@@ -577,6 +669,9 @@ export function PaginaMapa() {
       data-fila={direcao.fila}
       data-camera={cameraSeguindo ? 'seguindo' : 'livre'}
       data-nivel={nivel.toFixed(1)}
+      data-giro={giroAtual}
+      data-balao={direcao.balao?.tipo ?? ''}
+      data-aguardando={direcao.aguardando ? 'sim' : 'nao'}
     >
       <div className="mapa__barra">
         <h1 id="titulo-mapa" className="mapa__titulo">
@@ -630,6 +725,18 @@ export function PaginaMapa() {
         <Button id="iniciar-viagem" size="md" renderIcon={Play} onClick={iniciar} disabled={emAndamento}>
           {emAndamento ? t.barra.emViagem : t.barra.iniciar}
         </Button>
+        <Toggle
+          id="passo-a-passo"
+          size="sm"
+          className="mapa__passo-a-passo"
+          labelText={t.passoAPasso}
+          labelA={t.passoAPasso}
+          labelB={t.passoAPasso}
+          hideLabel
+          title={t.passoAPassoAjuda}
+          toggled={passoAPasso}
+          onToggle={setPassoAPasso}
+        />
         <Button
           id="abrir-apresentador"
           kind={apresentador ? 'secondary' : 'ghost'}
@@ -687,7 +794,7 @@ export function PaginaMapa() {
               className="mapa__tela"
               onPointerDown={(e) => (inicioDoClique.current = [e.clientX, e.clientY])}
               onClick={(e) => {
-                if ((e.target as HTMLElement).closest('.rotulo')) return; // o rótulo trata o próprio clique
+                if ((e.target as HTMLElement).closest('.rotulo, .balao')) return; // o rótulo e o balão tratam o próprio clique
                 const [x0, y0] = inicioDoClique.current ?? [e.clientX, e.clientY];
                 if (Math.hypot(e.clientX - x0, e.clientY - y0) > 5) return; // foi arrasto
                 const caixa = e.currentTarget.getBoundingClientRect();
@@ -731,6 +838,15 @@ export function PaginaMapa() {
                   reservado={espacoDoRobo(robo, projetar)}
                 />
               )}
+              {projetar && robo && direcao.balao && (
+                <Balao
+                  balao={direcao.balao}
+                  posicao={projetar([robo[0], robo[1], Z_RUA + 0.3 + ALTURA_DO_ROBO])}
+                  largura={tamanho[0]}
+                  aguardando={direcao.aguardando}
+                  aoSeguir={direcao.seguir}
+                />
+              )}
             </div>
           )}
 
@@ -739,8 +855,10 @@ export function PaginaMapa() {
             aoFechar={() => setApresentador(false)}
             cenaAtual={cena}
             real={{ ...exibido, id: real.id }}
-            aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
+            aoResponder={responderPelaAna}
             gravacoes={gravacoesPorCena(gravacoes)}
+            aguardando={direcao.aguardando}
+            aoSeguir={direcao.seguir}
           />
 
           <div className="mapa__estado">
@@ -758,8 +876,14 @@ export function PaginaMapa() {
               </Button>
             )}
             {real.id && !replay && (
-              <Tag type={direcao.fila > 0 ? 'warm-gray' : 'green'} size="md">
-                {direcao.fila > 0 ? t.reproduzindo(direcao.fila) : real.fim ? t.encerrada : t.aoVivo}
+              <Tag type={direcao.aguardando ? 'blue' : direcao.fila > 0 ? 'warm-gray' : 'green'} size="md">
+                {direcao.aguardando
+                  ? t.aguardando
+                  : direcao.fila > 0
+                    ? t.reproduzindo(direcao.fila)
+                    : real.fim
+                      ? t.encerrada
+                      : t.aoVivo}
               </Tag>
             )}
             {direcao.fila > 3 && (
@@ -832,6 +956,26 @@ export function PaginaMapa() {
             >
               <Subtract />
             </IconButton>
+            <IconButton kind="secondary" label={t.girarEsquerda} onClick={() => girar(-PASSO_DO_GIRO, 0)}>
+              <RotateCounterclockwise />
+            </IconButton>
+            <IconButton kind="secondary" label={t.girarDireita} onClick={() => girar(PASSO_DO_GIRO, 0)}>
+              <RotateClockwise />
+            </IconButton>
+            <IconButton kind="secondary" label={t.inclinarMais} onClick={() => girar(0, -PASSO_DA_INCLINACAO)}>
+              <ChevronDown />
+            </IconButton>
+            <IconButton kind="secondary" label={t.inclinarMenos} onClick={() => girar(0, PASSO_DA_INCLINACAO)}>
+              <ChevronUp />
+            </IconButton>
+            <IconButton
+              kind="secondary"
+              label={t.norte(giroAtual)}
+              className="mapa__bussola"
+              onClick={() => girar(-giroAtual, 0)}
+            >
+              <Compass style={{ transform: `rotate(${-giroAtual}deg)` }} />
+            </IconButton>
             <IconButton kind="secondary" label={t.enquadrar} onClick={() => voltarACidade()}>
               <ZoomFit />
             </IconButton>
@@ -845,7 +989,7 @@ export function PaginaMapa() {
             viagem={exibido}
             conversa={replay ? { ...exibido, pergunta: null } : exibido}
             nos={nos}
-            aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
+            aoResponder={responderPelaAna}
             aoEscolherNo={(id) => {
               setSelecionado(id);
               const ponto = pontoDoNo(id);
@@ -855,7 +999,7 @@ export function PaginaMapa() {
         ) : (
           <Conversa
             viagem={replay ? { ...exibido, pergunta: null } : exibido}
-            aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
+            aoResponder={responderPelaAna}
           />
         )}
       </div>

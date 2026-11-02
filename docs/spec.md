@@ -351,7 +351,15 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
   - as paradas viram placas nas esquinas; o rio corta quadras, e as ruas que o atravessam são pontes;
   - o deck.gl (`OrbitView`) desenha as coordenadas próprias da cidade (1000 × 700), sem mapa-base geográfico, com as construções em `SimpleMeshLayer`;
   - rótulos em HTML (IBM Plex, a partir de 14 px), com declutter: de longe, os bairros e as paradas; de perto, as construções; no GPS, só os lugares da viagem.
-- **Câmera de GPS** (decidido antes da Fase 9): durante a viagem, a câmera fica baixa e próxima, com o robô no centro a cada quadro. Ao fim, sobe uma vez para a cidade inteira e fica livre para o apresentador explorar. Mexer na câmera pausa o seguimento, e a releitura da cidade nunca move a câmera.
+- **Câmera de GPS com visão traseira** (decidido antes da Fase 9):
+  - durante a viagem, a câmera fica baixa e próxima, segue o robô a cada quadro, gira para a direção da viagem ficar para cima e mira um pouco à frente dele;
+  - ao fim, sobe uma vez para a cidade inteira, com o norte para cima, e fica livre para o apresentador explorar;
+  - na câmera livre, o apresentador gira e inclina o mapa (botão direito e botões próprios), e uma bússola volta o norte para cima;
+  - mexer na câmera pausa o seguimento, e a releitura da cidade nunca move a câmera.
+- **Balões de fala e passo a passo** (decidido antes da Fase 9):
+  - a cada `tool.called`, incidente, recálculo e pedágio, o robô chega ao lugar e abre um balão com o que está fazendo; o texto vem do evento real (tool, argumentos e status), em pt-BR;
+  - no passo a passo (toggle na barra, ligado por padrão), o mapa espera o apresentador mandar seguir (botão no balão, Espaço ou o painel do apresentador). Só o mapa para: o agente segue trabalhando, e os tempos e custos não mudam;
+  - desligado, o balão aparece e some sozinho.
 - **As 3 rotas não aparecem no mapa.** O que aparece é o caminho real do robô. A escolha e o recálculo continuam como eventos (o recálculo também como aviso).
 - **A viagem é dirigida só pelo SSE da execução**, por um **diretor de animações**:
   - os eventos reais são reproduzidos na ordem, com tempo mínimo;
@@ -517,6 +525,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Modo Mapa em deck.gl, sem MapLibre: cidade 3D (`OrbitView`) sobre as coordenadas próprias do grafo, não geográficas
 - [x] Cidade em grade (quadras, ruas e avenidas), bairros só pela cor do chão, uma construção por lugar do grafo no estilo do bairro, o robô andando pelas ruas até cada lugar que o agente usa e sem as 3 rotas no mapa
 - [x] Os 5 bairros do infográfico, com cada sistema no bairro do seu domínio; construções com janelas, portas e variantes; câmera de GPS; a conversa no ritmo do robô; apresentador e Raio-X na escala de tipos do Carbon
+- [x] Balões de fala do robô a cada sistema chamado, com o passo a passo do apresentador; GPS com visão traseira e rotação livre do mapa
 - [x] Ritmo do mapa: fila de animações com tempo mínimo por evento, sem criar nem reordenar eventos
 - [x] Infográfico de abertura: a versão horizontal (`docs/assets/infografico_horizontal.jpeg`)
 - [x] Painel do apresentador como gaveta no próprio mapa (tecla P), numa tela só

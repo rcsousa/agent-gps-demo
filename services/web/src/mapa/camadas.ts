@@ -141,10 +141,11 @@ export function camadas(c: Contexto): Layer[] {
       data: [
         {
           poligono: [
-            [-60, -60, 0],
-            [largura + 60, -60, 0],
-            [largura + 60, altura + 60, 0],
-            [-60, altura + 60, 0],
+            // O chão vai bem além da cidade: no GPS, a câmera baixa olha para longe.
+            [-600, -600, 0],
+            [largura + 600, -600, 0],
+            [largura + 600, altura + 600, 0],
+            [-600, altura + 600, 0],
           ],
         },
       ],

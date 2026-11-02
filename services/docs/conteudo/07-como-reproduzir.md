@@ -133,7 +133,13 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 
 ![A cidade em grade, com uma construção por lugar do banco](assets/mapa/cidade.png)
 
-**Navegar:** arraste para mover, use a roda para o zoom e o botão direito para mudar a inclinação ou girar. "Enquadrar a cidade" volta à vista inicial, alinhada ao norte. Clique no nome de um bairro para ir até ele.
+**Navegar:**
+
+- arraste para mover e use a roda para o zoom;
+- para girar e inclinar, use o botão direito (ou Ctrl + arrastar) ou os botões de girar e inclinar, ao lado do zoom;
+- a bússola mostra para onde o mapa aponta e, ao clicar, volta o norte para cima;
+- "Enquadrar a cidade" volta à vista inicial;
+- clique no nome de um bairro para ir até ele.
 
 **De perto, aparecem os nomes das construções.** Clique em uma para ver os atributos, o estado vivo, a **proveniência** e os vizinhos.
 
@@ -145,12 +151,15 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 
 1. Na barra de viagem, escolha o **modo** (com skill, sem skill ou sem contexto), o **canal** e o **modelo**. A opção "Roteiro (ensaio sem LLM)" não gasta tokens.
 2. Clique em **Iniciar viagem**. O endereço muda para `/mapa?execucao=<id>`, e dá para abrir o mesmo link em outra tela.
-3. O robô sai da porta do canal e anda pelas ruas até cada lugar que o agente usa: o CRM, o cofre de consentimentos, o motor de risco, as APIs das seguradoras, o gateway de pagamentos… O caminho acende em laranja atrás dele, e as placas das paradas acendem quando ele passa. Com "Seguir o agente" ligado, a câmera de GPS fica baixa, atrás dele, com o robô no centro. Se você mexer na câmera, o seguimento pausa até religar.
-4. Quando o agente perguntar algo à Ana, a pergunta aparece no painel **Conversa** assim que o robô chega à parada dela. Responda com um dos botões ou escreva a resposta.
-5. No fim, a câmera sobe para a cidade inteira, com o caminho todo aceso, e fica livre para explorar.
-6. O selo no alto mostra "Reproduzindo" enquanto o mapa está atrás do agente e "Ao vivo" quando alcança. **Pular para o fim** alcança de uma vez.
+3. O robô sai da porta do canal e anda pelas ruas até cada lugar que o agente usa: o CRM, o cofre de consentimentos, o motor de risco, as APIs das seguradoras, o gateway de pagamentos… O caminho acende em laranja atrás dele, e as placas das paradas acendem quando ele passa. Com "Seguir o agente" ligado, a câmera de GPS fica baixa, atrás dele, e o mapa gira com o robô: a direção da viagem fica sempre para cima. Se você mexer na câmera, o seguimento pausa até religar.
+4. **Passo a passo** (ligado por padrão, na barra): a cada sistema que o agente usa, o robô abre um balão de fala com o que está fazendo e espera. Clique em **Seguir**, ou aperte **Espaço**, para o balão sumir e a jornada continuar. O agente não espera: só o mapa. Desligado, a viagem corre sozinha.
+5. Quando o agente perguntar algo à Ana, a pergunta aparece no painel **Conversa** assim que o robô chega à parada dela. Responda com um dos botões ou escreva a resposta.
+6. No fim, a câmera sobe para a cidade inteira, com o caminho todo aceso, e fica livre para explorar.
+7. O selo no alto mostra "Reproduzindo" enquanto o mapa está atrás do agente e "Ao vivo" quando alcança. **Pular para o fim** alcança de uma vez.
 
 ![A viagem com skill: o robô andando pelas ruas, com o caminho real aceso](assets/mapa/viagem.png)
+
+![O passo a passo: o balão de fala do robô espera o apresentador mandar seguir](assets/mapa/balao.png)
 
 **Cenas prontas.** `/mapa?cena=6` deixa a barra pronta para a cena 6 e mostra o botão **Derrubar a API da Âncora**. Derrube a API e o farol vermelho sobe do prédio dela. Depois, inicie a viagem: o robô vai até a Âncora, o prédio pulsa em vermelho e o agente segue com as outras seguradoras.
 
