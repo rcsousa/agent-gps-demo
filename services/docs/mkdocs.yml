@@ -42,6 +42,10 @@ plugins:
 extra_css:
   - stylesheets/carbon.css
 
+# Os links de volta à demo abrem na aba inteira, mesmo com o capítulo aberto no painel lateral.
+extra_javascript:
+  - javascripts/voltar-a-demo.js
+
 markdown_extensions:
   - admonition
   - attr_list
@@ -57,6 +61,10 @@ markdown_extensions:
   - pymdownx.highlight
 
 nav:
+  # Caminhos absolutos: os bastidores são servidos em /bastidores/ pelo web, ao lado da demo.
+  - Voltar à demo:
+      - Abertura (infográfico): /
+      - Modo Mapa: /mapa
   - Início: index.md
   - 1. O problema: 01-o-problema.md
   - 2. A camada de contexto: 02-camada-de-contexto.md
@@ -66,3 +74,4 @@ nav:
   - 6. Arquitetura: 06-arquitetura.md
   - 7. Como reproduzir: 07-como-reproduzir.md
   - 8. Glossário e perguntas frequentes: 08-glossario-e-faq.md
+  - 9. O dia da apresentação: 09-o-dia-da-apresentacao.md

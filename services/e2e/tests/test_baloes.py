@@ -3,6 +3,15 @@
 from conftest import WEB
 
 
+def _seguiu(pagina, balao: str | None) -> None:
+    """O balão foi embora: o mapa não espera mais, ou já espera em outro balão."""
+    pagina.wait_for_function(
+        "([n]) => { const m = document.querySelector('.mapa').dataset;"
+        " return m.aguardando === 'nao' || m.balaoN !== n; }",
+        arg=[balao],
+    )
+
+
 def _iniciar_pelo_roteiro_no_passo_a_passo(pagina):
     pagina.goto(f"{WEB}/mapa", wait_until="networkidle")
     pagina.locator("label[for=passo-a-passo]").click()  # a fixture começa com ele desligado
@@ -32,9 +41,10 @@ def test_o_balao_espera_o_apresentador_e_some_ao_seguir(pagina, mundo_limpo):
     assert mapa.get_attribute("data-lugares-visitados") == lugares
     assert int(mapa.get_attribute("data-fila")) >= int(fila)
 
-    # "Seguir" no balão: o balão some e a jornada continua.
+    # "Seguir" no balão: o balão some e a jornada continua (o próximo balão, se vier logo, é outro).
+    primeiro = mapa.get_attribute("data-balao-n")
     balao.get_by_role("button", name="Seguir").click()
-    pagina.wait_for_function("document.querySelector('.mapa').dataset.aguardando === 'nao'")
+    _seguiu(pagina, primeiro)
 
     # Daí em diante, pelo teclado (Espaço), respondendo pela Ana quando ela é perguntada.
     seguidos = 1
@@ -44,9 +54,10 @@ def test_o_balao_espera_o_apresentador_e_some_ao_seguir(pagina, mundo_limpo):
         if opcoes.count():
             opcoes.first.click()
         if mapa.get_attribute("data-aguardando") == "sim":
+            atual = mapa.get_attribute("data-balao-n")
             pagina.evaluate("document.activeElement && document.activeElement.blur()")  # o foco sai dos botões
             pagina.keyboard.press("Space")
-            pagina.wait_for_function("document.querySelector('.mapa').dataset.aguardando === 'nao'")
+            _seguiu(pagina, atual)
             seguidos += 1
         if mapa.get_attribute("data-fila") == "0" and pagina.locator("#iniciar-viagem").is_enabled():
             break

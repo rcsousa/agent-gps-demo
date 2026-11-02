@@ -15,14 +15,16 @@ export function Balao(props: {
   balao: DadosDoBalao;
   posicao: [number, number]; // o robô, na tela
   largura: number;
+  escala: number; // o modo telão aumenta o balão
   aguardando: boolean;
   aoSeguir: () => void;
 }) {
   const { balao } = props;
   const [x, y] = props.posicao;
-  const esquerda = Math.min(Math.max(x, MEIA_LARGURA + 8), props.largura - MEIA_LARGURA - 8);
-  const topo = Math.max(y - ALTURA_DO_PINO, ALTURA_MINIMA);
-  const rabicho = Math.min(Math.max(x - esquerda, -MEIA_LARGURA + 20), MEIA_LARGURA - 20);
+  const meia = MEIA_LARGURA * props.escala;
+  const esquerda = Math.min(Math.max(x, meia + 8), props.largura - meia - 8);
+  const topo = Math.max(y - ALTURA_DO_PINO * props.escala, ALTURA_MINIMA * props.escala);
+  const rabicho = Math.min(Math.max(x - esquerda, -meia + 20), meia - 20);
   return (
     <div
       className={`balao balao--${balao.tipo}${balao.ok ? '' : ' balao--erro'}`}

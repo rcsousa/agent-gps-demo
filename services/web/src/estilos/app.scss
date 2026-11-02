@@ -16,6 +16,52 @@ $laranja-bussola: #f26522;
   @include theme.theme();
 }
 
+// Modo telão (tecla T): a fonte-base sobe 25% e tudo em rem cresce junto, para ler a 5 m num Full HD.
+html.telao {
+  font-size: 125%;
+}
+
+// Movimento reduzido: sem animações decorativas (o balão aparece direto).
+@media (prefers-reduced-motion: reduce) {
+  .balao {
+    animation: none;
+  }
+}
+
+.medidor {
+  @include type-style('code-01');
+  position: absolute;
+  z-index: 4;
+  inset-block-start: $spacing-03;
+  inset-inline-start: $spacing-03;
+  padding: $spacing-02 $spacing-03;
+  background: rgb(0 0 0 / 70%);
+  color: #fff;
+}
+
+// Atalhos de teclado (tecla ?).
+.atalhos__lista {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-04;
+
+  div {
+    display: grid;
+    grid-template-columns: 10rem 1fr;
+    gap: $spacing-04;
+    align-items: center;
+  }
+
+  kbd {
+    @include type-style('code-01');
+    display: inline-block;
+    margin-inline-end: $spacing-02;
+    padding: 0 $spacing-02;
+    border: 1px solid theme.$border-strong-01;
+    border-radius: 0.25rem;
+  }
+}
+
 body {
   background: theme.$background;
   color: theme.$text-primary;

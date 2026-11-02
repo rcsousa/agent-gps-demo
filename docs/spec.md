@@ -180,7 +180,7 @@ Duração-alvo: 12 minutos, com versão curta de 5. Cada cena tem um botão no "
 | 3 | Mapa sem GPS | Agente com todas as tools do gateway, mas sem skill. Faz quase tudo certo, mas lê dados pessoais antes do consentimento e troca de seguradora sem explicar. No meio da viagem, a Ana pede "aproveita e estorna aquele pagamento": sem skill, nada impede o agente; com skill, o gateway bloqueia (contramão) | Bom comportamento não é garantia | 1,5 min |
 | 4 | Digitar o destino | `skills/list`, escolha da skill e três rotas sugeridas no estilo Waze | A skill é a porta de entrada | 1,5 min |
 | 5 | A viagem | O robô percorre a rota, o zoom acompanha cada bairro, as paradas acendem | Navegação guiada, auditável | 2 min |
-| 6 | Incidente | O apresentador derruba a API da seguradora; trecho vermelho, recálculo ao vivo | Adaptação sem perder as regras | 2 min |
+| 6 | Incidente | Com a viagem em curso (na primeira pergunta à Ana), o apresentador derruba a API da seguradora; farol vermelho, recálculo ao vivo | Adaptação sem perder as regras | 2 min |
 | 7 | Pedágio | Valor acima da alçada: o agente para e chama um especialista humano | Governança é parte do mapa | 1 min |
 | 8 | Raio-X | Mesma viagem no modo técnico: chamadas MCP, proveniência, placar de regras cumpridas comparando as cenas 2, 3 e 5 | Nada é mágica | 1,5 min |
 
@@ -487,16 +487,22 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 7. **Raio-X e apresentador:** Modo Raio-X, painel de incidentes, placar comparativo, replay offline.
 8. **Bastidores:** site de documentação com os 8 capítulos e o botão por cena.
 9. **Polimento:** ensaio completo, acessibilidade, performance em telão.
+   - **Ensaio de palco** (`./scripts/ensaiar.sh`, sem tokens): sobe do zero, toca as 8 cenas no passo a passo e os replays, e confere os critérios num relatório (`ensaios/<data>.md`).
+   - **Ensaio com o modelo real:** os 6 incidentes com o Haiku (`./scripts/experimento.sh`); o caso "emissão lenta" ganhou regras.
+   - **Modo telão** (tecla T): a interface cresce 25%, para ser lida a 5 m num Full HD. **Atalhos** na tecla `?`.
+   - **Acessibilidade:** auditoria axe-core (WCAG 2.1 AA) no e2e, sem violações sérias ou críticas; movimento reduzido respeitado.
+   - **Performance:** o relógio da animação para quando nada se move, e a barra e os painéis não re-renderizam a cada quadro. Medidor em `/mapa?fps=1`.
+   - **Capítulo 9 dos bastidores:** o roteiro de fala, imprimível, e o checklist do dia.
 
 **Critérios de aceite:**
 
-- [ ] `docker compose up` sobe tudo do zero em menos de 3 minutos, sem passos manuais além do `.env`
-- [ ] A demo roda com Anthropic e com Azure OpenAI, mudando só variável de ambiente
+- [x] `docker compose up` sobe tudo do zero em menos de 3 minutos, sem passos manuais além do `.env` (47 s até tudo saudável, no ensaio de 02/11/2026, com as imagens já construídas)
+- [ ] A demo roda com Anthropic e com Azure OpenAI, mudando só variável de ambiente. **Parcial:** Anthropic (Foundry) validado com o Opus e o Haiku reais; o Azure OpenAI é testado só por contrato, sem um deployment real
 - [x] As 8 cenas rodam ao vivo e em replay offline (as cenas 2, 3, 5, 6 e 7 gravadas com o Haiku; a 4 e a 8 tocam a gravação da 5; a 1 é a cidade, sem viagem)
-- [ ] Cada incidente provoca recálculo real, com motivo e regra exibidos
-- [ ] O placar mostra diferença mensurável entre sem contexto, sem skill e com skill, em regras do banco cumpridas
-- [ ] O Modo Mapa é entendido sem narração por alguém não técnico
-- [ ] Toda animação corresponde a um evento real do agente
+- [ ] Cada incidente provoca recálculo real, com motivo e regra exibidos. **Parcial:** com skill, o Haiku percebeu os 6 incidentes (`incident.detected`) e cumpriu 34 de 35 regras (`docs/experimentos/2026-11-02-incidentes-haiku.md`). O recálculo formal, com motivo e regra, aparece quando o incidente surge no meio da viagem (cena 6, no ensaio e na gravação) e na alçada e na vistoria; com o incidente ativo desde o início, o agente planeja a rota já desviando
+- [x] O placar mostra diferença mensurável entre sem contexto, sem skill e com skill, em regras do banco cumpridas (no ensaio e no experimento: com skill 97%, sem skill 57%)
+- [ ] O Modo Mapa é entendido sem narração por alguém não técnico: a validar com uma pessoa não técnica no ensaio final
+- [x] Toda animação corresponde a um evento real do agente (o ensaio confere, por cena, um balão por evento com balão e nenhum trecho do robô sem evento)
 - [x] A doc de bastidores cobre todas as cenas, nos dois níveis de leitura
 
 ## Riscos e decisões em aberto
@@ -546,3 +552,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Dashboard de status em `/status`, com o código de tools e prompts servido pelo próprio servidor MCP (`fonte://`), fora do catálogo do agente
 - [x] Cenas 2 e 3 e placar ajustados ao comportamento do modelo real (experimento de 01/11/2026): placar por regras cumpridas
 - [x] Persona do agente por canal de atendimento, como prompt MCP do `canais-mcp`; regras do host no agente; workflow nas skills
+- [x] Telão Full HD, com modo telão (tecla T) e atalhos (tecla `?`); ensaio de palco automático e o capítulo 9, "O dia da apresentação" (Fase 9)
+- [x] Na cena 6, a API cai com a viagem em curso: só assim o recálculo acontece ao vivo (aplicada antes, o agente planeja desviando)
+- [x] Toda opção que um incidente tira do caminho é explicada à cliente, mesmo com o incidente ativo antes da viagem (skills `cotacao-multisseguradora` e `desvios.md`, ajuste da Fase 9)
+- [x] Os bastidores voltam à demo: "Voltar à demo" no menu (abertura e Modo Mapa) e botões no início; no painel lateral, os links abrem na aba inteira

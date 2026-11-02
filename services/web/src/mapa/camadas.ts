@@ -72,6 +72,7 @@ export interface Contexto {
   robo: Ponto3 | null;
   rastro: Rastro | null;
   chegada: Ponto3 | null; // onde a apólice saiu
+  escala: number; // 1, ou maior no modo telão
 }
 
 function construcoesDoEstilo(c: Contexto, estilo: Estilo): Layer[] {
@@ -327,7 +328,7 @@ export function camadas(c: Contexto): Layer[] {
         data: [[c.chegada[0] + 14, c.chegada[1], c.chegada[2]]],
         getPosition: (p) => p,
         getIcon: () => ICONE_CHEGADA,
-        getSize: 60,
+        getSize: 60 * c.escala,
         sizeUnits: 'pixels',
         parameters: { depthCompare: 'always' },
       }),
@@ -360,7 +361,7 @@ export function camadas(c: Contexto): Layer[] {
         data: [c.robo],
         getPosition: () => [x, y, Z_ROBO + ALTURA_DO_ROBO],
         getIcon: () => ICONE_ROBO,
-        getSize: 72,
+        getSize: 72 * c.escala,
         sizeUnits: 'pixels',
         parameters: { depthCompare: 'always' },
         updateTriggers: { getPosition: [x, y] },

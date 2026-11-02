@@ -2,9 +2,12 @@
 
 Toda mudança de rota precisa dizer à cliente três coisas: **o que mudou**, **qual regra você seguiu** e **a nova estimativa** de tempo, custo e risco. Para a estimativa nova, chame `contexto.consultar_rota` de novo.
 
+Isso vale também quando o incidente **já estava ativo antes de você sair**: se um alerta da rota ou o estado de um sistema tirou uma opção do caminho (uma seguradora fora do ar, uma emissão lenta, uma vistoria exigida), conte à cliente qual opção ficou de fora e por quê. Ela não pode descobrir a troca sozinha.
+
 ## Rua interditada (API de cotação fora do ar)
 A cotação da seguradora falha com "fora do ar" ou `contexto.consultar_rota` marca a rota como bloqueada.
 - Troque para outra seguradora disponível (`contexto.consultar_estado` com `tipo: ApiCotacao` mostra quem está no ar).
+- Diga à cliente, pelo nome, qual seguradora está fora do ar e que por isso ela não entrou na comparação, mesmo que já estivesse fora antes da cotação.
 - Explique a troca de preço e de cobertura em relação à opção original.
 
 ## Congestionamento (latência alta na emissão)

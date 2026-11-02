@@ -339,6 +339,29 @@ Abrir um link `/mapa?execucao=<id>` antigo reproduz a viagem inteira desde o in�
 
 O desenho do caminho é o próprio argumento.
 
+### Modo telão, acessibilidade e desempenho
+
+**Modo telão** (tecla **T**, ou o painel do apresentador; fica guardado no navegador):
+
+- a fonte-base do `html` sobe 25%, e tudo o que é medido em `rem` cresce junto: a barra, os painéis, a linha do tempo, os rótulos e o balão;
+- o que é medido em pixels na cena (o pino do robô, as caixas do declutter, o espaço do balão) usa a mesma escala (`telao.ts`);
+- o alvo é ler a 5 m num Full HD.
+
+**Acessibilidade:**
+
+- o e2e roda o **axe-core** (WCAG 2.1 AA) na abertura, no mapa, no Raio-X, no status e no painel do apresentador, e falha com qualquer violação séria ou crítica;
+- os atalhos de teclado ficam num cartão (tecla `?`);
+- com `prefers-reduced-motion`, os voos e o giro da câmera ficam instantâneos, e o balão aparece sem *fade*;
+- a Conversa e o Raio-X são regiões com rótulo, e o balão e os avisos usam `aria-live`.
+
+**Desempenho:**
+
+- o relógio da animação (`requestAnimationFrame`) só corre enquanto algo se move: com o balão esperando o apresentador, a página para de re-renderizar;
+- a barra de viagem (com os dropdowns do Carbon), a conversa, o Raio-X, a linha do tempo e a legenda são memorizados e não acompanham o relógio;
+- `/mapa?fps=1` mostra um medidor: quadros por segundo, pior quadro, rótulos e camadas.
+
+No container, o WebGL é por software: a página fica cerca de 80% ociosa esperando o desenho, e o número de lá só serve para comparar versões. O valor que importa é o do notebook do dia, conferido no checklist do capítulo 9. A fusão das 54 camadas de construções numa malha só foi avaliada e adiada: não houve ganho demonstrável, e ela complicaria o clique em cada construção.
+
 ### A tela de abertura: o infográfico navegável
 
 Em `/`, o infográfico oficial (`docs/assets/infografico_horizontal.jpeg`, 2198 × 1446) abre com zoom e pan do OpenSeadragon. Os tiles são gerados no build do Docker do `web`, com `vips dzsave`, num estágio Debian.

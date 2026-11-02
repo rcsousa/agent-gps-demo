@@ -27,13 +27,15 @@ export function Rotulos(props: {
   largura: number;
   altura: number;
   reservado?: [number, number, number, number][]; // áreas da tela que nenhum rótulo cobre (o robô)
+  escala?: number; // o modo telão aumenta a fonte dos chips
 }) {
+  const e = props.escala ?? 1;
   const colocados: [number, number, number, number][] = [...(props.reservado ?? [])];
   const visiveis: { r: Rotulo; x: number; y: number }[] = [];
   for (const r of [...props.rotulos].sort((a, b) => a.prioridade - b.prioridade)) {
     const [px, py] = props.projetar(r.posicao);
-    const largura = r.texto.length * LETRA[r.tipo] + 28 + (r.numero != null ? 22 : 0) + (r.status ? 20 : 0);
-    const altura = ALTURA[r.tipo];
+    const largura = (r.texto.length * LETRA[r.tipo] + 28 + (r.numero != null ? 22 : 0) + (r.status ? 20 : 0)) * e;
+    const altura = ALTURA[r.tipo] * e;
     // O ponto precisa estar na tela; o chip é empurrado para dentro dela, se passar da borda.
     if (px < 0 || px > props.largura) continue;
     const x = Math.min(Math.max(px - largura / 2, 4), props.largura - largura - 4);

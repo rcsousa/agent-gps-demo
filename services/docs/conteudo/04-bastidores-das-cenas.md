@@ -11,12 +11,12 @@ Os vídeos abaixo são os replays reais, acelerados, gerados por `./scripts/capt
 | --- | --- | --- | --- | --- | --- | --- |
 | 1 · A cidade | — | — | — | — | — | O mapa, sem viagem |
 | 2 · Dirigir sem mapa | `cena-2` | sem contexto | 2/5 | 7 s | US$ 0,0005 | Sem apólice |
-| 3 · Mapa sem GPS | `cena-3` | sem skill | 3/5 | 38 s | US$ 0,0071 | Apólice da Âncora |
-| 4 · Digitar o destino | `cena-5` | com skill | 5/5 | 36 s | US$ 0,0122 | A mesma viagem da cena 5 |
-| 5 · A viagem | `cena-5` | com skill | 5/5 | 36 s | US$ 0,0122 | Apólice da Farol |
-| 6 · Incidente | `cena-6` | com skill | 5/5 | 43 s | US$ 0,0131 | Âncora fora, apólice da Horizonte |
-| 7 · Pedágio | `cena-7` | com skill | 5/5 | 44 s | US$ 0,0130 | Proposta aguardando o especialista |
-| 8 · Raio-X | `cena-5` | com skill | 5/5 | 36 s | US$ 0,0122 | A viagem da cena 5, por dentro |
+| 3 · Mapa sem GPS | `cena-3` | sem skill | 2/5 | 28 s | US$ 0,0062 | Apólice da Âncora |
+| 4 · Digitar o destino | `cena-5` | com skill | 5/5 | 30 s | US$ 0,0102 | A mesma viagem da cena 5 |
+| 5 · A viagem | `cena-5` | com skill | 5/5 | 30 s | US$ 0,0102 | Apólice da Âncora (rota rápida) |
+| 6 · Incidente | `cena-6` | com skill | 5/5 | 43 s | US$ 0,0138 | Âncora fora, apólice da Farol |
+| 7 · Pedágio | `cena-7` | com skill | 5/5 | 41 s | US$ 0,0124 | Proposta aguardando o especialista |
+| 8 · Raio-X | `cena-5` | com skill | 5/5 | 30 s | US$ 0,0102 | A viagem da cena 5, por dentro |
 
 ### Cena 1 · A cidade { #cena-1 }
 

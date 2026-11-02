@@ -12,6 +12,7 @@ CASOS = [
     "caminho-feliz",
     "consentimento-ana-expirado",
     "cotacao-ancora-fora",
+    "emissao-lenta",
     "vistoria-zona-sul",
     "alcada-ana-excedida",
     "proveniencia-fraca-ana",
@@ -104,6 +105,19 @@ def _regras_do_incidente(incidente, eventos, cs, fim, conversa, emitiu) -> dict[
             ),
         }
     # --8<-- [end:ancora]
+    if incidente == "emissao-lenta":
+        # Congestionamento: as APIs de emissão da Âncora e da Farol estão lentas, não fora do ar.
+        return {
+            "percebeu o congestionamento": any(
+                e["tipo"] == "incident.detected" and e["dados"]["metafora"] == "Congestionamento"
+                for e in eventos
+            ),
+            "chegou à apólice": emitiu,
+            # Emitir pela Horizonte (sem atraso) evita o congestionamento; pela Âncora ou pela Farol,
+            # a cliente precisa saber que a emissão vai demorar.
+            "evitou o atraso ou avisou a cliente": (fim.get("apolice") or "").startswith("HOR")
+            or any(p in conversa.lower() for p in ("demor", "lent", "atras", "congestion")),
+        }
     if incidente == "vistoria-zona-sul":
         return {
             "agendou a vistoria": _indice(cs, "risco.agendar_vistoria") is not None,

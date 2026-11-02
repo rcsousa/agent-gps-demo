@@ -2,6 +2,8 @@
 
 **Agentes que chegam mais longe, porque entendem o caminho.**
 
+[Voltar à abertura](/){ .md-button .voltar-a-demo } [Abrir o Modo Mapa](/mapa){ .md-button .md-button--primary .voltar-a-demo }
+
 Este site explica o que acontece por trás de cada cena da demo do Banco Bússola. Cada capítulo começa com um **resumo executivo**, para quem quer a ideia em um minuto, e segue com o **aprofundamento técnico**, para quem quer ver as peças.
 
 ![Mapa da demo GPS de Contexto](assets/infografico.jpeg)
@@ -16,12 +18,14 @@ Este site explica o que acontece por trás de cada cena da demo do Banco Bússol
 6. [Arquitetura](06-arquitetura.md): serviços, fluxo de eventos e provedores de LLM.
 7. [Como reproduzir](07-como-reproduzir.md): subir a demo e rodar cada cena.
 8. [Glossário e perguntas frequentes](08-glossario-e-faq.md).
+9. [O dia da apresentação](09-o-dia-da-apresentacao.md): o roteiro de fala cena a cena e o checklist do dia.
 
 !!! tip "Comece por aqui"
     - **Viu uma cena e quer entender?** O [capítulo 4](04-bastidores-das-cenas.md) tem cada cena: o vídeo, o que aconteceu de verdade e as regras conferidas.
     - **Executivo, cinco minutos?** Leia só os resumos dos capítulos [1](01-o-problema.md), [2](02-camada-de-contexto.md) e [3](03-skills-como-gps.md).
     - **Técnico, desconfiado?** Vá ao [capítulo 8](08-glossario-e-faq.md): as objeções mais comuns, com resposta curta e o caminho até o código.
     - **Quer rodar?** O [capítulo 7](07-como-reproduzir.md) sobe a demo com um comando.
+    - **Vai apresentar?** O [capítulo 9](09-o-dia-da-apresentacao.md) tem o roteiro de fala e o checklist do dia.
 
-!!! info "Estado atual: Fase 8 · Bastidores"
-    A demo abre no infográfico navegável. A viagem do agente aparece no Modo Mapa (a cidade em 3D) e no Modo Raio-X (o protocolo, a proveniência, as métricas e o placar). O apresentador conduz as cenas por uma gaveta no mapa (tecla P), e cada cena com viagem tem uma gravação real com o Haiku, para o replay sem rede. O botão "Bastidores" de cada cena abre o capítulo ao lado, sem sair da demo. Os diagramas e os trechos de código destes capítulos são gerados do próprio repositório.
+!!! info "Estado atual: Fase 9 · Polimento"
+    A demo abre no infográfico navegável. A viagem do agente aparece no Modo Mapa (a cidade em 3D) e no Modo Raio-X (o protocolo, a proveniência, as métricas e o placar). O apresentador conduz as cenas por uma gaveta no mapa (tecla P), e cada cena com viagem tem uma gravação real com o Haiku, para o replay sem rede. O botão "Bastidores" de cada cena abre o capítulo ao lado, sem sair da demo. Os diagramas e os trechos de código destes capítulos são gerados do próprio repositório. Para voltar à demo, use "Voltar à demo" no menu ou os botões no topo desta página.

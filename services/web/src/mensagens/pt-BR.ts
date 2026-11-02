@@ -66,6 +66,10 @@ export const mensagens = {
     inclinarMais: 'Inclinar mais (ver mais de lado)',
     inclinarMenos: 'Inclinar menos (ver mais de cima)',
     norte: (graus: number) => (graus ? `Bússola: rumo ${graus}°. Clique para o norte ficar para cima` : 'Bússola: norte para cima'),
+    medidor: {
+      linha: (fps: number, quadroMs: number, rotulos: number, camadas: number) =>
+        `${fps} quadros/s · pior quadro ${quadroMs} ms · ${rotulos} rótulos · ${camadas} camadas`,
+    },
     passoAPasso: 'Passo a passo',
     passoAPassoAjuda: 'O robô para em cada sistema que o agente chama, até você mandar seguir (Espaço).',
     aguardando: 'Aguardando o apresentador',
@@ -317,7 +321,21 @@ export const mensagens = {
       '08-glossario-e-faq': '8. Glossário e perguntas frequentes',
     } as Record<string, string>,
   },
+  atalhos: {
+    titulo: 'Atalhos de teclado',
+    fechar: 'Fechar',
+    lista: [
+      ['Enter', 'Na abertura: inicia a demo'],
+      ['M / S / B', 'Na abertura: abre o mapa, o status ou os bastidores'],
+      ['P', 'Abre e fecha o painel do apresentador'],
+      ['Espaço / Enter / →', 'Segue com a jornada quando o robô espera num balão'],
+      ['T', 'Liga e desliga o modo telão (tudo maior, para ler de longe)'],
+      ['Esc', 'Fecha painéis e janelas'],
+      ['?', 'Mostra estes atalhos'],
+    ] as [string, string][],
+  },
   apresentador: {
+    modoTelao: 'Modo telão (T)',
     abrir: 'Apresentador',
     titulo: 'Painel do apresentador',
     seguirJornada: 'Seguir com a jornada',

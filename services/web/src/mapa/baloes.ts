@@ -13,6 +13,7 @@ export interface Balao {
   texto: string;
   detalhe: string | null; // a tool e a duração, em mono: a honestidade técnica
   ok: boolean; // false: falha ou incidente (vermelho, sempre com ícone)
+  indice?: number; // a posição do evento na execução: cada balão tem o seu
 }
 
 // Os eventos que abrem balão (e, no passo a passo, esperam o apresentador).
