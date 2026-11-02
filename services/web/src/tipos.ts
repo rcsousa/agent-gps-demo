@@ -133,3 +133,65 @@ export interface Chamada {
   execucao_id: string | null;
   erro: string | null;
 }
+
+// --- Modo Mapa: a cidade vem do grafo (contexto://mapa), as rotas de contexto.consultar_rota ---
+
+export type Ponto = [number, number];
+
+export interface Bairro {
+  id: string;
+  nome: string;
+  cor: string;
+  poligono: Ponto[];
+}
+
+export interface NoDoMapa {
+  id: string;
+  tipo: string;
+  tipo_exibicao: string;
+  nome: string;
+  bairro: string;
+  x: number;
+  y: number;
+  // Estado vivo (o trânsito): ok, degradado ou fora; null para o que não tem estado.
+  status: 'ok' | 'degradado' | 'fora' | null;
+}
+
+export interface Cidade {
+  mundo: { largura: number; altura: number };
+  bairros: Bairro[];
+  rio: Ponto[];
+  avenidas: { de: string; para: string; relacoes: number }[];
+  nos: NoDoMapa[];
+  arestas: { de: string; tipo: string; para: string }[];
+}
+
+export interface ParadaDaRota {
+  ordem: number;
+  numero: number | null;
+  id: string;
+  nome: string;
+  bairro: string;
+}
+
+export interface RotaDaJornada {
+  id: string;
+  nome: string;
+  descricao: string;
+  paradas: ParadaDaRota[];
+  estimativa: {
+    tempo_texto: string;
+    custo_operacional: number;
+    risco: string;
+    premio_anual_referencia: number | null;
+    bloqueada: boolean;
+  };
+  alertas: { status?: string; mensagem: string; entidade?: { id: string } }[];
+}
+
+export interface EventoDaExecucao {
+  tipo: string;
+  origem: string;
+  instante: string;
+  dados: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+}

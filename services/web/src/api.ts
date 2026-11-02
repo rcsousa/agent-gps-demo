@@ -1,6 +1,6 @@
 // Chamadas do web. Dados vêm do agent (/api); ações sobre o mundo vão ao simulador (/simulador).
 
-import type { Catalogo, Chamada, EstadoDoModelo, Fonte, Status } from './tipos';
+import type { Catalogo, Chamada, Cidade, EstadoDoModelo, Fonte, RotaDaJornada, Status } from './tipos';
 
 async function obter<T>(caminho: string): Promise<T> {
   const resposta = await fetch(caminho);
@@ -19,6 +19,9 @@ export const api = {
   previa: (nome: string) =>
     obter<{ texto: string; cliente_id: string }>(`/api/catalogo/prompt/${encodeURIComponent(nome)}/previa`),
   modelo: () => obter<EstadoDoModelo>('/api/llm/modelo'),
+  cidade: () => obter<Cidade>('/api/mapa'),
+  rotas: () => obter<{ rotas: RotaDaJornada[] }>('/api/mapa/rotas'),
+  entidade: (id: string) => obter<Record<string, unknown>>(`/api/mapa/entidade/${encodeURIComponent(id)}`),
   chamadas: (filtro: { tool?: string; prompt?: string; skill?: string }) =>
     obter<Chamada[]>(`/api/catalogo/chamadas?${new URLSearchParams(filtro as Record<string, string>)}`),
 };
@@ -32,6 +35,35 @@ export async function escolherModelo(modelo: string): Promise<EstadoDoModelo> {
   });
   if (!resposta.ok) throw new Error(String(resposta.status));
   return resposta.json();
+}
+
+async function enviar<T>(caminho: string, corpo: unknown): Promise<T> {
+  const resposta = await fetch(caminho, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(corpo),
+  });
+  if (!resposta.ok) throw new Error((await resposta.text()) || String(resposta.status));
+  return resposta.json();
+}
+
+export interface PedidoDeViagem {
+  modo: string;
+  canal?: string;
+  modelo?: string;
+  provedor?: string;
+}
+
+// Uma viagem do agente e a resposta da Ana (o apresentador responde por ela).
+export const viagem = {
+  iniciar: (pedido: PedidoDeViagem) => enviar<{ id: string }>('/api/execucoes', pedido),
+  responder: (id: string, texto: string) => enviar<{ ok: boolean }>(`/api/execucoes/${id}/resposta`, { texto }),
+};
+
+// Incidentes são ação do apresentador sobre o mundo: vão ao simulador, nunca ao agente.
+export async function aplicarIncidente(id: string): Promise<void> {
+  const resposta = await fetch(`/simulador/incidentes/${id}/aplicar`, { method: 'POST' });
+  if (!resposta.ok) throw new Error(String(resposta.status));
 }
 
 // Ligar e desligar é ação do apresentador sobre o mundo: vai ao simulador, nunca ao agente.

@@ -448,3 +448,384 @@ $largura-painel: 40rem;
     font-weight: 600;
   }
 }
+
+// --- Páginas de tela cheia (abertura e mapa) --------------------------------------
+
+$altura-cabecalho: 3rem;
+$papel: #f4f1ea;
+
+.pagina-cheia {
+  position: fixed;
+  inset: $altura-cabecalho 0 0 0;
+  overflow: hidden;
+}
+
+// --- Tela de abertura ---------------------------------------------------------------
+
+.abertura {
+  position: absolute;
+  inset: 0;
+  background: theme.$background;
+
+  &__visor {
+    position: absolute;
+    inset: 0;
+  }
+
+  &__areas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+
+  &__area {
+    all: unset;
+    position: absolute;
+    pointer-events: auto;
+    cursor: pointer;
+    border-radius: 6px;
+    transition:
+      background-color 200ms,
+      box-shadow 200ms;
+
+    &--ativa,
+    &:focus-visible {
+      background: rgb(242 101 34 / 14%);
+      box-shadow:
+        0 0 0 2px $laranja-bussola,
+        0 0 0 4px rgb(255 255 255 / 85%);
+    }
+  }
+
+  &__dica {
+    position: absolute;
+    transform: translate(-50%, -100%);
+    max-inline-size: 22rem;
+    padding: $spacing-03 $spacing-04;
+    background: theme.$layer-01;
+    color: theme.$text-primary;
+    border-inline-start: 3px solid $laranja-bussola;
+    box-shadow: 0 2px 8px rgb(0 0 0 / 40%);
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-02;
+    pointer-events: none;
+    @include type-style('body-compact-01');
+
+    span {
+      color: theme.$text-secondary;
+    }
+  }
+
+  &__controles {
+    position: absolute;
+    inset-block-start: $spacing-05;
+    inset-inline-end: $spacing-05;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-02;
+  }
+
+  &__iniciar {
+    position: absolute;
+    inset-block-end: $spacing-06;
+    inset-inline-end: $spacing-06;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: $spacing-03;
+  }
+
+  &__atalhos {
+    @include type-style('helper-text-01');
+    color: theme.$text-secondary;
+    background: rgb(22 22 22 / 70%);
+    padding: $spacing-02 $spacing-03;
+  }
+}
+
+// --- Modo Mapa ----------------------------------------------------------------------
+
+$largura-conversa: 24rem;
+
+.mapa {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+
+  &__barra {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: $spacing-04;
+    padding: $spacing-04 $spacing-05;
+    background: theme.$layer-01;
+    border-block-end: 1px solid theme.$border-subtle-01;
+
+    .cds--dropdown__wrapper {
+      min-inline-size: 11rem;
+    }
+  }
+
+  &__titulo {
+    @include type-style('heading-03');
+    margin-inline-end: $spacing-05;
+    align-self: center;
+  }
+
+  &__cena {
+    display: flex;
+    align-items: center;
+    gap: $spacing-03;
+    margin-inline-start: auto;
+  }
+
+  &__corpo {
+    flex: 1;
+    display: flex;
+    min-block-size: 0;
+  }
+
+  &__area {
+    position: relative;
+    flex: 1;
+    background: $papel;
+    overflow: hidden;
+  }
+
+  &__tela {
+    position: absolute;
+    inset: 0;
+  }
+
+  &__erro {
+    position: absolute;
+    z-index: 3;
+    inset-block-start: $spacing-04;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+  }
+
+  &__cartao {
+    position: absolute;
+    z-index: 2;
+    padding: $spacing-04;
+    max-inline-size: 20rem;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 30%);
+
+    ul {
+      display: flex;
+      flex-direction: column;
+      gap: $spacing-03;
+    }
+  }
+
+  &__cartao-titulo {
+    @include type-style('heading-compact-01');
+    margin-block-end: $spacing-03;
+  }
+
+  &__rotas {
+    inset-block-start: $spacing-04;
+    inset-inline-start: $spacing-04;
+  }
+
+  &__rota {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-01;
+    padding: $spacing-02 $spacing-03;
+    border-inline-start: 3px solid transparent;
+    cursor: default;
+
+    &--ativa {
+      border-inline-start-color: $laranja-bussola;
+      background: theme.$layer-02;
+    }
+  }
+
+  &__rota-nome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-03;
+  }
+
+  &__rota-numeros {
+    @include type-style('helper-text-01');
+    color: theme.$text-secondary;
+  }
+
+  &__rota-alerta {
+    @include type-style('helper-text-01');
+    color: theme.$support-error;
+  }
+
+  &__legenda {
+    inset-block-end: $spacing-04;
+    inset-inline-start: $spacing-04;
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: $spacing-03;
+      @include type-style('helper-text-01');
+    }
+  }
+
+  &__amostra {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1rem;
+    block-size: 1rem;
+    border-radius: 50%;
+    border: 1px solid #fff;
+    font-size: 0.625rem;
+    font-weight: 700;
+    color: #fff;
+
+    &--ok {
+      background: rgb(74 156 108);
+    }
+
+    &--degradado {
+      background: rgb(214 158 56);
+    }
+
+    &--fora {
+      background: rgb(208 76 76);
+    }
+
+    &--parada {
+      background: #fff;
+      border: 2px solid $laranja-bussola;
+      color: $laranja-bussola;
+    }
+  }
+
+  &__traco {
+    inline-size: 1.5rem;
+    block-size: 0;
+
+    &--ativa {
+      border-block-start: 4px solid $laranja-bussola;
+    }
+
+    &--alternativa {
+      border-block-start: 2px dashed #9a9a9a;
+    }
+  }
+
+  &__avisos {
+    position: absolute;
+    z-index: 2;
+    inset-block-start: $spacing-04;
+    inset-inline-start: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-02;
+    inline-size: min(36rem, 60%);
+
+    .cds--inline-notification {
+      max-inline-size: none;
+    }
+  }
+
+  &__controles {
+    position: absolute;
+    z-index: 2;
+    inset-block-end: $spacing-04;
+    inset-inline-end: $spacing-04;
+    display: flex;
+    align-items: center;
+    gap: $spacing-02;
+    padding: $spacing-02 $spacing-03;
+    background: theme.$layer-01;
+    box-shadow: 0 2px 6px rgb(0 0 0 / 30%);
+  }
+
+  &__conversa {
+    inline-size: $largura-conversa;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-04;
+    padding: $spacing-05;
+    background: theme.$layer-01;
+    border-inline-start: 1px solid theme.$border-subtle-01;
+    overflow-y: auto;
+  }
+
+  &__navegador {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-02;
+    padding: $spacing-03 $spacing-04;
+    background: theme.$layer-02;
+    border-inline-start: 3px solid $laranja-bussola;
+
+    code {
+      @include type-style('code-02');
+    }
+  }
+
+  &__navegador-rotulo {
+    @include type-style('label-01');
+    color: theme.$text-secondary;
+  }
+
+  &__mensagens {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-04;
+    flex: 1;
+  }
+
+  &__mensagem {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-02;
+    padding: $spacing-03 $spacing-04;
+    background: theme.$layer-02;
+    @include type-style('body-compact-01');
+    white-space: pre-wrap;
+
+    &--resposta {
+      align-self: flex-end;
+      background: rgb(242 101 34 / 18%);
+    }
+
+    &--pergunta {
+      border-inline-start: 3px solid $laranja-bussola;
+    }
+  }
+
+  &__mensagem-autor {
+    @include type-style('label-01');
+    color: theme.$text-secondary;
+  }
+
+  &__resposta {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-03;
+  }
+
+  &__opcoes {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-02;
+
+    .cds--btn {
+      max-inline-size: none;
+      inline-size: 100%;
+    }
+  }
+
+  &__texto-livre {
+    display: flex;
+    gap: $spacing-02;
+    align-items: flex-end;
+  }
+}
