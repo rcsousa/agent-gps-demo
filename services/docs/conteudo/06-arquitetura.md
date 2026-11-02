@@ -258,6 +258,12 @@ O agente pode andar mais rápido do que a plateia consegue acompanhar: o roteiro
 | `tool.called` | 0,35 s (o arco e o pulso) |
 | Conversa e fim | imediato |
 
+No código (`web/src/mapa/diretor.ts`):
+
+```ts
+--8<-- "web/diretor.ts:retencao"
+```
+
 **Por que isso é honesto:**
 - nenhum evento é criado e a ordem não muda;
 - o mapa só fica alguns segundos **atrás** do agente, e o selo mostra "Reproduzindo · +N eventos" até alcançar e passar a "Ao vivo";
@@ -328,6 +334,18 @@ O verificador de regras (`bussola_comum.regras`) é o mesmo do experimento com o
 - **No fim de cada execução**, o agente lê os eventos dela no barramento (os dele e os do gateway) e confere as regras do caso. O resultado vai em `run.finished.metricas.regras`.
 - **Só conta o que trafegou:** uma tentativa barrada pelo gateway (fora de ordem ou contramão) não aconteceu.
 - `GET /api/placar` agrega as execuções terminadas por modo × modelo (regras, execuções perfeitas, tempo e custo médios) e traz, ao lado, a **referência** versionada do experimento Opus × Haiku (`agent/dados/placar-referencia.json`).
+
+O verificador, citado do repositório. As regras gerais valem para todos os casos; as do caso vêm a seguir:
+
+```python
+--8<-- "comum/regras.py:regras"
+```
+
+Um caso, por exemplo, a Âncora fora do ar:
+
+```python
+--8<-- "comum/regras.py:ancora"
+```
 
 ### Gravações e replay offline
 

@@ -53,6 +53,7 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
             await publicador.publicar("tools.listed", {"execucao_id": execucao, "quantidade": len(tools)})
         return types.ListToolsResult(tools=tools)
 
+    # --8<-- [start:governanca]
     async def governanca(nome: str, skill: str | None, execucao: str | None) -> tuple[str | None, str | None]:
         """(motivo, mensagem) de bloqueio, ou (None, None) se a chamada pode seguir."""
         if await estado.tool_fora(nome):
@@ -82,6 +83,8 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
         if falta := workflow.faltando(nome, await estado.fatos(execucao)):
             return "fora_de_ordem", f"Contramão: {falta}. Faça isso antes e tente de novo."
         return None, None
+
+    # --8<-- [end:governanca]
 
     async def chamar_tool(ctx, params: types.CallToolRequestParams) -> types.CallToolResult:
         inicio = time.perf_counter()

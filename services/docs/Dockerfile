@@ -19,6 +19,10 @@ COPY docs/assets/infografico_horizontal.jpeg conteudo/assets/infografico.jpeg
 COPY --from=diagramas /saida/ conteudo/assets/diagramas/
 COPY services/contexto-mcp/ontologia/ ontologia/
 COPY services/skills-mcp/skills/ skills/
+# Código real, citado por trecho (marcadores --8<-- no próprio código): a doc mostra o que roda.
+COPY services/mcp-gateway/src/mcp_gateway/servidor_mcp.py codigo/gateway/servidor_mcp.py
+COPY libs/bussola_comum/src/bussola_comum/regras.py codigo/comum/regras.py
+COPY services/web/src/mapa/diretor.ts codigo/web/diretor.ts
 RUN mkdocs build --strict --site-dir /site
 
 FROM nginx:1.27-alpine
