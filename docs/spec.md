@@ -554,3 +554,5 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Persona do agente por canal de atendimento, como prompt MCP do `canais-mcp`; regras do host no agente; workflow nas skills
 - [x] Telão Full HD, com modo telão (tecla T) e atalhos (tecla `?`); ensaio de palco automático e o capítulo 9, "O dia da apresentação" (Fase 9)
 - [x] Na cena 6, a API cai com a viagem em curso: só assim o recálculo acontece ao vivo (aplicada antes, o agente planeja desviando)
+- [x] Toda opção que um incidente tira do caminho é explicada à cliente, mesmo com o incidente ativo antes da viagem (skills `cotacao-multisseguradora` e `desvios.md`, ajuste da Fase 9)
+- [x] Os bastidores voltam à demo: "Voltar à demo" no menu (abertura e Modo Mapa) e botões no início; no painel lateral, os links abrem na aba inteira
