@@ -175,7 +175,8 @@ export function PaginaMapa() {
     };
   }, [gravacao, cabecalho]);
 
-  // A conversa usa o estado real; o mapa, o que o diretor já exibiu.
+  // A conversa usa o estado real (para responder sem atraso); o mapa, o que o diretor já exibiu.
+  // No replay ninguém responde: a conversa acompanha o mapa.
   const real = useViagem(gravacao ? (replayPronto ? PREFIXO_GRAVACAO + replayPronto : null) : execucao);
   const replay = ehReplay(real.id);
   const direcao = useDiretor(real);
@@ -820,7 +821,7 @@ export function PaginaMapa() {
         {raioX ? (
           <PainelRaioX
             viagem={exibido}
-            conversa={replay ? { ...real, pergunta: null } : real}
+            conversa={replay ? { ...exibido, pergunta: null } : real}
             nos={nos}
             aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
             aoEscolherNo={(id) => {
@@ -831,7 +832,7 @@ export function PaginaMapa() {
           />
         ) : (
           <Conversa
-            viagem={replay ? { ...real, pergunta: null } : real}
+            viagem={replay ? { ...exibido, pergunta: null } : real}
             aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
           />
         )}

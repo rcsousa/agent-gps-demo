@@ -5,7 +5,7 @@
 
 ## Aprofundamento técnico
 
-As gravações ficam em `gravacoes/cena-<n>.jsonl`. Para tocar uma delas, use `/mapa?gravacao=cena-6` ou o botão **Replay** da gaveta do apresentador (tecla P). Para regravar, rode `./scripts/gravar-cenas.sh` (gasta tokens). As regras são conferidas pelo agente no fim de cada viagem, nos eventos do barramento (capítulo 6).
+Os vídeos abaixo são os replays reais, acelerados, gerados por `./scripts/capturar-cenas.sh` (sem tokens). As gravações ficam em `gravacoes/cena-<n>.jsonl`. Para tocar uma delas, use `/mapa?gravacao=cena-6` ou o botão **Replay** da gaveta do apresentador (tecla P). Para regravar, rode `./scripts/gravar-cenas.sh` (gasta tokens). As regras são conferidas pelo agente no fim de cada viagem, nos eventos do barramento (capítulo 6).
 
 | Cena | Gravação | Modo | Regras cumpridas | Tempo | Custo | Desfecho |
 | --- | --- | --- | --- | --- | --- | --- |
@@ -22,6 +22,8 @@ As gravações ficam em `gravacoes/cena-<n>.jsonl`. Para tocar uma delas, use `/
 
 [Preparar ao vivo](/mapa?cena=1){ target=_top }
 
+![A cidade do banco, desenhada a partir do grafo](assets/cenas/cena-1.png)
+
 **A plateia vê** a cidade do banco em 3D: seis bairros, as estradas da jornada e o trânsito ao vivo. Clicar num bairro mostra os sistemas daquele bairro, cada um com a proveniência.
 
 **De verdade:** tudo vem do grafo, pelo gateway (`contexto://mapa`, `contexto.consultar_rota`). Não há viagem nem gravação.
@@ -29,6 +31,8 @@ As gravações ficam em `gravacoes/cena-<n>.jsonl`. Para tocar uma delas, use `/
 ### Cena 2 · Dirigir sem mapa { #cena-2 }
 
 [▶ Tocar esta cena (replay)](/mapa?gravacao=cena-2&cena=2){ target=_top } · [Preparar ao vivo](/mapa?cena=2){ target=_top }
+
+<video class="cena-video" src="../assets/cenas/cena-2.webm" poster="../assets/cenas/cena-2.png" autoplay loop muted playsinline controls aria-label="Replay da cena 2, acelerado"></video>
 
 **A plateia vê** o agente sem camada de contexto conversar com a Ana. Ele pergunta sobre coberturas e valores, mas não consulta nada.
 
@@ -42,6 +46,8 @@ As gravações ficam em `gravacoes/cena-<n>.jsonl`. Para tocar uma delas, use `/
 ### Cena 3 · Mapa sem GPS { #cena-3 }
 
 [▶ Tocar esta cena (replay)](/mapa?gravacao=cena-3&cena=3){ target=_top } · [Preparar ao vivo](/mapa?cena=3){ target=_top }
+
+<video class="cena-video" src="../assets/cenas/cena-3.webm" poster="../assets/cenas/cena-3.png" autoplay loop muted playsinline controls aria-label="Replay da cena 3, acelerado"></video>
 
 **A plateia vê** o agente com acesso a todas as tools do gateway, mas sem skill. Ele contrata o seguro. No meio da conversa, a Ana diz "aproveita e estorna aquele pagamento duplicado do mês passado".
 
@@ -58,6 +64,8 @@ Diante do pedido de estorno, ofereceu abrir um chamado e não estornou nada. **N
 
 [▶ Tocar esta cena (replay)](/mapa?gravacao=cena-5&cena=4&visao=raio-x){ target=_top } · [Preparar ao vivo](/mapa?cena=4){ target=_top }
 
+![O começo da viagem no Raio-X: skills/list, a leitura da skill e a rota](assets/cenas/cena-4.png)
+
 **A plateia vê**, no começo da viagem da cena 5, o agente descobrir as skills (`skills/list`), carregar a de contratação (`resources/read` do `SKILL.md`, com digest verificado) e escolher a rota entre as três sugeridas.
 
 **De verdade:** no Raio-X, o log mostra `tools/list`, `skills/list`, `prompts/get` (a persona do canal), a leitura da skill e o `contexto.consultar_rota`, antes da primeira parada.
@@ -65,6 +73,8 @@ Diante do pedido de estorno, ofereceu abrir um chamado e não estornou nada. **N
 ### Cena 5 · A viagem { #cena-5 }
 
 [▶ Tocar esta cena (replay)](/mapa?gravacao=cena-5&cena=5){ target=_top } · [Preparar ao vivo](/mapa?cena=5){ target=_top }
+
+<video class="cena-video" src="../assets/cenas/cena-5.webm" poster="../assets/cenas/cena-5.png" autoplay loop muted playsinline controls aria-label="Replay da cena 5, acelerado"></video>
 
 **A plateia vê** o robô percorrer as 9 paradas pela rota econômica, com a câmera indo de bairro em bairro e a linha do tempo avançando.
 
@@ -82,6 +92,8 @@ Diante do pedido de estorno, ofereceu abrir um chamado e não estornou nada. **N
 
 [▶ Tocar esta cena (replay)](/mapa?gravacao=cena-6&cena=6){ target=_top } · [Preparar ao vivo](/mapa?cena=6){ target=_top }
 
+<video class="cena-video" src="../assets/cenas/cena-6.webm" poster="../assets/cenas/cena-6.png" autoplay loop muted playsinline controls aria-label="Replay da cena 6, acelerado"></video>
+
 **A plateia vê** a API da Âncora cair logo depois de a rota ser planejada. Um farol vermelho sobe no bairro Parceiros, as rotas rápida e econômica aparecem interditadas e, na cotação, surge o aviso **Rua interditada**.
 
 **De verdade:**
@@ -98,6 +110,8 @@ O agente conferiu as regras do caso **Âncora fora**, que ele deduziu do registr
 
 [▶ Tocar esta cena (replay)](/mapa?gravacao=cena-7&cena=7){ target=_top } · [Preparar ao vivo](/mapa?cena=7){ target=_top }
 
+<video class="cena-video" src="../assets/cenas/cena-7.webm" poster="../assets/cenas/cena-7.png" autoplay loop muted playsinline controls aria-label="Replay da cena 7, acelerado"></video>
+
 **A plateia vê** a Ana declarar uma coleção de arte: a importância segurada sobe para R$ 1,8 milhão. Na proposta, aparece o pedágio, e o agente para e chama um especialista humano. O apresentador aprova pela gaveta.
 
 **De verdade:**
@@ -113,6 +127,8 @@ O agente conferiu as regras do caso **Âncora fora**, que ele deduziu do registr
 ### Cena 8 · Raio-X { #cena-8 }
 
 [▶ Tocar esta cena (replay)](/mapa?gravacao=cena-5&cena=8&visao=raio-x){ target=_top } · [Preparar ao vivo](/mapa?cena=8){ target=_top }
+
+![O placar no Raio-X: a sessão e a referência com os modelos reais](assets/cenas/cena-8.png)
 
 **A plateia vê** a viagem da cena 5 por dentro: o log de chamadas MCP, a proveniência de cada decisão, as métricas e o placar.
 
