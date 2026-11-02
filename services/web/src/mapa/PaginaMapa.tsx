@@ -112,6 +112,17 @@ function espacoDoRobo(robo: Robo | null, projetar: (p: Ponto3) => [number, numbe
   return [[x - 34, y - 84, x + 34, y + 4] as [number, number, number, number]];
 }
 
+// Cena → gravação para o replay. As cenas 4 (o destino) e 8 (o Raio-X) são a mesma viagem da 5.
+const MESMA_VIAGEM_DA: Record<string, string> = { '4': '5', '8': '5' };
+function gravacoesPorCena(gravacoes: Gravacao[]): Record<string, string> {
+  const porCena: Record<string, string> = Object.fromEntries(
+    gravacoes.filter((g) => g.cena).map((g) => [g.cena as string, g.nome]),
+  );
+  for (const [cena, origem] of Object.entries(MESMA_VIAGEM_DA))
+    if (!porCena[cena] && porCena[origem]) porCena[cena] = porCena[origem];
+  return porCena;
+}
+
 const chaveDaGeometria = (cidade: Cidade | null, rotas: RotaDaJornada[]) =>
   cidade
     ? `${cidade.bairros.map((b) => b.id).join()}|${cidade.nos.length}|${rotas.map((r) => r.paradas.map((p) => p.id).join()).join('/')}`
@@ -682,7 +693,7 @@ export function PaginaMapa() {
             cenaAtual={cena}
             real={real}
             aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
-            gravacoes={Object.fromEntries(gravacoes.filter((g) => g.cena).map((g) => [g.cena as string, g.nome]))}
+            gravacoes={gravacoesPorCena(gravacoes)}
           />
 
           <div className="mapa__estado">
