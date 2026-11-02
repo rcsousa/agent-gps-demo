@@ -181,7 +181,25 @@ export interface Grade {
   quadras: Quadra[];
 }
 
-export type Estilo = 'casa' | 'loja' | 'shopping' | 'fabrica' | 'publico' | 'torre' | 'tecnico' | 'escritorio' | 'placa';
+export type Estilo =
+  | 'casa'
+  | 'sobrado'
+  | 'residencial'
+  | 'agencia'
+  | 'torre'
+  | 'sede'
+  | 'publico'
+  | 'cupula'
+  | 'escritorio'
+  | 'central'
+  | 'loja'
+  | 'galeria'
+  | 'shopping'
+  | 'tecnico'
+  | 'oficina'
+  | 'datacenter'
+  | 'cartorio'
+  | 'placa';
 
 export interface Cidade {
   mundo: { largura: number; altura: number };

@@ -3,6 +3,7 @@
 // O y do grafo cresce para baixo; na cena 3D, cresce para cima (o norte fica no topo).
 
 import type { Bairro, Cidade, Estilo, Grade, NoDoMapa, Ponto } from '../tipos';
+import { FORMAS } from './construcoes';
 
 export type Ponto3 = [number, number, number];
 export type Cor = [number, number, number, number];
@@ -27,7 +28,7 @@ const BRANCO: Cor = [255, 255, 255, 255];
 const GRAMA: Cor = [166, 196, 140, 255];
 
 // Pseudoaleatório determinístico por texto: a mesma construção tem sempre a mesma variação.
-function sorte(texto: string): number {
+export function sorte(texto: string): number {
   let h = 2166136261;
   for (const c of texto) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
   return ((h >>> 0) % 1000) / 1000;
@@ -55,6 +56,7 @@ export interface Construcao {
   escala: [number, number, number];
   yaw: number; // 0: a frente para o norte da cena; 180: para o sul
   cor: Cor;
+  tom: number; // 0 a 1, fixo por construção: sorteia a cor do detalhe (os toldos das lojas)
 }
 
 export interface Cena3D {
@@ -165,7 +167,8 @@ export function montarCena(cidade: Cidade): Cena3D {
     .filter((n): n is NoDoMapa & { estilo: Estilo } => Boolean(n.estilo))
     .map((n) => {
       const placa = n.estilo === 'placa';
-      const variacao = 0.85 + sorte(n.id) * 0.3;
+      const [baixa, alta] = FORMAS[n.estilo].altura;
+      const variacao = baixa + sorte(n.id) * (alta - baixa);
       // A frente da construção dá para a rua da porta: no grafo, porta acima = norte da cena.
       const yaw = n.porta && n.porta[1] > n.y ? 180 : 0;
       return {
@@ -174,7 +177,8 @@ export function montarCena(cidade: Cidade): Cena3D {
         posicao: ponto(n.x, n.y, placa ? Z_RUA : Z_CHAO),
         escala: placa ? [40, 40, 1] : [larguraDoLote, alturaDoLote, variacao],
         yaw,
-        cor: misturar(corDoBairro.get(n.bairro) ?? [150, 150, 150, 255], BRANCO, 0.25 + sorte(`${n.id}*`) * 0.25),
+        cor: misturar(corDoBairro.get(n.bairro) ?? [150, 150, 150, 255], BRANCO, 0.3 + sorte(`${n.id}*`) * 0.3),
+        tom: sorte(`${n.id}#`),
       };
     });
 

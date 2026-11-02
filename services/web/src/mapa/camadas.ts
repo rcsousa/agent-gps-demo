@@ -42,6 +42,8 @@ export const LARANJA: Cor = [242, 101, 34, 255];
 export const DURACAO_DO_PULSO_MS = 1400;
 export const ALTURA_DO_ROBO = 22; // o pino flutua um pouco acima da rua
 const MATERIAL = { ambient: 0.5, diffuse: 0.6, shininess: 24, specularColor: [40, 40, 40] as [number, number, number] };
+// O vidro brilha mais: as janelas pegam o sol.
+const VIDRO = { ambient: 0.45, diffuse: 0.5, shininess: 64, specularColor: [150, 170, 190] as [number, number, number] };
 const Z_ROBO = Z_RUA + 0.3;
 
 // Trânsito é infraestrutura (sistemas, APIs, filas, canais, regras). O estado de um dado de
@@ -80,6 +82,7 @@ function construcoesDoEstilo(c: Contexto, estilo: Estilo): Layer[] {
   const corDoCorpo = (x: Construcao): Cor =>
     x.no.id === c.selecionado ? misturar(LARANJA, [255, 255, 255, 255], 0.2) : x.cor;
   const corDoDetalhe = (x: Construcao): Cor => {
+    if (forma.paleta) return [...forma.paleta[Math.floor(x.tom * forma.paleta.length)], 255];
     if (estilo !== 'placa') return [...forma.corDoDetalhe, 255];
     if (x.no.id === c.exibido.parada) return [214, 80, 20, 255];
     return visitadas.has(x.no.id) ? LARANJA : [250, 248, 244, 255];
@@ -108,6 +111,18 @@ function construcoesDoEstilo(c: Contexto, estilo: Estilo): Layer[] {
       pickable: true,
       updateTriggers: { getColor: [c.exibido.parada, c.exibido.visitadas.join()] },
     }),
+    ...(forma.vidro.attributes.positions.value.length
+      ? [
+          new SimpleMeshLayer<Construcao>({
+            ...comum,
+            id: `vidro-${estilo}`,
+            mesh: forma.vidro,
+            getColor: [...forma.corDoVidro, 255],
+            material: VIDRO,
+            pickable: true,
+          }),
+        ]
+      : []),
   ];
 }
 
