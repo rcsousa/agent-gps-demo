@@ -87,7 +87,7 @@ class MotorFalso:
             raise self._canais
         return self._canais
 
-    async def iniciar(self, modo, provedor, pedido, canal, modelo=None):
+    async def iniciar(self, modo, provedor, pedido, canal, modelo=None, caso="caminho-feliz"):
         from agent.execucao import Execucao
 
         self.iniciadas.append(canal)

@@ -23,6 +23,7 @@ from agent.mapa import EntidadeNaoEncontrada, Mapa
 from bussola_comum.barramento import checar_barramento
 from bussola_comum.cliente_mcp import conectar
 from bussola_comum.eventos import STREAM, PublicadorRedis, decodificar
+from bussola_comum.regras import caso_de
 from bussola_comum.saude import Checagem, rota_saude
 
 log = logging.getLogger("agent")
@@ -34,6 +35,8 @@ class PedidoExecucao(BaseModel):
     pedido: str | None = None
     canal: str | None = None
     modelo: str | None = None
+    # Incidentes ativos no mundo quando a viagem começou (o web sabe pelo simulador): o caso do placar.
+    incidentes: list[str] = []
 
 
 class EscolhaDeModelo(BaseModel):
@@ -235,7 +238,12 @@ def criar_app(
                     400, f"Modelo não permitido: {pedido.modelo}. Use um de: {', '.join(permitidos)}."
                 )
         execucao = await motor.iniciar(
-            pedido.modo, pedido.provedor, pedido.pedido, pedido.canal, pedido.modelo
+            pedido.modo,
+            pedido.provedor,
+            pedido.pedido,
+            pedido.canal,
+            pedido.modelo,
+            caso_de(pedido.incidentes),
         )
         return {
             "id": execucao.id,

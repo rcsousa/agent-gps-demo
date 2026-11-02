@@ -30,7 +30,8 @@ from agent.incidentes import detectar
 from agent.llm.base import ChamadaTool, DefinicaoTool, ErroProvedor, ResultadoTool, SessaoLLM, Uso
 from agent.llm.fabrica import criar_sessao, modelo_de
 from bussola_comum.dominio import agora
-from bussola_comum.eventos import STREAM, Publicador
+from bussola_comum.eventos import STREAM, Publicador, decodificar
+from bussola_comum.regras import regras, resumo
 from bussola_comum.skills import (
     CHAVE_EXECUCAO,
     CHAVE_SKILL_ATIVA,
@@ -71,6 +72,9 @@ class Metricas:
     duracao_s: float = 0.0
     # Custo em US$ pelos preços do modelo (None se o modelo não tem preço configurado).
     custo_usd: dict[str, Any] | None = None
+    # Regras do banco cumpridas no caso da execução (bussola_comum.regras): a base do placar.
+    caso: str = "caminho-feliz"
+    regras: dict[str, Any] | None = None
 
 
 @dataclass
@@ -125,6 +129,7 @@ class Motor:
         pedido: str | None = None,
         canal: str | None = None,
         modelo: str | None = None,
+        caso: str = "caminho-feliz",
     ) -> Execucao:
         if modo not in MODOS:
             raise ValueError(f"Modo desconhecido: {modo}. Use um de: {', '.join(MODOS)}.")
@@ -141,6 +146,7 @@ class Motor:
             modelo=modelo or "",
             cursor_eventos=ultimo[0][0] if ultimo else "0-0",
         )
+        execucao.metricas.caso = caso
         await self.salvar(execucao)
         await self.redis.lpush(LISTA, execucao.id)
         await self.redis.ltrim(LISTA, 0, 49)
@@ -188,6 +194,29 @@ class Motor:
         futuro.set_result(texto)
         return True
 
+    async def eventos_da_execucao(self, execucao: Execucao) -> list[dict[str, Any]]:
+        """Os eventos da execução no barramento (do agente e do gateway), em ordem."""
+        eventos: list[dict[str, Any]] = []
+        cursor = execucao.cursor_eventos
+        while True:
+            lote = await self.redis.xrange(STREAM, min=f"({cursor}", count=500)
+            if not lote:
+                return eventos
+            for ident, campos in lote:
+                evento = decodificar(campos)
+                if evento["dados"].get("execucao_id") == execucao.id:
+                    eventos.append(evento)
+                cursor = ident
+
+    async def _conferir_regras(self, execucao: Execucao) -> dict[str, Any] | None:
+        try:
+            eventos = await self.eventos_da_execucao(execucao)
+        except Exception:  # noqa: BLE001
+            log.warning("Regras da execução %s não conferidas: barramento indisponível", execucao.id)
+            return None
+        fim = {"tipo": "run.finished", "dados": {"apolice": execucao.apolice}}
+        return resumo(regras(execucao.metricas.caso, [*eventos, fim]))
+
     async def aguardar(self, ident: str) -> None:
         if tarefa := self.tarefas.get(ident):
             await tarefa
@@ -210,6 +239,7 @@ class Motor:
             execucao.pergunta = None
             execucao.metricas.duracao_s = round(time.perf_counter() - inicio, 2)
             execucao.metricas.custo_usd = custo(self.config, execucao.modelo, execucao.metricas.tokens)
+            execucao.metricas.regras = await self._conferir_regras(execucao)
             await self.salvar(execucao)
             await viagem.publicar(
                 "run.finished",
