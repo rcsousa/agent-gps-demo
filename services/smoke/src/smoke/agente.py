@@ -59,6 +59,7 @@ def _linha(evento: dict) -> str:
             f"{m['bloqueios']} bloqueios, {m['incidentes']} incidentes, "
             f"{m['tokens']['entrada']}+{m['tokens']['saida']} tokens, "
             f"{m['duracao_s']} s"
+            + (f", US$ {m['custo_usd']['total']:.4f}".replace(".", ",") if m.get("custo_usd") else "")
         )
     return f"  · {tipo}"
 

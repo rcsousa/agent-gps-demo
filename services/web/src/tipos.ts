@@ -32,6 +32,18 @@ export interface Status {
   prompts: number;
 }
 
+export interface OpcaoDeModelo {
+  id: string;
+  // Preço por milhão de tokens, em US$ (null se o modelo não tem preço configurado).
+  precos: { entrada: number; saida: number } | null;
+}
+
+export interface EstadoDoModelo {
+  modelo: string;
+  padrao: string;
+  modelos: OpcaoDeModelo[];
+}
+
 export interface SkillDaTool {
   uri: string;
   nome: string;

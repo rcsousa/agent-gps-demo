@@ -24,6 +24,7 @@ from redis.asyncio import Redis
 
 from agent import prompts
 from agent.config import Config
+from agent.custos import custo
 from agent.ferramentas import PERGUNTAR_CLIENTE, TOOLS_DA_VIAGEM, TOOLS_DE_SKILL
 from agent.incidentes import detectar
 from agent.llm.base import ChamadaTool, DefinicaoTool, ErroProvedor, ResultadoTool, SessaoLLM, Uso
@@ -45,6 +46,7 @@ log = logging.getLogger("agent.execucao")
 Modo = Literal["sem_contexto", "sem_skill", "com_skill"]
 MODOS: tuple[str, ...] = ("sem_contexto", "sem_skill", "com_skill")
 CHAVE = "bussola:execucoes:"
+CHAVE_MODELO = "bussola:llm:modelo"
 LISTA = "bussola:execucoes"
 NOMES_DE_SKILL = tuple(t.nome for t in TOOLS_DE_SKILL)
 MOTIVOS_DE_BLOQUEIO = {
@@ -67,6 +69,8 @@ class Metricas:
     incidentes: int = 0
     tokens: dict[str, int] = field(default_factory=lambda: asdict(Uso()))
     duracao_s: float = 0.0
+    # Custo em US$ pelos preços do modelo (None se o modelo não tem preço configurado).
+    custo_usd: dict[str, Any] | None = None
 
 
 @dataclass
@@ -125,10 +129,13 @@ class Motor:
         if modo not in MODOS:
             raise ValueError(f"Modo desconhecido: {modo}. Use um de: {', '.join(MODOS)}.")
         ultimo = await self.redis.xrevrange(STREAM, count=1)
+        provedor = provedor or self.config.llm_provider
+        if not modelo and provedor == "anthropic":
+            modelo = await self.modelo_atual()
         execucao = Execucao(
             id=uuid.uuid4().hex[:10],
             modo=modo,
-            provedor=provedor or self.config.llm_provider,
+            provedor=provedor,
             pedido=pedido or prompts.PEDIDO_PADRAO,
             canal=canal or prompts.CANAL_PADRAO,
             modelo=modelo or "",
@@ -146,6 +153,21 @@ class Motor:
             nomes = [p.name for p in (await gateway.list_prompts()).prompts]
         prefixo = prompts.PREFIXO_PROMPT_DE_CANAL
         return sorted(n.removeprefix(prefixo) for n in nomes if n.startswith(prefixo))
+
+    async def modelo_atual(self) -> str:
+        """O modelo das próximas execuções: o escolhido no painel, ou o padrão do .env."""
+        try:
+            escolhido = await self.redis.get(CHAVE_MODELO)
+        except Exception:  # noqa: BLE001
+            escolhido = None
+        return escolhido if escolhido in self.config.modelos_anthropic else self.config.anthropic_model
+
+    async def definir_modelo(self, modelo: str) -> None:
+        if modelo not in self.config.modelos_anthropic:
+            raise ValueError(
+                f"Modelo não permitido: {modelo}. Use um de: {', '.join(self.config.modelos_anthropic)}."
+            )
+        await self.redis.set(CHAVE_MODELO, modelo)
 
     async def salvar(self, execucao: Execucao) -> None:
         await self.redis.set(CHAVE + execucao.id, json.dumps(asdict(execucao), ensure_ascii=False))
@@ -187,6 +209,7 @@ class Motor:
         finally:
             execucao.pergunta = None
             execucao.metricas.duracao_s = round(time.perf_counter() - inicio, 2)
+            execucao.metricas.custo_usd = custo(self.config, execucao.modelo, execucao.metricas.tokens)
             await self.salvar(execucao)
             await viagem.publicar(
                 "run.finished",

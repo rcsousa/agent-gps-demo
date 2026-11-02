@@ -4,10 +4,10 @@ import { Renew } from '@carbon/icons-react';
 import { Button, InlineLoading, InlineNotification, Tab, TabList, TabPanel, TabPanels, Tabs } from '@carbon/react';
 import { useCallback, useEffect, useState } from 'react';
 
-import { api, mudarTool } from '../api';
+import { api, escolherModelo, mudarTool } from '../api';
 import { mensagens } from '../mensagens/pt-BR';
 import { ABAS, type Rota, useRota } from '../rota';
-import type { Catalogo, Status } from '../tipos';
+import type { Catalogo, EstadoDoModelo, Status } from '../tipos';
 import { DetalhePrompt, DetalheServico, DetalheSkill, DetalheTool } from './Detalhes';
 import { Indicadores } from './Indicadores';
 import { PainelLateral } from './Painel';
@@ -20,9 +20,11 @@ export function PaginaStatus() {
   const [rota, ir] = useRota();
   const [status, setStatus] = useState<Status | null>(null);
   const [catalogo, setCatalogo] = useState<Catalogo | null>(null);
+  const [modelo, setModelo] = useState<EstadoDoModelo | null>(null);
   const [erroStatus, setErroStatus] = useState(false);
   const [erroCatalogo, setErroCatalogo] = useState(false);
   const [erroAcao, setErroAcao] = useState(false);
+  const [erroModelo, setErroModelo] = useState(false);
   const [atualizadoEm, setAtualizadoEm] = useState<Date | null>(null);
   // Resposta imediata no toggle; a próxima consulta ao status confirma o estado real.
   const [otimista, setOtimista] = useState<Record<string, boolean>>({});
@@ -47,10 +49,28 @@ export function PaginaStatus() {
     }
   }, []);
 
+  const consultarModelo = useCallback(async () => {
+    try {
+      setModelo(await api.modelo());
+    } catch {
+      setModelo(null);
+    }
+  }, []);
+
   const atualizar = useCallback(
-    () => Promise.all([consultarStatus(), consultarCatalogo()]),
-    [consultarStatus, consultarCatalogo],
+    () => Promise.all([consultarStatus(), consultarCatalogo(), consultarModelo()]),
+    [consultarStatus, consultarCatalogo, consultarModelo],
   );
+
+  async function aoEscolherModelo(id: string) {
+    try {
+      setModelo(await escolherModelo(id));
+      setErroModelo(false);
+    } catch {
+      setErroModelo(true);
+    }
+    await consultarStatus();
+  }
 
   useEffect(() => {
     atualizar();
@@ -121,6 +141,15 @@ export function PaginaStatus() {
           subtitle={t.erroAgenteDetalhe}
         />
       )}
+      {erroModelo && (
+        <InlineNotification
+          kind="error"
+          lowContrast
+          title={mensagens.indicadores.erroModelo}
+          subtitle={mensagens.status.erroAgenteDetalhe}
+          onClose={() => setErroModelo(false)}
+        />
+      )}
       {erroAcao && (
         <InlineNotification
           kind="error"
@@ -132,7 +161,7 @@ export function PaginaStatus() {
       )}
 
       {!status && !erroStatus && <InlineLoading description={t.carregando} />}
-      {status && <Indicadores status={status} />}
+      {status && <Indicadores status={status} modelo={modelo} aoEscolherModelo={aoEscolherModelo} />}
 
       <Tabs
         selectedIndex={ABAS.indexOf(rota.aba)}

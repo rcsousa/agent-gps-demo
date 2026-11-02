@@ -1,6 +1,6 @@
 // Chamadas do web. Dados vêm do agent (/api); ações sobre o mundo vão ao simulador (/simulador).
 
-import type { Catalogo, Chamada, Fonte, Status } from './tipos';
+import type { Catalogo, Chamada, EstadoDoModelo, Fonte, Status } from './tipos';
 
 async function obter<T>(caminho: string): Promise<T> {
   const resposta = await fetch(caminho);
@@ -18,9 +18,21 @@ export const api = {
     ),
   previa: (nome: string) =>
     obter<{ texto: string; cliente_id: string }>(`/api/catalogo/prompt/${encodeURIComponent(nome)}/previa`),
+  modelo: () => obter<EstadoDoModelo>('/api/llm/modelo'),
   chamadas: (filtro: { tool?: string; prompt?: string; skill?: string }) =>
     obter<Chamada[]>(`/api/catalogo/chamadas?${new URLSearchParams(filtro as Record<string, string>)}`),
 };
+
+// O modelo das próximas execuções: escolha do apresentador, guardada pelo agente.
+export async function escolherModelo(modelo: string): Promise<EstadoDoModelo> {
+  const resposta = await fetch('/api/llm/modelo', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ modelo }),
+  });
+  if (!resposta.ok) throw new Error(String(resposta.status));
+  return resposta.json();
+}
 
 // Ligar e desligar é ação do apresentador sobre o mundo: vai ao simulador, nunca ao agente.
 export async function mudarTool(caminho: string): Promise<void> {

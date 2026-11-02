@@ -46,7 +46,14 @@ export const mensagens = {
     llmAusente: 'Chave ausente · só o roteiro roda',
     provedores: { anthropic: 'Anthropic', azure_openai: 'Azure OpenAI' } as Record<string, string>,
     plataformas: { api: 'API da Anthropic', foundry: 'Microsoft Foundry' } as Record<string, string>,
-    outrosModelos: (n: number) => `(+${n} ${n === 1 ? 'modelo' : 'modelos'})`,
+    modelo: 'Modelo das próximas execuções',
+    nomesDeModelo: { 'claude-haiku-5-5': 'Haiku 5.5', 'claude-opus-5-5': 'Opus 5.5' } as Record<string, string>,
+    precoPorMilhao: (entrada: number, saida: number) => {
+      const usd = (v: number) => v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+      return `US$ ${usd(entrada)} / ${usd(saida)} por milhão de tokens (entrada / saída)`;
+    },
+    semPreco: 'sem preço configurado',
+    erroModelo: 'Não foi possível trocar o modelo.',
     barramento: 'Barramento',
     barramentoDetalhe: 'bus · Redis Streams',
   },
