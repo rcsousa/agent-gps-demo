@@ -53,6 +53,7 @@
   - com skill, o gateway barrou a leitura fora de ordem (contramão), e o agente renovou e reverificou antes de cotar.
 - **Emissão lenta:** com skill, o agente viu o congestionamento na Âncora e na Farol e emitiu pela Horizonte, sem atraso. Uma leitura do imóvel fora de ordem foi barrada pelo gateway (contramão) e refeita depois do consentimento.
 - **Âncora fora:** com skill, o agente planejou já sem a Âncora ("as rotas rápida e econômica estão bloqueadas") e emitiu pela Farol, mas não contou isso à Ana. O verificador acusa "explicou a troca à cliente".
+  - **Depois do ajuste da skill** (mesmo dia): `cotacao-multisseguradora` e `desvios.md` passaram a pedir que o agente diga à cliente, pelo nome, qual opção ficou de fora e por quê, mesmo com o incidente ativo antes da viagem. Uma repetição nova do caso, com o Haiku: com skill, **5 de 5 regras**, inclusive "explicou a troca à cliente"; sem skill, 4 de 5. É uma repetição só: confirma o ajuste, mas não mede a taxa.
 
 ## Limitações
 
