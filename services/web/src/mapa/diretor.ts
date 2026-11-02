@@ -23,6 +23,9 @@ const RETENCAO_MS: Record<string, number> = {
   'incident.detected': 1600,
   'route.recalculated': 1600,
   'human.required': 1200,
+  // A conversa também espera: a plateia lê a pergunta e a resposta do agente antes do próximo passo.
+  'client.asked': 800,
+  'agent.message': 800,
   // O protocolo também tem seu tempo na tela, para o Raio-X ser lido em voz alta.
   'skills.listed': 500,
   'resource.read': 500,

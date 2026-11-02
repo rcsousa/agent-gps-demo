@@ -38,10 +38,16 @@ const INTERVALO_TRANSITO_MS = 5000;
 const VISTA = new OrbitView({ id: 'cidade', orbitAxis: 'Z', fovy: 40 });
 const CONTROLE = { dragMode: 'pan' as const, scrollZoom: { speed: 0.01, smooth: true } };
 const LUZ = new LightingEffect({
-  ambiente: new AmbientLight({ color: [255, 255, 255], intensity: 1.0 }),
-  sol: new DirectionalLight({ color: [255, 250, 240], intensity: 1.6, direction: [-2, -4, -6] }),
+  ambiente: new AmbientLight({ color: [255, 255, 255], intensity: 0.85 }),
+  // O sol vem do sudeste, baixo: ilumina as fachadas voltadas para a câmera e marca as janelas.
+  sol: new DirectionalLight({ color: [255, 248, 235], intensity: 1.7, direction: [-3, 4, -4] }),
 });
-const INCLINACAO = 52;
+// Vista aérea (a cidade inteira, e ao fim da viagem) e vista de GPS (baixa, atrás do robô).
+const INCLINACAO = 55;
+const INCLINACAO_GPS = 34;
+const ZOOM_GPS = 1.45;
+// A câmera alcança o robô com essa constante de tempo: segue sem trancos, em qualquer taxa de quadros.
+const TEMPO_DA_CAMERA_MS = 220;
 // Sem giro: o norte fica para cima e a profundidade vem só da inclinação da câmera.
 const GIRO = 0;
 // A partir desse zoom (relativo à cidade inteira), aparecem os nomes das construções.
@@ -83,7 +89,8 @@ function enquadramento(largura: number, altura: number, cidade: Cidade): Visao {
   const mundo = cidade.mundo;
   const escala = Math.min(largura / mundo.largura, (altura * 1.25) / mundo.altura) * 0.92;
   return {
-    target: [mundo.largura / 2, mundo.altura / 2 - 10, 0],
+    // Um pouco ao sul do centro: a linha do tempo do rodapé não cobre os bairros de baixo.
+    target: [mundo.largura / 2, mundo.altura / 2 - 40, 0],
     zoom: Math.log2(Math.max(escala, 0.05)),
     rotationX: INCLINACAO,
     rotationOrbit: GIRO,
@@ -111,7 +118,7 @@ function gravacoesPorCena(gravacoes: Gravacao[]): Record<string, string> {
 }
 
 // As construções (corpo e detalhe de cada estilo) respondem ao clique.
-const CAMADAS_CLICAVEIS = ESTILOS.flatMap((e) => [`construcao-${e}`, `detalhe-${e}`]);
+const CAMADAS_CLICAVEIS = ESTILOS.flatMap((e) => [`construcao-${e}`, `detalhe-${e}`, `vidro-${e}`]);
 
 const chaveDaGeometria = (cidade: Cidade | null) =>
   cidade ? `${cidade.cidade.xs.join()}|${cidade.cidade.ys.join()}|${cidade.nos.map((n) => n.id).join()}` : '';
@@ -215,8 +222,9 @@ export function PaginaMapa() {
     [trajetoEntre],
   );
 
-  // A conversa usa o estado real (para responder sem atraso); o mapa, o que o diretor já exibiu.
-  // No replay ninguém responde: a conversa acompanha o mapa.
+  // Tudo o que aparece na tela (o mapa e a conversa) é o que o diretor já exibiu: a pergunta à Ana
+  // só aparece quando o robô chega à parada dela. O estado real serve só para responder (o id).
+  // No replay ninguém responde.
   const real = useViagem(gravacao ? (replayPronto ? PREFIXO_GRAVACAO + replayPronto : null) : execucao);
   const replay = ehReplay(real.id);
   const direcao = useDiretor(real, tempoDoTrecho);
@@ -230,6 +238,8 @@ export function PaginaMapa() {
   const [base, setBase] = useState<Visao | null>(null);
   const [visao, setVisao] = useState<Visao | null>(null);
   const [seguir, setSeguir] = useState(true);
+  const viagemEmCurso = Boolean(exibido.id && !(exibido.fim && direcao.fila === 0));
+  const cameraSeguindo = seguir && viagemEmCurso;
 
   useEffect(() => {
     if (!area.current) return;
@@ -272,30 +282,33 @@ export function PaginaMapa() {
     },
     [cena3d, voar],
   );
-  const voltarACidade = useCallback(() => {
-    if (base)
-      setVisao({
-        ...base,
-        transitionDuration: 900,
-        transitionInterpolator: new LinearInterpolator(['target', 'zoom', 'rotationX', 'rotationOrbit']),
-      });
-  }, [base]);
+  const voltarACidade = useCallback(
+    (duracao = 900) => {
+      if (base)
+        setVisao({
+          ...base,
+          transitionDuration: duracao,
+          transitionInterpolator: new LinearInterpolator(['target', 'zoom', 'rotationX', 'rotationOrbit']),
+        });
+    },
+    [base],
+  );
   const nivel = visao && base ? visao.zoom - base.zoom : 0;
 
   // ?parada=N (da tela de abertura): o mapa abre naquela parada.
+  // Só uma vez: a cidade é relida a cada 5 s (o trânsito), e a câmera não pode voltar sozinha.
+  const paradaDaAbertura = useRef(false);
   useEffect(() => {
+    if (paradaDaAbertura.current || !base) return;
     const numero = parametro('parada');
     const alvo = paradasDaJornada(rotas, null).find((p) => String(p.numero) === numero);
     const ponto = alvo && pontoDoNo(alvo.id);
-    if (ponto && base) voar(ponto, ZOOM_SEGUINDO);
+    if (!ponto) return;
+    paradaDaAbertura.current = true;
+    voar(ponto, ZOOM_SEGUINDO);
   }, [rotas, base, pontoDoNo, voar]);
 
-  // "Seguir o agente": a câmera vai junto com o robô, no mesmo ritmo do trecho.
   const trechoAtual = direcao.trechos.at(-1) ?? null;
-  useEffect(() => {
-    const destino = trechoAtual && pontoDoNo(trechoAtual.para, Z_RUA);
-    if (seguir && destino) voar(destino, ZOOM_SEGUINDO, Math.max(trechoAtual.duracao, 400));
-  }, [seguir, trechoAtual, pontoDoNo, voar]);
 
   // --- Relógio: só corre enquanto há o que animar ----------------------------------------
   const [agora, setAgora] = useState(() => performance.now());
@@ -338,6 +351,37 @@ export function PaginaMapa() {
     const r: Rastro = { pontos, tempos, percorrido };
     return { robo: posicao, rastro: r };
   }, [exibido.modo, cena3d, direcao.partida, direcao.trechos, agora, nos, trajetoEntre]);
+
+  // --- Câmera de GPS -------------------------------------------------------------------------
+  // Durante a viagem, a câmera fica baixa e com o robô no centro, ajustada a cada quadro.
+  const quadroDaCamera = useRef(0);
+  useEffect(() => {
+    if (!cameraSeguindo || !robo || !base) return;
+    const passo = Math.min(agora - (quadroDaCamera.current || agora - 16), 500);
+    quadroDaCamera.current = agora;
+    const k = 1 - Math.exp(-Math.max(passo, 0) / TEMPO_DA_CAMERA_MS);
+    const perto = (a: number, b: number) => a + (b - a) * k;
+    setVisao((v) => {
+      const atual = v ?? base;
+      return {
+        ...atual,
+        target: [perto(atual.target[0], robo[0]), perto(atual.target[1], robo[1]), 0],
+        zoom: perto(atual.zoom, base.zoom + ZOOM_GPS),
+        rotationX: perto(atual.rotationX, INCLINACAO_GPS),
+        rotationOrbit: perto(atual.rotationOrbit, GIRO),
+        transitionDuration: 0,
+      };
+    });
+  }, [cameraSeguindo, robo, base, agora]);
+
+  // Ao fim da viagem (o diretor já mostrou a chegada), a câmera sobe para a cidade inteira, uma vez,
+  // e fica livre para o apresentador explorar.
+  const fimEnquadrado = useRef<string | null>(null);
+  useEffect(() => {
+    if (!exibido.id || !exibido.fim || direcao.fila > 0 || fimEnquadrado.current === exibido.id) return;
+    fimEnquadrado.current = exibido.id;
+    if (seguir) voltarACidade(1800);
+  }, [exibido.id, exibido.fim, direcao.fila, seguir, voltarACidade]);
 
   const [selecionado, setSelecionado] = useState<string | null>(null);
   const chegada = exibido.fim?.apolice && trechoAtual ? pontoDoNo(trechoAtual.para, Z_RUA) : null;
@@ -408,8 +452,11 @@ export function PaginaMapa() {
     }
     if (mostrarNomes) {
       const comFarol = new Set(incidentes.map((n) => n.id));
+      // No GPS (seguindo o robô), só os nomes dos lugares da viagem: o destino atual e os já visitados.
+      const daViagem = cameraSeguindo && !raioX ? new Set(direcao.trechos.map((x) => x.para)) : null;
       for (const c of cena3d.construcoes) {
         if (c.estilo === 'placa' || comFarol.has(c.no.id)) continue;
+        if (daViagem && !daViagem.has(c.no.id) && c.no.id !== selecionado) continue;
         lista.push({
           id: `construcao-${c.no.id}`,
           tipo: 'sistema',
@@ -433,6 +480,9 @@ export function PaginaMapa() {
     selecionado,
     pontoDoNo,
     voarParaBairro,
+    cameraSeguindo,
+    raioX,
+    direcao.trechos,
   ]);
 
   // --- Barra de viagem ----------------------------------------------------------------
@@ -462,6 +512,7 @@ export function PaginaMapa() {
           ? { modo, canal, provedor: ROTEIRO, incidentes }
           : { modo, canal, modelo: modeloEscolhido, incidentes };
       const { id } = await apiViagem.iniciar(pedido);
+      setSeguir(true);
       voltarACidade();
       const busca = new URLSearchParams({ execucao: id });
       if (cena) busca.set('cena', cena);
@@ -525,6 +576,7 @@ export function PaginaMapa() {
       data-lugares-visitados={direcao.trechos.length}
       data-nomes={mostrarNomes ? 'sim' : 'nao'}
       data-fila={direcao.fila}
+      data-camera={cameraSeguindo ? 'seguindo' : 'livre'}
     >
       <div className="mapa__barra">
         <h1 id="titulo-mapa" className="mapa__titulo">
@@ -653,7 +705,12 @@ export function PaginaMapa() {
                 ref={deck}
                 views={VISTA}
                 viewState={visao}
-                onViewStateChange={({ viewState }) => setVisao(viewState as Visao)}
+                onViewStateChange={({ viewState, interactionState }) => {
+                  // O apresentador mexeu na câmera: o seguimento pausa até ele religar "Seguir o agente".
+                  const i = interactionState;
+                  if (cameraSeguindo && (i.isDragging || i.isPanning || i.isZooming || i.isRotating)) setSeguir(false);
+                  setVisao(viewState as Visao);
+                }}
                 controller={CONTROLE}
                 effects={[LUZ]}
                 layers={listaDeCamadas}
@@ -681,7 +738,7 @@ export function PaginaMapa() {
             aberto={apresentador}
             aoFechar={() => setApresentador(false)}
             cenaAtual={cena}
-            real={real}
+            real={{ ...exibido, id: real.id }}
             aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
             gravacoes={gravacoesPorCena(gravacoes)}
           />
@@ -758,18 +815,24 @@ export function PaginaMapa() {
             <IconButton
               kind="secondary"
               label={t.aproximar}
-              onClick={() => setVisao((v) => v && { ...v, zoom: v.zoom + 0.5, transitionDuration: 300 })}
+              onClick={() => {
+                setSeguir(false);
+                setVisao((v) => v && { ...v, zoom: v.zoom + 0.5, transitionDuration: 300 });
+              }}
             >
               <Add />
             </IconButton>
             <IconButton
               kind="secondary"
               label={t.afastar}
-              onClick={() => setVisao((v) => v && { ...v, zoom: v.zoom - 0.5, transitionDuration: 300 })}
+              onClick={() => {
+                setSeguir(false);
+                setVisao((v) => v && { ...v, zoom: v.zoom - 0.5, transitionDuration: 300 });
+              }}
             >
               <Subtract />
             </IconButton>
-            <IconButton kind="secondary" label={t.enquadrar} onClick={voltarACidade}>
+            <IconButton kind="secondary" label={t.enquadrar} onClick={() => voltarACidade()}>
               <ZoomFit />
             </IconButton>
           </div>
@@ -780,7 +843,7 @@ export function PaginaMapa() {
         {raioX ? (
           <PainelRaioX
             viagem={exibido}
-            conversa={replay ? { ...exibido, pergunta: null } : real}
+            conversa={replay ? { ...exibido, pergunta: null } : exibido}
             nos={nos}
             aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
             aoEscolherNo={(id) => {
@@ -791,7 +854,7 @@ export function PaginaMapa() {
           />
         ) : (
           <Conversa
-            viagem={replay ? { ...exibido, pergunta: null } : real}
+            viagem={replay ? { ...exibido, pergunta: null } : exibido}
             aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
           />
         )}

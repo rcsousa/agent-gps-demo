@@ -2,7 +2,7 @@
 
 import { CheckmarkFilled, ErrorFilled, Send, WarningAltFilled } from '@carbon/icons-react';
 import { Button, Link, Tag, TextInput } from '@carbon/react';
-import { type ChangeEvent, type MouseEvent, type ReactNode, useState } from 'react';
+import { type ChangeEvent, type MouseEvent, type ReactNode, useEffect, useState } from 'react';
 
 import { api } from '../api';
 import { mensagens } from '../mensagens/pt-BR';
@@ -149,13 +149,18 @@ export function RespostaDaAna(props: {
 }) {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
+  // Respondida: os botões ficam desligados até a próxima pergunta (a resposta ainda vai chegar
+  // ao mapa pelo diretor de animações, e não pode haver resposta dupla).
+  const [respondida, setRespondida] = useState(false);
+  useEffect(() => setRespondida(false), [props.pergunta.texto]);
 
   async function responder(resposta: string) {
-    if (!resposta.trim()) return;
+    if (!resposta.trim() || respondida) return;
     setEnviando(true);
     try {
       await props.aoResponder(resposta.trim());
       setTexto('');
+      setRespondida(true);
     } finally {
       setEnviando(false);
     }
@@ -167,7 +172,13 @@ export function RespostaDaAna(props: {
       {props.compacta && <p className="mapa__pergunta">{props.pergunta.texto}</p>}
       <div className="mapa__opcoes">
         {props.pergunta.opcoes.map((opcao) => (
-          <Button key={opcao} kind="tertiary" size="sm" disabled={enviando} onClick={() => responder(opcao)}>
+          <Button
+            key={opcao}
+            kind="tertiary"
+            size="sm"
+            disabled={enviando || respondida}
+            onClick={() => responder(opcao)}
+          >
             {opcao}
           </Button>
         ))}
@@ -195,7 +206,7 @@ export function RespostaDaAna(props: {
           hasIconOnly
           renderIcon={Send}
           iconDescription={t.conversa.enviar}
-          disabled={enviando || !texto.trim()}
+          disabled={enviando || respondida || !texto.trim()}
         />
       </form>
     </div>
