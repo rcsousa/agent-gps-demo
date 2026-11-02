@@ -19,6 +19,7 @@ from agent.config import Config
 from agent.custos import precos_por_milhao
 from agent.execucao import MODOS, Motor
 from agent.llm.fabrica import PROVEDORES
+from agent.mapa import EntidadeNaoEncontrada, Mapa
 from bussola_comum.barramento import checar_barramento
 from bussola_comum.cliente_mcp import conectar
 from bussola_comum.eventos import STREAM, PublicadorRedis, decodificar
@@ -75,6 +76,8 @@ def criar_app(
         lambda: conectar(f"{config.gateway_url}/mcp", config.gateway_token), redis, saude_do_gateway
     )
 
+    mapa = Mapa(lambda: conectar(f"{config.gateway_url}/mcp", config.gateway_token))
+
     app = FastAPI(title="agent")
     app.add_api_route("/saude", rota_saude(config.servico_nome, checagens), methods=["GET"])
 
@@ -113,6 +116,30 @@ def criar_app(
             "skills": skills,
             "prompts": prompts,
         }
+
+    # --- Mapa da cidade (Modo Mapa) ------------------------------------------------
+
+    @app.get("/api/mapa")
+    async def ver_mapa() -> dict:
+        """A cidade desenhada a partir do grafo, com o trânsito (status vivo) de cada nó."""
+        try:
+            return await mapa.cidade()
+        except Exception as erro:  # noqa: BLE001
+            raise HTTPException(503, "A camada de contexto não respondeu.") from erro
+
+    @app.get("/api/mapa/rotas")
+    async def ver_rotas() -> dict:
+        try:
+            return await mapa.rotas()
+        except Exception as erro:  # noqa: BLE001
+            raise HTTPException(503, "As rotas não puderam ser consultadas.") from erro
+
+    @app.get("/api/mapa/entidade/{ident}")
+    async def ver_entidade(ident: str) -> dict:
+        try:
+            return await mapa.entidade(ident)
+        except EntidadeNaoEncontrada as erro:
+            raise HTTPException(404, str(erro)) from erro
 
     # --- Modelo das próximas execuções (escolhido no painel) ---------------------------
 
