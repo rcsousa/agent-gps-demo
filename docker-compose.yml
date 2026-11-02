@@ -31,7 +31,8 @@ x-dominio:
 services:
   # ---------------------------------------------------------------- front
   web:
-    build: ./services/web
+    # Contexto na raiz: o build gera os tiles do infográfico (docs/assets) para a tela de abertura.
+    build: { context: ., dockerfile: services/web/Dockerfile }
     restart: unless-stopped
     networks: [bussola]
     ports: ["${WEB_PORT:-8080}:80"]
@@ -238,6 +239,15 @@ services:
     environment:
       GATEWAY_TOKEN: ${GATEWAY_TOKEN}
     command: ["pytest", "-v"]
+    depends_on:
+      web: { condition: service_healthy }
+      simulator: { condition: service_healthy }
+
+  # docker compose --profile test run --rm --build e2e   (navegador; usa o roteiro, sem tokens)
+  e2e:
+    profiles: [test]
+    build: { context: services/e2e }
+    networks: [bussola]
     depends_on:
       web: { condition: service_healthy }
       simulator: { condition: service_healthy }

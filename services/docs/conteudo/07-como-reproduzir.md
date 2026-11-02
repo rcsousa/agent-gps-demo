@@ -15,7 +15,9 @@ docker compose ps           # todos os serviços devem aparecer como "healthy"
 
 | Endereço | O que é |
 | --- | --- |
-| <http://localhost:8080> | Demo (por enquanto, leva ao dashboard de status em `/status`) |
+| <http://localhost:8080> | Tela de abertura: o infográfico navegável |
+| <http://localhost:8080/mapa> | Modo Mapa: a cidade e a viagem do agente |
+| <http://localhost:8080/status> | Dashboard de status |
 | <http://localhost:8080/bastidores/> | Este site |
 | <http://localhost:7474> | Neo4j Browser (usuário e senha do `.env`) |
 
@@ -32,6 +34,9 @@ docker compose run --rm --no-deps agent pytest
 
 # Checagem ponta a ponta, com a demo no ar
 docker compose --profile test run --rm --build smoke
+
+# No navegador (Chromium): abertura, mapa, viagem e incidente. Usa o roteiro, sem tokens
+docker compose --profile test run --rm --build e2e
 ```
 
 ### Atualizar dependências
@@ -109,6 +114,46 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 | `vistoria-zona-sul` | Desvio por obra |
 | `alcada-ana-excedida` | Pedágio |
 | `proveniencia-fraca-ana` | Ponte interditada |
+
+### A tela de abertura
+
+<http://localhost:8080> abre o infográfico da demo. Para aproximar, arraste e use a roda do mouse ou os botões `+` e `−`. Ao passar o mouse, cada área acende e mostra para onde leva:
+
+- as mensagens 1, 2 e 3, a Ana, o celular, as rotas e as seguradoras levam à cena correspondente, já no mapa;
+- as paradas 1 a 9 (no mapa ou na faixa) abrem o mapa no bairro daquela parada;
+- a placa, a camada de contexto, a skill, a proveniência e a tabela da metáfora levam ao capítulo destes bastidores;
+- o Modo Raio-X chega na Fase 7.
+
+**Atalhos:** `Enter` inicia a demo, `M` abre o mapa, `S` abre o status e `B` abre os bastidores. `Tab` percorre as áreas.
+
+### O Modo Mapa
+
+<http://localhost:8080/mapa> mostra a cidade do banco em 3D, desenhada a partir do grafo, com os seis bairros, as três estradas da jornada, as nove paradas e o trânsito ao vivo.
+
+![A cidade em 3D, com os bairros e as estradas da jornada](assets/mapa/cidade.png)
+
+**Navegar:** arraste para mover, use a roda para o zoom e o botão direito para mudar a inclinação ou girar. "Enquadrar a cidade" volta à vista inicial, alinhada ao norte.
+
+**Abrir um bairro:** clique no nome ou na placa do bairro, ou aproxime bem o zoom. Os sistemas daquele bairro aparecem como prédios com placas, e o status fica no telhado. Clique numa placa ou num prédio para ver os atributos, o estado vivo, a **proveniência** e os vizinhos. "Voltar à cidade" fecha o bairro.
+
+![O bairro Parceiros aberto: as APIs das seguradoras e os sistemas do banco](assets/mapa/bairro.png)
+
+![O detalhe de um sistema, com a proveniência](assets/mapa/no.png)
+
+**Fazer uma viagem:**
+1. Na barra de viagem, escolha o **modo** (com skill, sem skill ou sem contexto), o **canal** e o **modelo**. A opção "Roteiro (ensaio sem LLM)" não gasta tokens.
+2. Clique em **Iniciar viagem**. O endereço muda para `/mapa?execucao=<id>`, e dá para abrir o mesmo link em outra tela.
+3. O robô percorre a estrada parada a parada. Com "Seguir o agente" ligado, a câmera vai junto e abre o bairro de cada parada. A linha do tempo no rodapé e a narração mostram em que passo ele está.
+4. Quando o agente perguntar algo à Ana, a pergunta aparece no painel **Conversa**. Responda com um dos botões ou escreva a resposta.
+5. O selo no alto mostra "Reproduzindo" enquanto o mapa está atrás do agente e "Ao vivo" quando alcança. **Pular para o fim** alcança de uma vez.
+
+![A viagem com skill: o robô na parada 6, com o trecho percorrido aceso e a linha do tempo](assets/mapa/viagem.png)
+
+**Cenas prontas.** `/mapa?cena=6` deixa a barra pronta para a cena 6 e mostra o botão **Derrubar a API da Âncora**. Derrube a API: o farol vermelho sobe no bairro Parceiros e as rotas que passam por ali ficam interditadas. Depois, inicie a viagem e veja o desvio.
+
+![A cena 6: o farol da Âncora e as rotas interditadas](assets/mapa/incidente.png)
+
+Depois, volte o mundo ao normal com `./scripts/incidente.sh reset`.
 
 ### O dashboard de status
 

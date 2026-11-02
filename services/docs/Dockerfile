@@ -2,7 +2,7 @@
 FROM squidfunk/mkdocs-material:9 AS build
 WORKDIR /docs
 COPY services/docs/ ./
-COPY docs/assets/mapa-da-demo.png conteudo/assets/mapa-da-demo.png
+COPY docs/assets/infografico_horizontal.jpeg conteudo/assets/infografico.jpeg
 COPY services/contexto-mcp/ontologia/ ontologia/
 COPY services/skills-mcp/skills/ skills/
 RUN mkdocs build --strict --site-dir /site

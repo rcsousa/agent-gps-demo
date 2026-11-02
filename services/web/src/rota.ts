@@ -2,7 +2,9 @@
 //   /status/{aba}          a aba aberta
 //   /status/{aba}/{item}   o painel lateral daquele item (link compartilhável)
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+
+import { useMudancaDeEndereco } from './navegacao';
 
 export const ABAS = ['servicos', 'tools', 'skills', 'prompts'] as const;
 export type Aba = (typeof ABAS)[number];
@@ -26,13 +28,8 @@ const caminho = (r: Rota) => `/status/${r.aba}${r.item ? `/${encodeURIComponent(
 export function useRota(): [Rota, (rota: Rota) => void] {
   const [rota, setRota] = useState<Rota>(ler);
 
-  useEffect(() => {
-    // Até a tela de abertura (Fase 6), a raiz leva ao dashboard.
-    if (!window.location.pathname.startsWith('/status')) window.history.replaceState(null, '', caminho(ler()));
-    const aoVoltar = () => setRota(ler());
-    window.addEventListener('popstate', aoVoltar);
-    return () => window.removeEventListener('popstate', aoVoltar);
-  }, []);
+  // Voltar/avançar do navegador e navegação vinda de outras páginas (ex.: /status no cabeçalho).
+  useMudancaDeEndereco(useCallback(() => setRota(ler()), []));
 
   const ir = useCallback((nova: Rota) => {
     if (caminho(nova) !== window.location.pathname) window.history.pushState(null, '', caminho(nova));
