@@ -13,11 +13,11 @@ mundo: { largura: 1000, altura: 700 }
 # --8<-- [start:cidade]
 cidade:
   colunas: 10               # quadras na horizontal
-  linhas: 8                 # quadras na vertical
+  linhas: 7                 # quadras na vertical
   lotes_por_quadra: [2, 2]  # cada quadra tem 2 × 2 lotes; cada lugar do grafo ocupa um
   rua: 10                   # largura das ruas
   avenida: 18               # largura das avenidas
-  # Avenidas: as linhas da grade (0 a 10, 0 a 8) que são mais largas; separam os bairros.
+  # Avenidas: as linhas da grade (0 a 10, 0 a 7) que são mais largas; separam os bairros.
   avenidas_verticais: [4, 8]
   avenidas_horizontais: [5]
 # --8<-- [end:cidade]
@@ -43,11 +43,11 @@ bairros:
   - id: parceiros
     nome: Serviços e Parceiros
     cor: "#198038"      # Carbon green 60
-    quadras: [0, 5, 7, 8]
+    quadras: [0, 5, 7, 7]
   - id: pagamentos
     nome: Pagamentos e Emissão
     cor: "#002d9c"      # Carbon blue 80
-    quadras: [7, 5, 10, 8]
+    quadras: [7, 5, 10, 7]
 # --8<-- [end:bairros]
 
 # Rio que corta a cidade na diagonal, à esquerda, como no infográfico.

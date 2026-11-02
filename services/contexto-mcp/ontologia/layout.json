@@ -2,7 +2,7 @@
  "versao": 2,
  "cidade": {
   "colunas": 10,
-  "linhas": 8,
+  "linhas": 7,
   "xs": [
    0.0,
    100.0,
@@ -18,13 +18,12 @@
   ],
   "ys": [
    0.0,
-   87.5,
-   175.0,
-   262.5,
-   350.0,
-   437.5,
-   525.0,
-   612.5,
+   100.0,
+   200.0,
+   300.0,
+   400.0,
+   500.0,
+   600.0,
    700.0
   ],
   "rua": 10,
@@ -38,7 +37,7 @@
   ],
   "lote": [
    43.0,
-   36.8
+   43.0
   ]
  },
  "regioes": {
@@ -46,23 +45,23 @@
    0.0,
    0.0,
    400.0,
-   437.5
+   500.0
   ],
   "governanca": [
    400.0,
    0.0,
    800.0,
-   437.5
+   500.0
   ],
   "pagamentos": [
    700.0,
-   437.5,
+   500.0,
    1000.0,
    700.0
   ],
   "parceiros": [
    0.0,
-   437.5,
+   500.0,
    700.0,
    700.0
   ],
@@ -70,7 +69,7 @@
    800.0,
    0.0,
    1000.0,
-   437.5
+   500.0
   ]
  },
  "quadras": [
@@ -83,7 +82,7 @@
     5.0,
     5.0,
     95.0,
-    82.5
+    95.0
    ]
   },
   {
@@ -95,7 +94,7 @@
     105.0,
     5.0,
     195.0,
-    82.5
+    95.0
    ]
   },
   {
@@ -107,7 +106,7 @@
     205.0,
     5.0,
     295.0,
-    82.5
+    95.0
    ]
   },
   {
@@ -119,7 +118,7 @@
     305.0,
     5.0,
     391.0,
-    82.5
+    95.0
    ]
   },
   {
@@ -131,7 +130,7 @@
     409.0,
     5.0,
     495.0,
-    82.5
+    95.0
    ]
   },
   {
@@ -143,7 +142,7 @@
     505.0,
     5.0,
     595.0,
-    82.5
+    95.0
    ]
   },
   {
@@ -155,7 +154,7 @@
     605.0,
     5.0,
     695.0,
-    82.5
+    95.0
    ]
   },
   {
@@ -167,7 +166,7 @@
     705.0,
     5.0,
     791.0,
-    82.5
+    95.0
    ]
   },
   {
@@ -179,7 +178,7 @@
     809.0,
     5.0,
     895.0,
-    82.5
+    95.0
    ]
   },
   {
@@ -191,7 +190,7 @@
     905.0,
     5.0,
     995.0,
-    82.5
+    95.0
    ]
   },
   {
@@ -201,9 +200,9 @@
    "agua": false,
    "retangulo": [
     5.0,
-    92.5,
+    105.0,
     95.0,
-    170.0
+    195.0
    ]
   },
   {
@@ -213,9 +212,9 @@
    "agua": false,
    "retangulo": [
     105.0,
-    92.5,
+    105.0,
     195.0,
-    170.0
+    195.0
    ]
   },
   {
@@ -225,9 +224,9 @@
    "agua": false,
    "retangulo": [
     205.0,
-    92.5,
+    105.0,
     295.0,
-    170.0
+    195.0
    ]
   },
   {
@@ -237,9 +236,9 @@
    "agua": false,
    "retangulo": [
     305.0,
-    92.5,
+    105.0,
     391.0,
-    170.0
+    195.0
    ]
   },
   {
@@ -249,9 +248,9 @@
    "agua": false,
    "retangulo": [
     409.0,
-    92.5,
+    105.0,
     495.0,
-    170.0
+    195.0
    ]
   },
   {
@@ -261,9 +260,9 @@
    "agua": false,
    "retangulo": [
     505.0,
-    92.5,
+    105.0,
     595.0,
-    170.0
+    195.0
    ]
   },
   {
@@ -273,9 +272,9 @@
    "agua": false,
    "retangulo": [
     605.0,
-    92.5,
+    105.0,
     695.0,
-    170.0
+    195.0
    ]
   },
   {
@@ -285,9 +284,9 @@
    "agua": false,
    "retangulo": [
     705.0,
-    92.5,
+    105.0,
     791.0,
-    170.0
+    195.0
    ]
   },
   {
@@ -297,9 +296,9 @@
    "agua": false,
    "retangulo": [
     809.0,
-    92.5,
+    105.0,
     895.0,
-    170.0
+    195.0
    ]
   },
   {
@@ -309,9 +308,9 @@
    "agua": false,
    "retangulo": [
     905.0,
-    92.5,
+    105.0,
     995.0,
-    170.0
+    195.0
    ]
   },
   {
@@ -321,9 +320,9 @@
    "agua": false,
    "retangulo": [
     5.0,
-    180.0,
+    205.0,
     95.0,
-    257.5
+    295.0
    ]
   },
   {
@@ -333,9 +332,9 @@
    "agua": false,
    "retangulo": [
     105.0,
-    180.0,
+    205.0,
     195.0,
-    257.5
+    295.0
    ]
   },
   {
@@ -345,9 +344,9 @@
    "agua": false,
    "retangulo": [
     205.0,
-    180.0,
+    205.0,
     295.0,
-    257.5
+    295.0
    ]
   },
   {
@@ -357,9 +356,9 @@
    "agua": false,
    "retangulo": [
     305.0,
-    180.0,
+    205.0,
     391.0,
-    257.5
+    295.0
    ]
   },
   {
@@ -369,9 +368,9 @@
    "agua": false,
    "retangulo": [
     409.0,
-    180.0,
+    205.0,
     495.0,
-    257.5
+    295.0
    ]
   },
   {
@@ -381,9 +380,9 @@
    "agua": false,
    "retangulo": [
     505.0,
-    180.0,
+    205.0,
     595.0,
-    257.5
+    295.0
    ]
   },
   {
@@ -393,9 +392,9 @@
    "agua": false,
    "retangulo": [
     605.0,
-    180.0,
+    205.0,
     695.0,
-    257.5
+    295.0
    ]
   },
   {
@@ -405,9 +404,9 @@
    "agua": false,
    "retangulo": [
     705.0,
-    180.0,
+    205.0,
     791.0,
-    257.5
+    295.0
    ]
   },
   {
@@ -417,9 +416,9 @@
    "agua": false,
    "retangulo": [
     809.0,
-    180.0,
+    205.0,
     895.0,
-    257.5
+    295.0
    ]
   },
   {
@@ -429,9 +428,9 @@
    "agua": false,
    "retangulo": [
     905.0,
-    180.0,
+    205.0,
     995.0,
-    257.5
+    295.0
    ]
   },
   {
@@ -441,153 +440,153 @@
    "agua": true,
    "retangulo": [
     5.0,
-    267.5,
-    95.0,
-    345.0
-   ]
-  },
-  {
-   "coluna": 1,
-   "linha": 3,
-   "bairro": "cliente",
-   "agua": false,
-   "retangulo": [
-    105.0,
-    267.5,
-    195.0,
-    345.0
-   ]
-  },
-  {
-   "coluna": 2,
-   "linha": 3,
-   "bairro": "cliente",
-   "agua": false,
-   "retangulo": [
-    205.0,
-    267.5,
-    295.0,
-    345.0
-   ]
-  },
-  {
-   "coluna": 3,
-   "linha": 3,
-   "bairro": "cliente",
-   "agua": false,
-   "retangulo": [
     305.0,
-    267.5,
-    391.0,
-    345.0
-   ]
-  },
-  {
-   "coluna": 4,
-   "linha": 3,
-   "bairro": "governanca",
-   "agua": false,
-   "retangulo": [
-    409.0,
-    267.5,
-    495.0,
-    345.0
-   ]
-  },
-  {
-   "coluna": 5,
-   "linha": 3,
-   "bairro": "governanca",
-   "agua": false,
-   "retangulo": [
-    505.0,
-    267.5,
-    595.0,
-    345.0
-   ]
-  },
-  {
-   "coluna": 6,
-   "linha": 3,
-   "bairro": "governanca",
-   "agua": false,
-   "retangulo": [
-    605.0,
-    267.5,
-    695.0,
-    345.0
-   ]
-  },
-  {
-   "coluna": 7,
-   "linha": 3,
-   "bairro": "governanca",
-   "agua": false,
-   "retangulo": [
-    705.0,
-    267.5,
-    791.0,
-    345.0
-   ]
-  },
-  {
-   "coluna": 8,
-   "linha": 3,
-   "bairro": "produtos",
-   "agua": false,
-   "retangulo": [
-    809.0,
-    267.5,
-    895.0,
-    345.0
-   ]
-  },
-  {
-   "coluna": 9,
-   "linha": 3,
-   "bairro": "produtos",
-   "agua": false,
-   "retangulo": [
-    905.0,
-    267.5,
-    995.0,
-    345.0
-   ]
-  },
-  {
-   "coluna": 0,
-   "linha": 4,
-   "bairro": "cliente",
-   "agua": false,
-   "retangulo": [
-    5.0,
-    355.0,
     95.0,
-    428.5
+    395.0
    ]
   },
   {
    "coluna": 1,
-   "linha": 4,
+   "linha": 3,
    "bairro": "cliente",
    "agua": true,
    "retangulo": [
     105.0,
-    355.0,
+    305.0,
     195.0,
-    428.5
+    395.0
+   ]
+  },
+  {
+   "coluna": 2,
+   "linha": 3,
+   "bairro": "cliente",
+   "agua": false,
+   "retangulo": [
+    205.0,
+    305.0,
+    295.0,
+    395.0
+   ]
+  },
+  {
+   "coluna": 3,
+   "linha": 3,
+   "bairro": "cliente",
+   "agua": false,
+   "retangulo": [
+    305.0,
+    305.0,
+    391.0,
+    395.0
+   ]
+  },
+  {
+   "coluna": 4,
+   "linha": 3,
+   "bairro": "governanca",
+   "agua": false,
+   "retangulo": [
+    409.0,
+    305.0,
+    495.0,
+    395.0
+   ]
+  },
+  {
+   "coluna": 5,
+   "linha": 3,
+   "bairro": "governanca",
+   "agua": false,
+   "retangulo": [
+    505.0,
+    305.0,
+    595.0,
+    395.0
+   ]
+  },
+  {
+   "coluna": 6,
+   "linha": 3,
+   "bairro": "governanca",
+   "agua": false,
+   "retangulo": [
+    605.0,
+    305.0,
+    695.0,
+    395.0
+   ]
+  },
+  {
+   "coluna": 7,
+   "linha": 3,
+   "bairro": "governanca",
+   "agua": false,
+   "retangulo": [
+    705.0,
+    305.0,
+    791.0,
+    395.0
+   ]
+  },
+  {
+   "coluna": 8,
+   "linha": 3,
+   "bairro": "produtos",
+   "agua": false,
+   "retangulo": [
+    809.0,
+    305.0,
+    895.0,
+    395.0
+   ]
+  },
+  {
+   "coluna": 9,
+   "linha": 3,
+   "bairro": "produtos",
+   "agua": false,
+   "retangulo": [
+    905.0,
+    305.0,
+    995.0,
+    395.0
+   ]
+  },
+  {
+   "coluna": 0,
+   "linha": 4,
+   "bairro": "cliente",
+   "agua": false,
+   "retangulo": [
+    5.0,
+    405.0,
+    95.0,
+    491.0
+   ]
+  },
+  {
+   "coluna": 1,
+   "linha": 4,
+   "bairro": "cliente",
+   "agua": false,
+   "retangulo": [
+    105.0,
+    405.0,
+    195.0,
+    491.0
    ]
   },
   {
    "coluna": 2,
    "linha": 4,
    "bairro": "cliente",
-   "agua": false,
+   "agua": true,
    "retangulo": [
     205.0,
-    355.0,
+    405.0,
     295.0,
-    428.5
+    491.0
    ]
   },
   {
@@ -597,9 +596,9 @@
    "agua": false,
    "retangulo": [
     305.0,
-    355.0,
+    405.0,
     391.0,
-    428.5
+    491.0
    ]
   },
   {
@@ -609,9 +608,9 @@
    "agua": false,
    "retangulo": [
     409.0,
-    355.0,
+    405.0,
     495.0,
-    428.5
+    491.0
    ]
   },
   {
@@ -621,9 +620,9 @@
    "agua": false,
    "retangulo": [
     505.0,
-    355.0,
+    405.0,
     595.0,
-    428.5
+    491.0
    ]
   },
   {
@@ -633,9 +632,9 @@
    "agua": false,
    "retangulo": [
     605.0,
-    355.0,
+    405.0,
     695.0,
-    428.5
+    491.0
    ]
   },
   {
@@ -645,9 +644,9 @@
    "agua": false,
    "retangulo": [
     705.0,
-    355.0,
+    405.0,
     791.0,
-    428.5
+    491.0
    ]
   },
   {
@@ -657,9 +656,9 @@
    "agua": false,
    "retangulo": [
     809.0,
-    355.0,
+    405.0,
     895.0,
-    428.5
+    491.0
    ]
   },
   {
@@ -669,9 +668,9 @@
    "agua": false,
    "retangulo": [
     905.0,
-    355.0,
+    405.0,
     995.0,
-    428.5
+    491.0
    ]
   },
   {
@@ -681,9 +680,9 @@
    "agua": false,
    "retangulo": [
     5.0,
-    446.5,
+    509.0,
     95.0,
-    520.0
+    595.0
    ]
   },
   {
@@ -693,21 +692,21 @@
    "agua": false,
    "retangulo": [
     105.0,
-    446.5,
+    509.0,
     195.0,
-    520.0
+    595.0
    ]
   },
   {
    "coluna": 2,
    "linha": 5,
    "bairro": "parceiros",
-   "agua": true,
+   "agua": false,
    "retangulo": [
     205.0,
-    446.5,
+    509.0,
     295.0,
-    520.0
+    595.0
    ]
   },
   {
@@ -717,9 +716,9 @@
    "agua": false,
    "retangulo": [
     305.0,
-    446.5,
+    509.0,
     391.0,
-    520.0
+    595.0
    ]
   },
   {
@@ -729,9 +728,9 @@
    "agua": false,
    "retangulo": [
     409.0,
-    446.5,
+    509.0,
     495.0,
-    520.0
+    595.0
    ]
   },
   {
@@ -741,9 +740,9 @@
    "agua": false,
    "retangulo": [
     505.0,
-    446.5,
+    509.0,
     595.0,
-    520.0
+    595.0
    ]
   },
   {
@@ -753,9 +752,9 @@
    "agua": false,
    "retangulo": [
     605.0,
-    446.5,
+    509.0,
     695.0,
-    520.0
+    595.0
    ]
   },
   {
@@ -765,9 +764,9 @@
    "agua": false,
    "retangulo": [
     705.0,
-    446.5,
+    509.0,
     791.0,
-    520.0
+    595.0
    ]
   },
   {
@@ -777,9 +776,9 @@
    "agua": false,
    "retangulo": [
     809.0,
-    446.5,
+    509.0,
     895.0,
-    520.0
+    595.0
    ]
   },
   {
@@ -789,9 +788,9 @@
    "agua": false,
    "retangulo": [
     905.0,
-    446.5,
+    509.0,
     995.0,
-    520.0
+    595.0
    ]
   },
   {
@@ -801,9 +800,9 @@
    "agua": false,
    "retangulo": [
     5.0,
-    530.0,
+    605.0,
     95.0,
-    607.5
+    695.0
    ]
   },
   {
@@ -813,9 +812,9 @@
    "agua": false,
    "retangulo": [
     105.0,
-    530.0,
+    605.0,
     195.0,
-    607.5
+    695.0
    ]
   },
   {
@@ -825,9 +824,9 @@
    "agua": false,
    "retangulo": [
     205.0,
-    530.0,
+    605.0,
     295.0,
-    607.5
+    695.0
    ]
   },
   {
@@ -837,9 +836,9 @@
    "agua": false,
    "retangulo": [
     305.0,
-    530.0,
+    605.0,
     391.0,
-    607.5
+    695.0
    ]
   },
   {
@@ -849,9 +848,9 @@
    "agua": false,
    "retangulo": [
     409.0,
-    530.0,
+    605.0,
     495.0,
-    607.5
+    695.0
    ]
   },
   {
@@ -861,9 +860,9 @@
    "agua": false,
    "retangulo": [
     505.0,
-    530.0,
+    605.0,
     595.0,
-    607.5
+    695.0
    ]
   },
   {
@@ -873,163 +872,43 @@
    "agua": false,
    "retangulo": [
     605.0,
-    530.0,
-    695.0,
-    607.5
-   ]
-  },
-  {
-   "coluna": 7,
-   "linha": 6,
-   "bairro": "pagamentos",
-   "agua": false,
-   "retangulo": [
-    705.0,
-    530.0,
-    791.0,
-    607.5
-   ]
-  },
-  {
-   "coluna": 8,
-   "linha": 6,
-   "bairro": "pagamentos",
-   "agua": false,
-   "retangulo": [
-    809.0,
-    530.0,
-    895.0,
-    607.5
-   ]
-  },
-  {
-   "coluna": 9,
-   "linha": 6,
-   "bairro": "pagamentos",
-   "agua": false,
-   "retangulo": [
-    905.0,
-    530.0,
-    995.0,
-    607.5
-   ]
-  },
-  {
-   "coluna": 0,
-   "linha": 7,
-   "bairro": "parceiros",
-   "agua": false,
-   "retangulo": [
-    5.0,
-    617.5,
-    95.0,
-    695.0
-   ]
-  },
-  {
-   "coluna": 1,
-   "linha": 7,
-   "bairro": "parceiros",
-   "agua": false,
-   "retangulo": [
-    105.0,
-    617.5,
-    195.0,
-    695.0
-   ]
-  },
-  {
-   "coluna": 2,
-   "linha": 7,
-   "bairro": "parceiros",
-   "agua": true,
-   "retangulo": [
-    205.0,
-    617.5,
-    295.0,
-    695.0
-   ]
-  },
-  {
-   "coluna": 3,
-   "linha": 7,
-   "bairro": "parceiros",
-   "agua": false,
-   "retangulo": [
-    305.0,
-    617.5,
-    391.0,
-    695.0
-   ]
-  },
-  {
-   "coluna": 4,
-   "linha": 7,
-   "bairro": "parceiros",
-   "agua": false,
-   "retangulo": [
-    409.0,
-    617.5,
-    495.0,
-    695.0
-   ]
-  },
-  {
-   "coluna": 5,
-   "linha": 7,
-   "bairro": "parceiros",
-   "agua": false,
-   "retangulo": [
-    505.0,
-    617.5,
-    595.0,
-    695.0
-   ]
-  },
-  {
-   "coluna": 6,
-   "linha": 7,
-   "bairro": "parceiros",
-   "agua": false,
-   "retangulo": [
     605.0,
-    617.5,
     695.0,
     695.0
    ]
   },
   {
    "coluna": 7,
-   "linha": 7,
+   "linha": 6,
    "bairro": "pagamentos",
    "agua": false,
    "retangulo": [
     705.0,
-    617.5,
+    605.0,
     791.0,
     695.0
    ]
   },
   {
    "coluna": 8,
-   "linha": 7,
+   "linha": 6,
    "bairro": "pagamentos",
    "agua": false,
    "retangulo": [
     809.0,
-    617.5,
+    605.0,
     895.0,
     695.0
    ]
   },
   {
    "coluna": 9,
-   "linha": 7,
+   "linha": 6,
    "bairro": "pagamentos",
    "agua": false,
    "retangulo": [
     905.0,
-    617.5,
+    605.0,
     995.0,
     695.0
    ]
@@ -1038,777 +917,777 @@
  "nos": {
   "adequacao-cliente-vulneravel": [
    474.5,
-   239.1
+   273.5
   ],
   "adequacao-cobertura-x-valor": [
-   526.5,
-   110.9
+   626.5,
+   226.5
   ],
   "adequacao-necessidade-declarada": [
    526.5,
-   151.6
+   173.5
   ],
   "adequacao-renda-x-premio": [
    573.5,
-   151.6
+   173.5
   ],
   "adequacao-sem-duplicidade": [
    526.5,
-   285.9
+   326.5
   ],
   "alcada-automatica": [
    673.5,
-   326.6
+   373.5
   ],
   "alcada-comite": [
    626.5,
-   372.4
+   273.5
   ],
   "alcada-especialista": [
    673.5,
-   285.9
+   326.5
   ],
   "api-cotacao-ancora": [
-   226.5,
-   589.1
+   273.5,
+   626.5
   ],
   "api-cotacao-farol": [
-   73.5,
-   589.1
+   173.5,
+   626.5
   ],
   "api-cotacao-horizonte": [
-   626.5,
-   502.6
+   526.5,
+   574.5
   ],
   "api-emissao-ancora": [
-   725.5,
-   635.9
+   770.5,
+   626.5
   ],
   "api-emissao-farol": [
    874.5,
-   676.6
+   673.5
   ],
   "api-emissao-horizonte": [
-   973.5,
-   589.1
+   926.5,
+   626.5
   ],
   "area-campinas": [
    429.5,
-   151.6
+   173.5
   ],
   "area-litoral-norte": [
    673.5,
-   23.4
+   26.5
   ],
   "area-sp-centro": [
    626.5,
-   411.1
+   470.5
   ],
   "area-sp-zona-leste": [
    429.5,
-   285.9
+   326.5
   ],
   "area-sp-zona-oeste": [
    770.5,
-   64.1
+   73.5
   ],
   "area-sp-zona-sul": [
    673.5,
-   411.1
+   470.5
   ],
   "area-varzea-tiete": [
-   626.5,
-   239.1
+   573.5,
+   273.5
   ],
   "assistencia-chaveiro": [
    829.5,
-   239.1
+   273.5
   ],
   "assistencia-desentupimento": [
    874.5,
-   326.6
+   373.5
   ],
   "assistencia-eletricista": [
    973.5,
-   198.4
+   226.5
   ],
   "assistencia-encanador": [
    829.5,
-   198.4
+   226.5
   ],
   "assistencia-guincho": [
    926.5,
-   64.1
+   73.5
   ],
   "assistencia-pet": [
    926.5,
-   326.6
+   373.5
   ],
   "assistencia-vidraceiro": [
    829.5,
-   151.6
+   173.5
   ],
   "base-consentimento": [
    673.5,
-   198.4
+   226.5
   ],
   "base-execucao-contrato": [
    725.5,
-   151.6
+   173.5
   ],
   "base-legitimo-interesse": [
    626.5,
-   151.6
+   173.5
   ],
   "base-obrigacao-legal": [
    673.5,
-   110.9
+   126.5
   ],
   "base-protecao-credito": [
    725.5,
-   110.9
+   126.5
   ],
   "canal-agencia": [
    26.5,
-   372.4
+   425.5
   ],
   "canal-app": [
    73.5,
-   372.4
+   425.5
   ],
   "canal-central": [
    370.5,
-   198.4
+   226.5
   ],
   "canal-internet-banking": [
    173.5,
-   64.1
+   73.5
   ],
   "cliente-ana": [
    273.5,
-   198.4
+   226.5
   ],
   "cliente-bruno": [
    370.5,
-   285.9
+   326.5
   ],
   "cliente-carla": [
    73.5,
-   110.9
+   126.5
   ],
   "cliente-diego": [
    173.5,
-   326.6
+   425.5
   ],
   "cliente-elisa": [
    26.5,
-   239.1
+   273.5
   ],
   "cliente-fabio": [
    273.5,
-   64.1
+   73.5
   ],
   "cliente-gabriela": [
    273.5,
-   372.4
+   373.5
   ],
   "cliente-helena": [
    126.5,
-   239.1
+   273.5
   ],
   "cobertura-alagamento": [
    874.5,
-   151.6
+   173.5
   ],
   "cobertura-auto-colisao": [
    973.5,
-   23.4
+   26.5
   ],
   "cobertura-auto-terceiros": [
    874.5,
-   23.4
+   26.5
   ],
   "cobertura-danos-eletricos": [
    926.5,
-   239.1
+   273.5
   ],
   "cobertura-desmoronamento": [
    829.5,
-   326.6
+   373.5
   ],
   "cobertura-incendio": [
    926.5,
-   285.9
+   326.5
   ],
   "cobertura-perda-aluguel": [
    973.5,
-   285.9
+   326.5
   ],
   "cobertura-rc-familiar": [
    973.5,
-   239.1
+   273.5
   ],
   "cobertura-roubo": [
    926.5,
-   198.4
+   226.5
   ],
   "cobertura-vendaval": [
    829.5,
-   285.9
+   326.5
   ],
   "cobertura-vida-invalidez": [
    973.5,
-   372.4
+   425.5
   ],
   "cobertura-vida-morte": [
    926.5,
-   372.4
+   425.5
   ],
   "cobertura-vidros": [
    926.5,
-   151.6
+   173.5
   ],
   "consentimento-ana-compartilhamento": [
    273.5,
-   151.6
+   173.5
   ],
   "consentimento-ana-oferta": [
    226.5,
-   198.4
+   226.5
   ],
   "consentimento-bruno-oferta": [
    325.5,
-   285.9
+   326.5
   ],
   "consentimento-carla-oferta": [
    126.5,
-   110.9
+   126.5
   ],
   "consentimento-diego-oferta": [
-   126.5,
-   326.6
+   173.5,
+   470.5
   ],
   "consentimento-elisa-oferta": [
-   26.5,
-   198.4
+   73.5,
+   273.5
   ],
   "consentimento-fabio-oferta": [
    226.5,
-   64.1
+   73.5
   ],
   "consentimento-gabriela-oferta": [
-   273.5,
-   326.6
+   226.5,
+   373.5
   ],
   "consentimento-helena-oferta": [
    173.5,
-   239.1
+   273.5
   ],
   "conta-ana-corrente": [
    226.5,
-   151.6
+   173.5
   ],
   "conta-ana-poupanca": [
    325.5,
-   198.4
+   226.5
   ],
   "conta-bruno": [
    370.5,
-   326.6
+   373.5
   ],
   "conta-carla": [
    73.5,
-   151.6
+   173.5
   ],
   "conta-diego": [
-   226.5,
-   372.4
+   126.5,
+   425.5
   ],
   "conta-elisa": [
-   73.5,
-   239.1
+   26.5,
+   226.5
   ],
   "conta-fabio": [
    273.5,
-   23.4
+   26.5
   ],
   "conta-gabriela": [
-   273.5,
-   411.1
+   325.5,
+   425.5
   ],
   "conta-helena": [
    126.5,
-   285.9
+   226.5
   ],
   "contratacao-seguro-residencial": [
    200.0,
-   218.8
+   250.0
   ],
   "contratado-ana-auto": [
    273.5,
-   239.1
+   273.5
   ],
   "contratado-ana-cartao": [
    325.5,
-   151.6
+   173.5
   ],
   "contratado-fabio-cartao": [
    226.5,
-   23.4
+   26.5
   ],
   "contratado-gabriela-vida": [
-   226.5,
-   326.6
+   325.5,
+   373.5
   ],
   "especialista-joana": [
    370.5,
-   463.9
+   529.5
   ],
   "especialista-marina": [
    474.5,
-   676.6
+   673.5
   ],
   "especialista-rafael": [
-   526.5,
-   635.9
+   474.5,
+   626.5
   ],
   "especialista-tiago": [
-   73.5,
-   463.9
+   173.5,
+   529.5
   ],
   "exigencia-registro-aceite": [
    573.5,
-   23.4
+   26.5
   ],
   "exigencia-registro-apolice": [
    573.5,
-   64.1
+   73.5
   ],
   "exigencia-registro-consentimento": [
-   626.5,
-   198.4
+   673.5,
+   273.5
   ],
   "exigencia-trilha-ia": [
    429.5,
-   372.4
+   425.5
   ],
   "exigencia-vistoria-previa": [
-   573.5,
-   239.1
+   626.5,
+   425.5
   ],
   "fila-aprovacao-alcada": [
-   526.5,
-   676.6
+   429.5,
+   673.5
   ],
   "fila-atendimento-geral": [
-   73.5,
-   502.6
+   173.5,
+   574.5
   ],
   "fila-vistoria": [
    325.5,
-   463.9
+   529.5
   ],
   "finalidade-cobranca": [
    770.5,
-   151.6
+   173.5
   ],
   "finalidade-compartilhamento-seguradoras": [
    626.5,
-   110.9
+   126.5
   ],
   "finalidade-oferta-personalizada": [
    673.5,
-   239.1
+   73.5
   ],
   "franquia-alagamento": [
    874.5,
-   110.9
+   126.5
   ],
   "franquia-auto-colisao": [
    973.5,
-   64.1
+   73.5
   ],
   "franquia-danos-eletricos": [
    973.5,
-   326.6
+   373.5
   ],
   "franquia-roubo": [
    874.5,
-   372.4
+   425.5
   ],
   "franquia-vendaval": [
    829.5,
-   372.4
+   425.5
   ],
   "franquia-vidros": [
    973.5,
-   151.6
+   173.5
   ],
   "imovel-ana": [
    273.5,
-   110.9
+   126.5
   ],
   "imovel-bruno": [
-   325.5,
-   326.6
+   370.5,
+   273.5
   ],
   "imovel-carla": [
    73.5,
-   64.1
+   73.5
   ],
   "imovel-diego": [
-   226.5,
-   411.1
+   126.5,
+   470.5
   ],
   "imovel-elisa": [
    73.5,
-   198.4
+   226.5
   ],
   "imovel-fabio": [
    226.5,
-   110.9
+   126.5
   ],
   "imovel-gabriela": [
-   325.5,
-   372.4
+   273.5,
+   326.5
   ],
   "imovel-helena": [
    173.5,
-   285.9
+   226.5
   ],
   "norma-cdc": [
    573.5,
-   198.4
+   226.5
   ],
   "norma-governanca-ia": [
    474.5,
-   326.6
+   373.5
   ],
   "norma-lgpd": [
    673.5,
-   151.6
+   173.5
   ],
   "norma-registro-operacoes": [
    526.5,
-   23.4
+   26.5
   ],
   "norma-seguros-danos": [
    626.5,
-   285.9
+   326.5
   ],
   "norma-suitability": [
-   526.5,
-   239.1
+   474.5,
+   226.5
   ],
   "pagamento-cartao-credito": [
    874.5,
-   502.6
+   574.5
   ],
   "pagamento-debito-em-conta": [
    829.5,
-   548.4
+   529.5
   ],
   "pagamento-pix": [
-   874.5,
-   548.4
+   829.5,
+   626.5
   ],
   "parada-adequacao": [
    900.0,
-   175.0
+   200.0
   ],
   "parada-aprovacao-humana": [
-   300.0,
-   612.5
+   400.0,
+   600.0
   ],
   "parada-consentimento": [
    600.0,
-   175.0
+   200.0
   ],
   "parada-cotacao": [
    300.0,
-   525.0
+   600.0
   ],
   "parada-elegibilidade": [
    600.0,
-   262.5
+   300.0
   ],
   "parada-emissao": [
-   800.0,
-   612.5
+   900.0,
+   600.0
   ],
   "parada-identificacao": [
    200.0,
-   262.5
+   300.0
   ],
   "parada-intencao": [
    200.0,
-   175.0
+   200.0
   ],
   "parada-pagamento": [
    800.0,
-   525.0
+   600.0
   ],
   "parada-proposta": [
    900.0,
-   262.5
+   300.0
   ],
   "parada-vistoria": [
-   400.0,
-   525.0
+   300.0,
+   500.0
   ],
   "politica-alcadas": [
    626.5,
-   326.6
+   373.5
   ],
   "politica-oferta-responsavel": [
    526.5,
-   198.4
+   226.5
   ],
   "politica-pld": [
    429.5,
-   110.9
+   126.5
   ],
   "politica-privacidade": [
    725.5,
-   198.4
+   226.5
   ],
   "politica-registro-aceite": [
    526.5,
-   64.1
+   73.5
   ],
   "politica-uso-de-ia": [
    474.5,
-   372.4
+   425.5
   ],
   "politica-vistoria-areas-risco": [
    573.5,
-   285.9
+   326.5
   ],
   "produto-auto-farol": [
    926.5,
-   23.4
+   26.5
   ],
   "produto-residencial-ancora": [
    874.5,
-   198.4
+   226.5
   ],
   "produto-residencial-farol": [
    874.5,
-   239.1
+   273.5
   ],
   "produto-residencial-horizonte": [
    874.5,
-   285.9
+   326.5
   ],
   "produto-vida-horizonte": [
    973.5,
-   411.1
+   470.5
   ],
   "regra-carencia-pos-sinistro": [
    526.5,
-   326.6
+   373.5
   ],
   "regra-construcao-alvenaria": [
    770.5,
-   239.1
+   273.5
   ],
   "regra-imovel-ocupado": [
    573.5,
-   411.1
+   470.5
   ],
   "regra-imovel-residencial": [
-   673.5,
-   372.4
+   725.5,
+   326.5
   ],
   "regra-regiao-atendida": [
-   725.5,
-   285.9
+   673.5,
+   425.5
   ],
   "regra-sem-restricao-cadastral": [
-   474.5,
-   198.4
+   526.5,
+   273.5
   ],
   "regra-valor-maximo-imovel": [
    725.5,
-   326.6
+   373.5
   ],
   "regra-vistoria-area-risco": [
    573.5,
-   326.6
+   373.5
   ],
   "relacionamento-ana": [
    325.5,
-   239.1
+   273.5
   ],
   "relacionamento-bruno": [
    370.5,
-   239.1
+   425.5
   ],
   "relacionamento-carla": [
    126.5,
-   64.1
+   73.5
   ],
   "relacionamento-diego": [
    73.5,
-   411.1
+   470.5
   ],
   "relacionamento-elisa": [
    26.5,
-   151.6
+   173.5
   ],
   "relacionamento-fabio": [
    325.5,
-   64.1
+   73.5
   ],
   "relacionamento-gabriela": [
    325.5,
-   411.1
+   470.5
   ],
   "relacionamento-helena": [
-   126.5,
-   198.4
+   226.5,
+   273.5
   ],
   "rota-assistida": [
    200.0,
-   218.8
+   250.0
   ],
   "rota-economica": [
    200.0,
-   218.8
+   250.0
   ],
   "rota-rapida": [
    200.0,
-   218.8
+   250.0
   ],
   "score-credito": [
    474.5,
-   151.6
+   173.5
   ],
   "score-propensao-seguro": [
-   573.5,
-   110.9
+   526.5,
+   126.5
   ],
   "score-relacionamento": [
    770.5,
-   198.4
+   226.5
   ],
   "score-risco-imovel": [
    573.5,
-   372.4
+   425.5
   ],
   "seguradora-ancora": [
-   173.5,
-   635.9
+   273.5,
+   673.5
   ],
   "seguradora-farol": [
-   126.5,
-   589.1
+   226.5,
+   626.5
   ],
   "seguradora-horizonte": [
-   673.5,
-   502.6
+   573.5,
+   574.5
   ],
   "sistema-cofre-consentimentos": [
    770.5,
-   326.6
+   373.5
   ],
   "sistema-core-bancario": [
    126.5,
-   23.4
+   26.5
   ],
   "sistema-crm": [
    173.5,
-   23.4
+   26.5
   ],
   "sistema-gateway-pagamentos": [
    829.5,
-   502.6
+   574.5
   ],
   "sistema-motor-risco": [
    429.5,
-   198.4
+   226.5
   ],
   "sistema-registro-operacoes": [
    626.5,
-   23.4
+   26.5
   ],
   "sistema-vistoria": [
-   673.5,
-   589.1
+   573.5,
+   626.5
   ],
   "sla-ancora": [
-   273.5,
-   589.1
+   325.5,
+   626.5
   ],
   "sla-farol": [
-   73.5,
-   548.4
+   126.5,
+   626.5
   ],
   "sla-horizonte": [
-   626.5,
-   548.4
+   526.5,
+   529.5
   ]
  },
  "portas": {
   "adequacao-cliente-vulneravel": [
    474.5,
-   262.5
+   300.0
   ],
   "adequacao-cobertura-x-valor": [
-   526.5,
-   87.5
+   626.5,
+   200.0
   ],
   "adequacao-necessidade-declarada": [
    526.5,
-   175.0
+   200.0
   ],
   "adequacao-renda-x-premio": [
    573.5,
-   175.0
+   200.0
   ],
   "adequacao-sem-duplicidade": [
    526.5,
-   262.5
+   300.0
   ],
   "alcada-automatica": [
    673.5,
-   350.0
+   400.0
   ],
   "alcada-comite": [
    626.5,
-   350.0
+   300.0
   ],
   "alcada-especialista": [
    673.5,
-   262.5
+   300.0
   ],
   "api-cotacao-ancora": [
-   226.5,
-   612.5
+   273.5,
+   600.0
   ],
   "api-cotacao-farol": [
-   73.5,
-   612.5
+   173.5,
+   600.0
   ],
   "api-cotacao-horizonte": [
-   626.5,
-   525.0
+   526.5,
+   600.0
   ],
   "api-emissao-ancora": [
-   725.5,
-   612.5
+   770.5,
+   600.0
   ],
   "api-emissao-farol": [
    874.5,
    700.0
   ],
   "api-emissao-horizonte": [
-   973.5,
-   612.5
+   926.5,
+   600.0
   ],
   "area-campinas": [
    429.5,
-   175.0
+   200.0
   ],
   "area-litoral-norte": [
    673.5,
@@ -1816,123 +1695,123 @@
   ],
   "area-sp-centro": [
    626.5,
-   437.5
+   500.0
   ],
   "area-sp-zona-leste": [
    429.5,
-   262.5
+   300.0
   ],
   "area-sp-zona-oeste": [
    770.5,
-   87.5
+   100.0
   ],
   "area-sp-zona-sul": [
    673.5,
-   437.5
+   500.0
   ],
   "area-varzea-tiete": [
-   626.5,
-   262.5
+   573.5,
+   300.0
   ],
   "assistencia-chaveiro": [
    829.5,
-   262.5
+   300.0
   ],
   "assistencia-desentupimento": [
    874.5,
-   350.0
+   400.0
   ],
   "assistencia-eletricista": [
    973.5,
-   175.0
+   200.0
   ],
   "assistencia-encanador": [
    829.5,
-   175.0
+   200.0
   ],
   "assistencia-guincho": [
    926.5,
-   87.5
+   100.0
   ],
   "assistencia-pet": [
    926.5,
-   350.0
+   400.0
   ],
   "assistencia-vidraceiro": [
    829.5,
-   175.0
+   200.0
   ],
   "base-consentimento": [
    673.5,
-   175.0
+   200.0
   ],
   "base-execucao-contrato": [
    725.5,
-   175.0
+   200.0
   ],
   "base-legitimo-interesse": [
    626.5,
-   175.0
+   200.0
   ],
   "base-obrigacao-legal": [
    673.5,
-   87.5
+   100.0
   ],
   "base-protecao-credito": [
    725.5,
-   87.5
+   100.0
   ],
   "canal-agencia": [
    26.5,
-   350.0
+   400.0
   ],
   "canal-app": [
    73.5,
-   350.0
+   400.0
   ],
   "canal-central": [
    370.5,
-   175.0
+   200.0
   ],
   "canal-internet-banking": [
    173.5,
-   87.5
+   100.0
   ],
   "cliente-ana": [
    273.5,
-   175.0
+   200.0
   ],
   "cliente-bruno": [
    370.5,
-   262.5
+   300.0
   ],
   "cliente-carla": [
    73.5,
-   87.5
+   100.0
   ],
   "cliente-diego": [
    173.5,
-   350.0
+   400.0
   ],
   "cliente-elisa": [
    26.5,
-   262.5
+   300.0
   ],
   "cliente-fabio": [
    273.5,
-   87.5
+   100.0
   ],
   "cliente-gabriela": [
    273.5,
-   350.0
+   400.0
   ],
   "cliente-helena": [
    126.5,
-   262.5
+   300.0
   ],
   "cobertura-alagamento": [
    874.5,
-   175.0
+   200.0
   ],
   "cobertura-auto-colisao": [
    973.5,
@@ -1944,147 +1823,147 @@
   ],
   "cobertura-danos-eletricos": [
    926.5,
-   262.5
+   300.0
   ],
   "cobertura-desmoronamento": [
    829.5,
-   350.0
+   400.0
   ],
   "cobertura-incendio": [
    926.5,
-   262.5
+   300.0
   ],
   "cobertura-perda-aluguel": [
    973.5,
-   262.5
+   300.0
   ],
   "cobertura-rc-familiar": [
    973.5,
-   262.5
+   300.0
   ],
   "cobertura-roubo": [
    926.5,
-   175.0
+   200.0
   ],
   "cobertura-vendaval": [
    829.5,
-   262.5
+   300.0
   ],
   "cobertura-vida-invalidez": [
    973.5,
-   350.0
+   400.0
   ],
   "cobertura-vida-morte": [
    926.5,
-   350.0
+   400.0
   ],
   "cobertura-vidros": [
    926.5,
-   175.0
+   200.0
   ],
   "consentimento-ana-compartilhamento": [
    273.5,
-   175.0
+   200.0
   ],
   "consentimento-ana-oferta": [
    226.5,
-   175.0
+   200.0
   ],
   "consentimento-bruno-oferta": [
    325.5,
-   262.5
+   300.0
   ],
   "consentimento-carla-oferta": [
    126.5,
-   87.5
+   100.0
   ],
   "consentimento-diego-oferta": [
-   126.5,
-   350.0
+   173.5,
+   500.0
   ],
   "consentimento-elisa-oferta": [
-   26.5,
-   175.0
+   73.5,
+   300.0
   ],
   "consentimento-fabio-oferta": [
    226.5,
-   87.5
+   100.0
   ],
   "consentimento-gabriela-oferta": [
-   273.5,
-   350.0
+   226.5,
+   400.0
   ],
   "consentimento-helena-oferta": [
    173.5,
-   262.5
+   300.0
   ],
   "conta-ana-corrente": [
    226.5,
-   175.0
+   200.0
   ],
   "conta-ana-poupanca": [
    325.5,
-   175.0
+   200.0
   ],
   "conta-bruno": [
    370.5,
-   350.0
+   400.0
   ],
   "conta-carla": [
    73.5,
-   175.0
+   200.0
   ],
   "conta-diego": [
-   226.5,
-   350.0
+   126.5,
+   400.0
   ],
   "conta-elisa": [
-   73.5,
-   262.5
+   26.5,
+   200.0
   ],
   "conta-fabio": [
    273.5,
    0.0
   ],
   "conta-gabriela": [
-   273.5,
-   437.5
+   325.5,
+   400.0
   ],
   "conta-helena": [
    126.5,
-   262.5
+   200.0
   ],
   "contratado-ana-auto": [
    273.5,
-   262.5
+   300.0
   ],
   "contratado-ana-cartao": [
    325.5,
-   175.0
+   200.0
   ],
   "contratado-fabio-cartao": [
    226.5,
    0.0
   ],
   "contratado-gabriela-vida": [
-   226.5,
-   350.0
+   325.5,
+   400.0
   ],
   "especialista-joana": [
    370.5,
-   437.5
+   500.0
   ],
   "especialista-marina": [
    474.5,
    700.0
   ],
   "especialista-rafael": [
-   526.5,
-   612.5
+   474.5,
+   600.0
   ],
   "especialista-tiago": [
-   73.5,
-   437.5
+   173.5,
+   500.0
   ],
   "exigencia-registro-aceite": [
    573.5,
@@ -2092,111 +1971,111 @@
   ],
   "exigencia-registro-apolice": [
    573.5,
-   87.5
+   100.0
   ],
   "exigencia-registro-consentimento": [
-   626.5,
-   175.0
+   673.5,
+   300.0
   ],
   "exigencia-trilha-ia": [
    429.5,
-   350.0
+   400.0
   ],
   "exigencia-vistoria-previa": [
-   573.5,
-   262.5
+   626.5,
+   400.0
   ],
   "fila-aprovacao-alcada": [
-   526.5,
+   429.5,
    700.0
   ],
   "fila-atendimento-geral": [
-   73.5,
-   525.0
+   173.5,
+   600.0
   ],
   "fila-vistoria": [
    325.5,
-   437.5
+   500.0
   ],
   "finalidade-cobranca": [
    770.5,
-   175.0
+   200.0
   ],
   "finalidade-compartilhamento-seguradoras": [
    626.5,
-   87.5
+   100.0
   ],
   "finalidade-oferta-personalizada": [
    673.5,
-   262.5
+   100.0
   ],
   "franquia-alagamento": [
    874.5,
-   87.5
+   100.0
   ],
   "franquia-auto-colisao": [
    973.5,
-   87.5
+   100.0
   ],
   "franquia-danos-eletricos": [
    973.5,
-   350.0
+   400.0
   ],
   "franquia-roubo": [
    874.5,
-   350.0
+   400.0
   ],
   "franquia-vendaval": [
    829.5,
-   350.0
+   400.0
   ],
   "franquia-vidros": [
    973.5,
-   175.0
+   200.0
   ],
   "imovel-ana": [
    273.5,
-   87.5
+   100.0
   ],
   "imovel-bruno": [
-   325.5,
-   350.0
+   370.5,
+   300.0
   ],
   "imovel-carla": [
    73.5,
-   87.5
+   100.0
   ],
   "imovel-diego": [
-   226.5,
-   437.5
+   126.5,
+   500.0
   ],
   "imovel-elisa": [
    73.5,
-   175.0
+   200.0
   ],
   "imovel-fabio": [
    226.5,
-   87.5
+   100.0
   ],
   "imovel-gabriela": [
-   325.5,
-   350.0
+   273.5,
+   300.0
   ],
   "imovel-helena": [
    173.5,
-   262.5
+   200.0
   ],
   "norma-cdc": [
    573.5,
-   175.0
+   200.0
   ],
   "norma-governanca-ia": [
    474.5,
-   350.0
+   400.0
   ],
   "norma-lgpd": [
    673.5,
-   175.0
+   200.0
   ],
   "norma-registro-operacoes": [
    526.5,
@@ -2204,95 +2083,95 @@
   ],
   "norma-seguros-danos": [
    626.5,
-   262.5
+   300.0
   ],
   "norma-suitability": [
-   526.5,
-   262.5
+   474.5,
+   200.0
   ],
   "pagamento-cartao-credito": [
    874.5,
-   525.0
+   600.0
   ],
   "pagamento-debito-em-conta": [
    829.5,
-   525.0
+   500.0
   ],
   "pagamento-pix": [
-   874.5,
-   525.0
+   829.5,
+   600.0
   ],
   "parada-adequacao": [
    900.0,
-   175.0
+   200.0
   ],
   "parada-aprovacao-humana": [
-   300.0,
-   612.5
+   400.0,
+   600.0
   ],
   "parada-consentimento": [
    600.0,
-   175.0
+   200.0
   ],
   "parada-cotacao": [
    300.0,
-   525.0
+   600.0
   ],
   "parada-elegibilidade": [
    600.0,
-   262.5
+   300.0
   ],
   "parada-emissao": [
-   800.0,
-   612.5
+   900.0,
+   600.0
   ],
   "parada-identificacao": [
    200.0,
-   262.5
+   300.0
   ],
   "parada-intencao": [
    200.0,
-   175.0
+   200.0
   ],
   "parada-pagamento": [
    800.0,
-   525.0
+   600.0
   ],
   "parada-proposta": [
    900.0,
-   262.5
+   300.0
   ],
   "parada-vistoria": [
-   400.0,
-   525.0
+   300.0,
+   500.0
   ],
   "politica-alcadas": [
    626.5,
-   350.0
+   400.0
   ],
   "politica-oferta-responsavel": [
    526.5,
-   175.0
+   200.0
   ],
   "politica-pld": [
    429.5,
-   87.5
+   100.0
   ],
   "politica-privacidade": [
    725.5,
-   175.0
+   200.0
   ],
   "politica-registro-aceite": [
    526.5,
-   87.5
+   100.0
   ],
   "politica-uso-de-ia": [
    474.5,
-   350.0
+   400.0
   ],
   "politica-vistoria-areas-risco": [
    573.5,
-   262.5
+   300.0
   ],
   "produto-auto-farol": [
    926.5,
@@ -2300,115 +2179,115 @@
   ],
   "produto-residencial-ancora": [
    874.5,
-   175.0
+   200.0
   ],
   "produto-residencial-farol": [
    874.5,
-   262.5
+   300.0
   ],
   "produto-residencial-horizonte": [
    874.5,
-   262.5
+   300.0
   ],
   "produto-vida-horizonte": [
    973.5,
-   437.5
+   500.0
   ],
   "regra-carencia-pos-sinistro": [
    526.5,
-   350.0
+   400.0
   ],
   "regra-construcao-alvenaria": [
    770.5,
-   262.5
+   300.0
   ],
   "regra-imovel-ocupado": [
    573.5,
-   437.5
+   500.0
   ],
   "regra-imovel-residencial": [
-   673.5,
-   350.0
+   725.5,
+   300.0
   ],
   "regra-regiao-atendida": [
-   725.5,
-   262.5
+   673.5,
+   400.0
   ],
   "regra-sem-restricao-cadastral": [
-   474.5,
-   175.0
+   526.5,
+   300.0
   ],
   "regra-valor-maximo-imovel": [
    725.5,
-   350.0
+   400.0
   ],
   "regra-vistoria-area-risco": [
    573.5,
-   350.0
+   400.0
   ],
   "relacionamento-ana": [
    325.5,
-   262.5
+   300.0
   ],
   "relacionamento-bruno": [
    370.5,
-   262.5
+   400.0
   ],
   "relacionamento-carla": [
    126.5,
-   87.5
+   100.0
   ],
   "relacionamento-diego": [
    73.5,
-   437.5
+   500.0
   ],
   "relacionamento-elisa": [
    26.5,
-   175.0
+   200.0
   ],
   "relacionamento-fabio": [
    325.5,
-   87.5
+   100.0
   ],
   "relacionamento-gabriela": [
    325.5,
-   437.5
+   500.0
   ],
   "relacionamento-helena": [
-   126.5,
-   175.0
+   226.5,
+   300.0
   ],
   "score-credito": [
    474.5,
-   175.0
+   200.0
   ],
   "score-propensao-seguro": [
-   573.5,
-   87.5
+   526.5,
+   100.0
   ],
   "score-relacionamento": [
    770.5,
-   175.0
+   200.0
   ],
   "score-risco-imovel": [
    573.5,
-   350.0
+   400.0
   ],
   "seguradora-ancora": [
-   173.5,
-   612.5
+   273.5,
+   700.0
   ],
   "seguradora-farol": [
-   126.5,
-   612.5
+   226.5,
+   600.0
   ],
   "seguradora-horizonte": [
-   673.5,
-   525.0
+   573.5,
+   600.0
   ],
   "sistema-cofre-consentimentos": [
    770.5,
-   350.0
+   400.0
   ],
   "sistema-core-bancario": [
    126.5,
@@ -2420,31 +2299,31 @@
   ],
   "sistema-gateway-pagamentos": [
    829.5,
-   525.0
+   600.0
   ],
   "sistema-motor-risco": [
    429.5,
-   175.0
+   200.0
   ],
   "sistema-registro-operacoes": [
    626.5,
    0.0
   ],
   "sistema-vistoria": [
-   673.5,
-   612.5
+   573.5,
+   600.0
   ],
   "sla-ancora": [
-   273.5,
-   612.5
+   325.5,
+   600.0
   ],
   "sla-farol": [
-   73.5,
-   525.0
+   126.5,
+   600.0
   ],
   "sla-horizonte": [
-   626.5,
-   525.0
+   526.5,
+   500.0
   ]
  }
 }

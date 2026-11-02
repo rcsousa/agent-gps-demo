@@ -22,6 +22,7 @@ ARQUIVO_LAYOUT = "layout.json"
 VERSAO = 2
 FOLGA_ENTRE_LOTES = 4
 DISTANCIA_DO_RIO = 40  # quadras com o centro mais perto que isso do rio viram água
+FOLGA_DE_LOTES = 1.4  # num bairro com poucos lugares, eles ocupam a área de ~1,4 lote cada
 SEMENTE = 7
 # Lugares que não são construções: as paradas viram placas; rotas e jornada não aparecem.
 TIPOS_SEM_LOTE = {"Parada", "Rota", "Jornada"}
@@ -141,10 +142,18 @@ def gerar_layout(ontologia: Ontologia) -> dict:
             grafo, seed=SEMENTE, k=1.2 / math.sqrt(max(len(construcoes), 1)), iterations=200
         )
         livres = list(lotes)
+        # Bairro com poucos lugares: as construções se juntam em volta do centro da terra firme,
+        # e os lotes da borda viram praças (em vez de construções soltas pelo bairro todo).
+        terra = (
+            sum(lote["centro"][0] for lote in lotes) / len(lotes),
+            sum(lote["centro"][1] for lote in lotes) / len(lotes),
+        )
+        aperto = min(1.0, math.sqrt(len(construcoes) * FOLGA_DE_LOTES / len(lotes)))
         # Ordem estável: os lugares mais conectados escolhem lote primeiro.
         for ident in sorted(construcoes, key=lambda i: (-grafo.degree(i), i)):
             px, py = posicoes[ident]
-            alvo = (x0 + (px + 1) / 2 * (x1 - x0), y0 + (py + 1) / 2 * (y1 - y0))
+            bruto = (x0 + (px + 1) / 2 * (x1 - x0), y0 + (py + 1) / 2 * (y1 - y0))
+            alvo = (terra[0] + (bruto[0] - terra[0]) * aperto, terra[1] + (bruto[1] - terra[1]) * aperto)
             lote = min(livres, key=lambda lote: (math.dist(lote["centro"], alvo), lote["centro"]))
             livres.remove(lote)
             nos[ident] = list(lote["centro"])
