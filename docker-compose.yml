@@ -243,6 +243,15 @@ services:
       web: { condition: service_healthy }
       simulator: { condition: service_healthy }
 
+  # docker compose --profile test run --rm --build e2e   (navegador; usa o roteiro, sem tokens)
+  e2e:
+    profiles: [test]
+    build: { context: services/e2e }
+    networks: [bussola]
+    depends_on:
+      web: { condition: service_healthy }
+      simulator: { condition: service_healthy }
+
 networks:
   bussola:
 
