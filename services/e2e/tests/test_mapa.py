@@ -1,16 +1,16 @@
-"""Modo Mapa: a cidade em grade (uma construção por lugar do grafo) e o robô andando pelas ruas."""
+"""Modo Mapa: a cidade em grade, o robô andando pelas ruas, a câmera de GPS e a conversa no ritmo do robô."""
 
 import re
 
 from conftest import WEB, esperar_a_fila, simulador, viajar_pelo_roteiro
 
-BAIRROS = ("cliente", "regulatorio", "produtos", "risco", "parceiros", "canais")
+BAIRROS = ("cliente", "governanca", "produtos", "parceiros", "pagamentos")
 
 
-def test_cidade_com_bairros_e_sem_rotas(pagina, mundo_limpo):
+def test_cidade_com_os_bairros_do_infografico_e_sem_rotas(pagina, mundo_limpo):
     pagina.goto(f"{WEB}/mapa", wait_until="networkidle")
     pagina.wait_for_selector(".mapa__tela canvas")
-    pagina.wait_for_selector('[data-rotulo="bairro-risco"]')
+    pagina.wait_for_selector('[data-rotulo="bairro-governanca"]')
     assert pagina.locator('[data-rotulo^="bairro-"]').count() == len(BAIRROS)
     # De longe: sem nomes de construções, sem faróis (o mundo está limpo) e sem o cartão das 3 rotas.
     assert pagina.locator(".mapa").get_attribute("data-nomes") == "nao"
@@ -38,15 +38,48 @@ def test_de_perto_aparecem_os_nomes_e_o_clique_mostra_a_proveniencia(pagina, mun
 def test_parada_da_abertura_aproxima_a_camera(pagina, mundo_limpo):
     pagina.goto(f"{WEB}/mapa?parada=6", wait_until="networkidle")
     pagina.wait_for_function("document.querySelector('.mapa').dataset.nomes === 'sim'")
+    # A cidade é relida a cada 5 s: a câmera não pode voltar sozinha para a parada.
+    pagina.get_by_role("button", name="Enquadrar a cidade").click()
+    pagina.wait_for_function("document.querySelector('.mapa').dataset.nivel === '0.0'")
+    pagina.wait_for_timeout(6000)
+    assert pagina.locator(".mapa").get_attribute("data-nivel") == "0.0"
 
 
-def test_o_robo_anda_por_cada_lugar_que_o_agente_usa(pagina, mundo_limpo):
+def test_o_robo_anda_por_cada_lugar_e_a_conversa_vem_no_ritmo_dele(pagina, mundo_limpo):
     pagina.goto(f"{WEB}/mapa", wait_until="networkidle")
-    respostas = viajar_pelo_roteiro(pagina)
-    assert respostas >= 1, "A Ana precisa ter respondido pelo painel de conversa."
-    esperar_a_fila(pagina, limite_s=180)
-
     mapa = pagina.locator(".mapa")
+    pagina.click("#viagem-modelo")
+    pagina.get_by_role("option", name="Roteiro (ensaio sem LLM)").click()
+    pagina.click("#iniciar-viagem")
+    pagina.wait_for_function("document.querySelector('.mapa').dataset.execucao !== ''")
+
+    # Cada pergunta à Ana só aparece quando o robô chega à parada que a gerou;
+    # a mensagem da apólice, só quando ele chega à emissão.
+    paradas_das_perguntas = []
+    parada_da_apolice = None
+    camera_durante = set()
+    for _ in range(360):
+        pagina.wait_for_timeout(500)
+        camera_durante.add(mapa.get_attribute("data-camera"))
+        botoes = pagina.locator(".mapa__opcoes button:not([disabled])")
+        if botoes.count():
+            paradas_das_perguntas.append(mapa.get_attribute("data-parada"))
+            botoes.first.click()
+        if parada_da_apolice is None and "apólice" in pagina.locator(".mapa__mensagens").inner_text():
+            parada_da_apolice = mapa.get_attribute("data-parada")
+        if mapa.get_attribute("data-fila") == "0" and pagina.locator("#iniciar-viagem").is_enabled():
+            break
+
+    assert paradas_das_perguntas[:1] == ["parada-intencao"], paradas_das_perguntas
+    assert "parada-proposta" in paradas_das_perguntas, paradas_das_perguntas
+    assert parada_da_apolice == "parada-emissao"
+    # Durante a viagem, a câmera seguiu o robô; ao fim, ela sobe para a cidade inteira e fica livre.
+    assert "seguindo" in camera_durante
+    pagina.wait_for_function("document.querySelector('.mapa').dataset.camera === 'livre'")
+    pagina.wait_for_function("document.querySelector('.mapa').dataset.nivel === '0.0'", timeout=10_000)
+    pagina.wait_for_timeout(6000)
+    assert mapa.get_attribute("data-nivel") == "0.0"
+
     # Cada trecho é um evento real: as placas das paradas e os prédios dos sistemas chamados.
     assert int(mapa.get_attribute("data-lugares-visitados")) >= 10
     assert int(mapa.get_attribute("data-visitadas")) >= 9

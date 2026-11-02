@@ -36,7 +36,7 @@ O infográfico abaixo é o grande navegador da demo. Ele abre o site na rota `/`
 | 3. A skill é a porta de entrada | Cena 4 |
 | Placa (Skills, Contexto, Regras, Resultados) | Capítulos de bastidores correspondentes |
 | Seletor Modo Mapa / Modo Raio-X | Demo aberta no modo escolhido (o Raio-X chega na Fase 7) |
-| Paradas 1 a 9 no mapa e na faixa "As 9 paradas" | Demo posicionada naquela parada, com o bairro aberto |
+| Paradas 1 a 9 no mapa e na faixa "As 9 paradas" | Demo posicionada naquela parada, com a câmera perto da placa |
 | Ana e o celular | Início da jornada (cena 1) |
 | A metáfora: mapa, trânsito, regras e GPS | Bastidores, capítulo 8 (a tabela de equivalências) |
 | Rotas disponíveis | Cena 4, na escolha de rota |
@@ -110,16 +110,17 @@ Rotas alternativas que a demo exibe:
 
 O grafo é a fonte única do mapa. O layout visual da "cidade" é derivado dele, nunca desenhado à mão.
 
-**Bairros (domínios)**, cada um com cor e posição fixas no mapa:
+**Bairros (domínios)**: os 5 do infográfico, cada um com cor e posição fixas no mapa (decidido antes da Fase 9):
 
 | Bairro | Entidades principais |
 | --- | --- |
-| Cliente | Cliente, Conta, Relacionamento, Produto contratado, Consentimento |
-| Produtos | Produto de seguro, Cobertura, Assistência, Franquia |
-| Risco | Regra de elegibilidade, Regra de adequação, Score, Limite de alçada |
-| Regulatório | Política, Norma, Base legal (LGPD), Exigência de registro |
-| Parceiros | Seguradora, API de cotação, API de emissão, SLA |
-| Canais e operação | Canal, Especialista humano, Fila, Meio de pagamento |
+| Cliente e Relacionamento | Cliente, Conta, Relacionamento, Produto contratado, Consentimento, Imóvel, Canal; o CRM e o core bancário |
+| Regras e Governança | Política, Norma, Base legal (LGPD), Exigência de registro, Finalidade de dados, Regra de elegibilidade, Regra de adequação, Score, Limite de alçada, Área de risco; o motor de risco, o cofre de consentimentos e o registro de operações |
+| Produtos e Ofertas | Produto de seguro, Cobertura, Assistência, Franquia |
+| Serviços e Parceiros | Seguradora, API de cotação, SLA, Especialista humano, Fila; a plataforma de vistorias |
+| Pagamentos e Emissão | Meio de pagamento, API de emissão; o gateway de pagamentos |
+
+Cada **sistema** mora no bairro do domínio que serve (o tipo `Sistema` tem bairro variável, como as paradas), e um teste guarda essa coerência.
 
 **Ruas (relações)**, por exemplo: `Cliente —POSSUI→ Conta`, `Produto —OFERECIDO_POR→ Seguradora`, `Produto —EXIGE→ Regra`, `Uso de dado —REQUER→ Consentimento`, `Seguradora —EXPÕE→ API`, `Parada —SUJEITA_A→ Limite de alçada —EXIGE→ Fila de aprovação humana`. O esquema completo das relações fica em `services/contexto-mcp/ontologia/esquema.yaml`.
 
@@ -129,7 +130,7 @@ O grafo é a fonte única do mapa. O layout visual da "cidade" é derivado dele,
 
 Tamanho-alvo: de 150 a 300 nós. É o bastante para parecer uma cidade de verdade, e ainda legível.
 
-**Layout do mapa (decidido): cidade fixa com bairros curados.** Cada bairro tem posição e formato definidos na ontologia, como um mapa que não muda entre ensaios. Dentro de cada bairro, os nós são distribuídos por layout de forças com restrição e depois alinhados em quadras e ruas. As relações entre bairros viram avenidas. O layout é calculado uma vez, no seed, e salvo. A plateia passa a reconhecer os lugares ("o bairro do Risco fica ali") ao longo da apresentação, que é o que faz a metáfora de mapa funcionar. Um layout recalculado a cada execução quebraria isso.
+**Layout do mapa (decidido): cidade fixa com bairros curados.** Cada bairro tem posição e formato definidos na ontologia, como um mapa que não muda entre ensaios. Dentro de cada bairro, os nós são distribuídos por layout de forças com restrição e depois alinhados em quadras e ruas. As relações entre bairros viram avenidas. O layout é calculado uma vez, no seed, e salvo. A plateia passa a reconhecer os lugares ("as regras ficam ali") ao longo da apresentação, que é o que faz a metáfora de mapa funcionar. Um layout recalculado a cada execução quebraria isso.
 
 ## Skills via MCP (SEP-2640) como navegador
 
@@ -343,18 +344,20 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
   - `contexto://mapa` e `contexto.consultar_entidade`, pelo caminho `web` → `agent` (`/api/mapa`, `/api/mapa/entidade/{id}`) → `mcp-gateway`;
   - o web relê a cidade a cada 5 s, e isso é o trânsito.
 - **Uma cidade em grade, como num GPS** (ajuste antes da Fase 9):
-  - 8 × 8 quadras, ruas e avenidas mais largas; cada bairro é uma região de quadras e se distingue só pela cor do chão;
+  - 10 × 7 quadras, ruas e avenidas mais largas entre os bairros; cada bairro é uma região de quadras e se distingue só pela cor do chão; num bairro com poucos lugares, eles se juntam perto do centro;
   - cada lugar do grafo ocupa um lote do seu bairro, com a porta na rua (`layout.json` v2), e vira uma construção, sem nenhum prédio decorativo;
-  - as construções têm o estilo do bairro: casas (Cliente), lojas e shopping (Produtos), fábricas (Risco), prédios públicos (Regulatório), torres e prédios técnicos (Parceiros) e escritórios (Canais);
+  - as construções têm o estilo do bairro, com variantes por tipo e sorteadas por lugar: casas, sobrados, prédios residenciais e a sede do banco (Cliente e Relacionamento); prédios públicos, a cúpula, escritórios e a central de vidro (Regras e Governança); lojas, galerias e o shopping (Produtos e Ofertas); torres de vidro, prédios técnicos e a oficina (Serviços e Parceiros); agências, o data center e cartórios (Pagamentos e Emissão);
+  - cada construção tem corpo, detalhe e vidro: janelas por andar, vitrines e a porta voltada para a rua;
   - as paradas viram placas nas esquinas; o rio corta quadras, e as ruas que o atravessam são pontes;
   - o deck.gl (`OrbitView`) desenha as coordenadas próprias da cidade (1000 × 700), sem mapa-base geográfico, com as construções em `SimpleMeshLayer`;
-  - rótulos em HTML (IBM Plex, a partir de 14 px), com declutter: de longe, os bairros e as paradas; de perto, as construções.
+  - rótulos em HTML (IBM Plex, a partir de 14 px), com declutter: de longe, os bairros e as paradas; de perto, as construções; no GPS, só os lugares da viagem.
+- **Câmera de GPS** (decidido antes da Fase 9): durante a viagem, a câmera fica baixa e próxima, com o robô no centro a cada quadro. Ao fim, sobe uma vez para a cidade inteira e fica livre para o apresentador explorar. Mexer na câmera pausa o seguimento, e a releitura da cidade nunca move a câmera.
 - **As 3 rotas não aparecem no mapa.** O que aparece é o caminho real do robô. A escolha e o recálculo continuam como eventos (o recálculo também como aviso).
 - **A viagem é dirigida só pelo SSE da execução**, por um **diretor de animações**:
   - os eventos reais são reproduzidos na ordem, com tempo mínimo;
   - a cada `step.started` e a cada `tool.called`, o robô anda pelas ruas até a placa da parada ou até o prédio do sistema chamado, com o tempo proporcional à distância (0,6 a 1,8 s);
   - o selo mostra "Reproduzindo · +N eventos" ou "Ao vivo", e há "Pular para o fim";
-  - a conversa usa o estado real, sem atraso;
+  - a conversa também segue o diretor (decidido antes da Fase 9): a pergunta à Ana aparece quando o robô chega à parada dela, e a apólice quando ele chega à emissão. Isso vale para o painel Conversa, o Raio-X e o apresentador;
   - uma linha do tempo das 9 paradas e uma linha de narração ficam no rodapé.
 
   Cada evento tem uma animação correspondente, documentada nos bastidores (capítulo 6). Sem contexto, o robô fica parado na porta do canal; sem skill, ele anda de sistema em sistema, sem placas de parada nem roteiro.
@@ -513,6 +516,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Personagens: a Ana em todos os incidentes ao vivo; sete clientes-cenário para testes e placar
 - [x] Modo Mapa em deck.gl, sem MapLibre: cidade 3D (`OrbitView`) sobre as coordenadas próprias do grafo, não geográficas
 - [x] Cidade em grade (quadras, ruas e avenidas), bairros só pela cor do chão, uma construção por lugar do grafo no estilo do bairro, o robô andando pelas ruas até cada lugar que o agente usa e sem as 3 rotas no mapa
+- [x] Os 5 bairros do infográfico, com cada sistema no bairro do seu domínio; construções com janelas, portas e variantes; câmera de GPS; a conversa no ritmo do robô; apresentador e Raio-X na escala de tipos do Carbon
 - [x] Ritmo do mapa: fila de animações com tempo mínimo por evento, sem criar nem reordenar eventos
 - [x] Infográfico de abertura: a versão horizontal (`docs/assets/infografico_horizontal.jpeg`)
 - [x] Painel do apresentador como gaveta no próprio mapa (tecla P), numa tela só

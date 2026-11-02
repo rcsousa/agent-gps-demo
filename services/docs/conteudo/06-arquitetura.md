@@ -217,28 +217,35 @@ A cidade é relida a cada 5 s: esse é o **trânsito**. Quando o simulador derru
 
 **Uma cidade em grade, como num GPS** (`contexto_mcp/layout.py`, versionado em `ontologia/layout.json`):
 
-- **A grade:** a cidade tem 8 × 8 quadras, cortadas por ruas, e as avenidas são mais largas. Cada bairro é uma região de quadras e se distingue só pela cor do chão.
-- **Um lugar por lote:** cada lugar do grafo (um sistema, um cliente, uma regra) ocupa um lote do seu bairro, com a **porta** voltada para a rua. Lugares ligados ficam perto, pelo layout de forças, com semente fixa.
+- **A grade:** a cidade tem 10 × 7 quadras, cortadas por ruas, e as avenidas, mais largas, separam os bairros. Cada bairro é uma região de quadras e se distingue só pela cor do chão.
+- **Um lugar por lote:** cada lugar do grafo (um sistema, um cliente, uma regra) ocupa um lote do seu bairro, com a **porta** voltada para a rua. Lugares ligados ficam perto, pelo layout de forças, com semente fixa. Num bairro com poucos lugares, eles se juntam perto do centro, e os lotes da borda viram praças.
 - **As paradas** viram placas numeradas nas esquinas.
 - **O rio:** as quadras que ele cruza viram água, e as ruas que o atravessam, pontes.
 
-**Só o que existe:** cada lugar vira uma construção, e não há nenhum prédio decorativo. O estilo vem do bairro e, em alguns casos, do tipo:
+**Só o que existe:** cada lugar vira uma construção, e não há nenhum prédio decorativo. A forma vem do tipo e, quando o tipo não tem forma própria, de uma variante do bairro sorteada com semente pelo id (`layout.py:estilo`). O bairro tem cara de bairro, mas as construções não são todas iguais:
 
-| Bairro | Construção |
+| Bairro | Construções |
 | --- | --- |
-| Cliente | Casas |
-| Produtos | Lojas e o shopping (os produtos de seguro) |
-| Risco | Fábricas |
-| Regulatório | Prédios públicos, com colunas e frontão |
-| Parceiros | Torres-sede (seguradoras) e prédios técnicos com antena (APIs, sistemas e SLA) |
-| Canais e operação | Lojas (agência e meios de pagamento), a torre do app e escritórios (central, filas e especialistas) |
+| Cliente e Relacionamento | Casas, sobrados e prédios residenciais (o imóvel segue o que a cliente tem: apartamento, casa, sobrado); a sede laranja do Banco Bússola (CRM e core), a agência e a torre do app |
+| Regras e Governança | Prédios públicos com colunas e frontão (políticas e bases legais), o edifício com cúpula (normas), escritórios (regras, scores e alçadas) e a central de vidro (motor de risco, cofre de consentimentos e registro) |
+| Produtos e Ofertas | Lojas com toldo, galerias e o shopping (os produtos de seguro) |
+| Serviços e Parceiros | Torres de vidro (seguradoras), prédios técnicos com antena (APIs e SLAs), a oficina (vistorias) e escritórios (especialistas e filas) |
+| Pagamentos e Emissão | Agências (meios de pagamento), o data center com grelhas (gateway) e cartórios (APIs de emissão) |
 
-As construções são malhas 3D simples, montadas em código (`mapa/construcoes.ts`) e desenhadas com `SimpleMeshLayer`. Cada uma tem duas partes: o corpo, na cor do bairro, e o detalhe (telhado, toldo, chaminé, colunas, antena…). Os lotes vazios viram praças.
+As construções são malhas 3D simples, montadas em código (`mapa/construcoes.ts`) e desenhadas com `SimpleMeshLayer`. Cada uma tem três partes:
+
+- o **corpo**, na cor do bairro, com o tom e a altura variando por construção;
+- o **detalhe** (telhado, toldo, colunas, cúpula, letreiro, antena…);
+- o **vidro**: janelas por andar, faixas de vidro, vitrines e a porta, sempre voltada para a rua.
+
+O sol vem baixo, do sudeste, para marcar as fachadas que a câmera vê. Os lotes vazios viram praças.
 
 **Câmera e rótulos:**
 
-- O deck.gl, com `OrbitView`, desenha as coordenadas próprias da cidade (1000 × 700) em WebGL, sem mapa-base geográfico. A câmera fica inclinada (cerca de 50°) e alinhada ao norte, e a luz é ambiente e direcional.
-- De longe, aparecem os nomes dos bairros, as placas das paradas e os faróis. De perto, os nomes das construções.
+- O deck.gl, com `OrbitView`, desenha as coordenadas próprias da cidade (1000 × 700) em WebGL, sem mapa-base geográfico. O norte fica sempre para cima.
+- **Câmera de GPS:** durante a viagem, a câmera fica baixa (34°) e próxima, e segue o robô **a cada quadro**, com o robô no centro. Ao fim da viagem, ela sobe uma vez para a vista aérea da cidade inteira (55°) e fica livre para o apresentador.
+- Mexer na câmera (arrastar, dar zoom ou girar) pausa o seguimento até "Seguir o agente" ser religado. A cidade é relida a cada 5 s, e nada disso move a câmera.
+- De longe, aparecem os nomes dos bairros, as placas das paradas e os faróis. De perto, os nomes das construções. No GPS, só os nomes dos lugares da viagem.
 - Os nomes são **chips em HTML** (IBM Plex, a partir de 14 px). Os que se sobreporiam ficam de fora, por prioridade, e nenhum cobre o robô.
 - Clicar numa construção mostra a proveniência daquele lugar.
 
@@ -261,7 +268,8 @@ O agente pode andar mais rápido do que a plateia consegue acompanhar: o roteiro
 | `route.planned` | 0,8 s |
 | `incident.detected`, `route.recalculated` | 1,6 s |
 | `human.required` | 1,2 s |
-| Conversa e fim | imediato |
+| `client.asked`, `agent.message` | 0,8 s |
+| Resposta da Ana e fim | imediato |
 
 No código (`web/src/mapa/diretor.ts`):
 
@@ -274,7 +282,8 @@ No código (`web/src/mapa/diretor.ts`):
 - nenhum evento é criado e a ordem não muda;
 - o mapa só fica alguns segundos **atrás** do agente, e o selo mostra "Reproduzindo · +N eventos" até alcançar e passar a "Ao vivo";
 - "Pular para o fim" alcança o presente de uma vez;
-- a conversa com a Ana usa o estado real, sem atraso: dá para responder enquanto o mapa ainda anima.
+- a conversa também segue o diretor: a pergunta à Ana aparece quando o robô chega à parada que a gerou, e a resposta final, com a apólice, quando ele chega à emissão. O agente fica esperando a resposta, então nada trava: a pergunta é o último evento da fila;
+- depois de responder, os botões ficam desligados até a próxima pergunta, para não haver resposta dupla.
 
 Abrir um link `/mapa?execucao=<id>` antigo reproduz a viagem inteira desde o início, pelo mesmo caminho.
 
@@ -286,13 +295,13 @@ Abrir um link `/mapa?execucao=<id>` antigo reproduz a viagem inteira desde o in�
 | --- | --- |
 | `run.started` | O robô aparece na porta do canal (o app, a agência ou a central) |
 | `skill.loaded` | O painel Conversa mostra o navegador, isto é, a skill ativa |
-| `step.started` | O robô anda pelas ruas até a placa da parada, e o caminho acende em laranja atrás dele. A placa fica laranja, e a linha do tempo avança. Com "Seguir o agente", a câmera vai junto |
+| `step.started` | O robô anda pelas ruas até a placa da parada, e o caminho acende em laranja atrás dele. A placa fica laranja, e a linha do tempo avança. Com "Seguir o agente", a câmera de GPS vai junto |
 | `tool.called` | O robô anda até o prédio do sistema chamado, que pulsa: laranja se deu certo, vermelho se falhou |
 | `incident.detected` | Um aviso vermelho com ícone e a metáfora (Rua interditada, Contramão...), e a parada fica vermelha na linha do tempo |
 | `route.recalculated` | Um aviso de recálculo, com o motivo e a regra |
 | `human.required` | O pedágio aparece na placa da aprovação |
-| `client.asked` / `agent.message` | A pergunta e as opções aparecem no painel Conversa, para responder pela Ana |
-| `run.finished` | O pino de chegada com o número da apólice, ou o motivo da parada, com duração, custo e modelo |
+| `client.asked` / `agent.message` | A pergunta e as opções aparecem no painel Conversa, para responder pela Ana, quando o robô chega à parada |
+| `run.finished` | O pino de chegada com o número da apólice, ou o motivo da parada, com duração, custo e modelo. A câmera sobe para a cidade inteira |
 
 **Os modos sem GPS:**
 
@@ -308,7 +317,7 @@ Em `/`, o infográfico oficial (`docs/assets/infografico_horizontal.jpeg`, 2198 
 As 38 áreas clicáveis estão em `services/web/src/abertura/hotspots.json`, em porcentagem da imagem, e acompanham o pan e o zoom. Cada área leva a um de três destinos:
 
 - uma cena do mapa (`/mapa?cena=N`);
-- uma parada (`/mapa?parada=N`, que abre o bairro da parada);
+- uma parada (`/mapa?parada=N`, que aproxima a câmera da placa da parada);
 - um capítulo destes bastidores. A tabela "A metáfora", por exemplo, leva ao capítulo 8.
 
 ### Catálogo de eventos

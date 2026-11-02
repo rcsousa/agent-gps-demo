@@ -576,6 +576,7 @@ export function PaginaMapa() {
       data-nomes={mostrarNomes ? 'sim' : 'nao'}
       data-fila={direcao.fila}
       data-camera={cameraSeguindo ? 'seguindo' : 'livre'}
+      data-nivel={nivel.toFixed(1)}
     >
       <div className="mapa__barra">
         <h1 id="titulo-mapa" className="mapa__titulo">
