@@ -453,7 +453,7 @@ export function PaginaMapa() {
     if (mostrarNomes) {
       const comFarol = new Set(incidentes.map((n) => n.id));
       // No GPS (seguindo o robô), só os nomes dos lugares da viagem: o destino atual e os já visitados.
-      const daViagem = cameraSeguindo && !raioX ? new Set(direcao.trechos.map((x) => x.para)) : null;
+      const daViagem = cameraSeguindo ? new Set(direcao.trechos.map((x) => x.para)) : null;
       for (const c of cena3d.construcoes) {
         if (c.estilo === 'placa' || comFarol.has(c.no.id)) continue;
         if (daViagem && !daViagem.has(c.no.id) && c.no.id !== selecionado) continue;
@@ -481,7 +481,6 @@ export function PaginaMapa() {
     pontoDoNo,
     voarParaBairro,
     cameraSeguindo,
-    raioX,
     direcao.trechos,
   ]);
 
