@@ -1,4 +1,4 @@
-# Bairro Cliente: a Ana (personagem padrão) e 7 clientes-cenário.
+# Bairro Cliente e Relacionamento: a Ana (personagem padrão) e 7 clientes-cenário.
 # Cada cliente-cenário prepara um incidente da spec; o atributo
 # "cenario" diz qual. Todos os dados são fictícios.
 

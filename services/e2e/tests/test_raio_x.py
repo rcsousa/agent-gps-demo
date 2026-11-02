@@ -75,8 +75,8 @@ def test_apresentador_muda_o_mundo_e_decide_o_pedagio(pagina, mundo_limpo):
     aprovou = False
     for _ in range(240):
         pagina.wait_for_timeout(500)
-        if pagina.locator(".mapa__opcoes button").count():
-            pagina.locator(".mapa__opcoes button").first.click()
+        if pagina.locator(".mapa__opcoes button:not([disabled])").count():
+            pagina.locator(".mapa__opcoes button:not([disabled])").first.click()
         if not aprovou and ticket.count():
             ticket.get_by_role("button", name="Aprovar").click()
             aprovou = True

@@ -8,7 +8,7 @@
     - **As regras de trânsito:** consentimento, alçadas e políticas.
     - **A origem de cada informação.**
 
-    Sem esse mapa, o agente adivinha. Com ele, escolhe rotas, respeita regras e explica o que fez. Na demo, esse mapa é uma cidade com 6 bairros e cerca de 180 lugares, sempre igual em todo ensaio.
+    Sem esse mapa, o agente adivinha. Com ele, escolhe rotas, respeita regras e explica o que fez. Na demo, esse mapa é uma cidade com 5 bairros e cerca de 180 lugares, sempre igual em todo ensaio.
 
 ## Aprofundamento técnico
 
@@ -26,13 +26,30 @@ Tudo isso é versionado em YAML, legível por gente. A cada `docker compose up`,
 
 ### Os bairros
 
-As posições seguem o infográfico da demo. A plateia passa a reconhecer os lugares ("o bairro do Risco fica ali") ao longo da apresentação.
+Os 5 bairros são os do infográfico da demo, nas mesmas posições: em cima, Cliente e Relacionamento, Regras e Governança e Produtos e Ofertas; embaixo, Serviços e Parceiros e Pagamentos e Emissão. A plateia passa a reconhecer os lugares ("as regras ficam ali") ao longo da apresentação.
+
+Cada tipo de entidade mora num bairro (`esquema.yaml`). Os **sistemas** moram no bairro do domínio que servem, e não num bairro de "sistemas":
+
+| Sistema | Bairro |
+| --- | --- |
+| CRM Bússola, core bancário | Cliente e Relacionamento |
+| Motor de regras de risco, cofre de consentimentos, registro de operações | Regras e Governança |
+| Gateway de pagamentos | Pagamentos e Emissão |
+| Plataforma de vistorias | Serviços e Parceiros |
+
+Um teste (`test_cada_sistema_no_bairro_do_seu_dominio`) impede que essa coerência se perca.
 
 ```yaml
 --8<-- "bairros.yaml:bairros"
 ```
 
-Dentro de cada bairro, os nós são distribuídos por layout de forças, com semente fixa, e encaixados numa grade de quadras. O resultado fica salvo em `ontologia/layout.json`, e um teste garante que ele corresponde à ontologia. Relações entre bairros viram **avenidas**.
+A cidade é uma grade de quadras cortada por ruas e avenidas, e cada bairro é uma região dela:
+
+```yaml
+--8<-- "bairros.yaml:cidade"
+```
+
+Cada lugar do grafo ocupa um lote do seu bairro, com a porta na rua, e vira uma construção no mapa. Lugares ligados ficam perto, pelo layout de forças, com semente fixa. O resultado fica salvo em `ontologia/layout.json`, e um teste garante que ele corresponde à ontologia. Veja o capítulo 6.
 
 ### O mapa em uma imagem
 
@@ -99,4 +116,4 @@ O agente nunca escreve Cypher. O `contexto-mcp` expõe perguntas de negócio com
 | `consultar_proveniencia` | De onde veio esta informação, e com que confiança? |
 | `consultar_rota` | Quais rotas levam ao destino, e quanto custa cada uma agora? |
 
-O recurso MCP `contexto://mapa` entrega o mapa completo (bairros, rio, avenidas, nós com posição e estado) para o desenho da cidade. Ele não é tool, porque não faz sentido gastar tokens do modelo com ele.
+O recurso MCP `contexto://mapa` entrega o mapa completo (a grade, os bairros, o rio e os lugares com posição, porta, estilo e estado) para o desenho da cidade. Ele não é tool, porque não faz sentido gastar tokens do modelo com ele.

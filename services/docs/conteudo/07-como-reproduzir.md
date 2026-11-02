@@ -120,7 +120,7 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 <http://localhost:8080> abre o infográfico da demo. Para aproximar, arraste e use a roda do mouse ou os botões `+` e `−`. Ao passar o mouse, cada área acende e mostra para onde leva:
 
 - as mensagens 1, 2 e 3, a Ana, o celular, as rotas e as seguradoras levam à cena correspondente, já no mapa;
-- as paradas 1 a 9 (no mapa ou na faixa) abrem o mapa no bairro daquela parada;
+- as paradas 1 a 9 (no mapa ou na faixa) abrem o mapa perto daquela parada;
 - a placa, a camada de contexto, a skill, a proveniência e a tabela da metáfora levam ao capítulo destes bastidores;
 - o seletor Mapa / Raio-X e a área "Modo Raio-X: transparência total" abrem o Raio-X;
 - as áreas de bastidores abrem o capítulo num painel ao lado, sem sair do infográfico.
@@ -129,31 +129,32 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 
 ### O Modo Mapa
 
-<http://localhost:8080/mapa> mostra a cidade do banco em 3D, desenhada a partir do grafo, com os seis bairros, as três estradas da jornada, as nove paradas e o trânsito ao vivo.
+<http://localhost:8080/mapa> mostra a cidade do banco: ruas, avenidas, o rio com pontes e uma construção para cada lugar do grafo. São os 5 bairros do infográfico: casas, sobrados e a sede do banco em Cliente e Relacionamento; prédios públicos, a cúpula e escritórios em Regras e Governança; lojas, galerias e o shopping em Produtos e Ofertas; torres de vidro e prédios técnicos em Serviços e Parceiros; agências, o data center e cartórios em Pagamentos e Emissão. O trânsito é ao vivo.
 
-![A cidade em 3D, com os bairros e as estradas da jornada](assets/mapa/cidade.png)
+![A cidade em grade, com uma construção por lugar do banco](assets/mapa/cidade.png)
 
-**Navegar:** arraste para mover, use a roda para o zoom e o botão direito para mudar a inclinação ou girar. "Enquadrar a cidade" volta à vista inicial, alinhada ao norte.
+**Navegar:** arraste para mover, use a roda para o zoom e o botão direito para mudar a inclinação ou girar. "Enquadrar a cidade" volta à vista inicial, alinhada ao norte. Clique no nome de um bairro para ir até ele.
 
-**Abrir um bairro:** clique no nome ou na placa do bairro, ou aproxime bem o zoom. Os sistemas daquele bairro aparecem como prédios com placas, e o status fica no telhado. Clique numa placa ou num prédio para ver os atributos, o estado vivo, a **proveniência** e os vizinhos. "Voltar à cidade" fecha o bairro.
+**De perto, aparecem os nomes das construções.** Clique em uma para ver os atributos, o estado vivo, a **proveniência** e os vizinhos.
 
-![O bairro Parceiros aberto: as APIs das seguradoras e os sistemas do banco](assets/mapa/bairro.png)
+![De perto, os nomes dos lugares de Parceiros: as APIs das seguradoras e os sistemas do banco](assets/mapa/bairro.png)
 
-![O detalhe de um sistema, com a proveniência](assets/mapa/no.png)
+![O detalhe de um lugar, com a proveniência](assets/mapa/no.png)
 
 **Fazer uma viagem:**
 
 1. Na barra de viagem, escolha o **modo** (com skill, sem skill ou sem contexto), o **canal** e o **modelo**. A opção "Roteiro (ensaio sem LLM)" não gasta tokens.
 2. Clique em **Iniciar viagem**. O endereço muda para `/mapa?execucao=<id>`, e dá para abrir o mesmo link em outra tela.
-3. O robô percorre a estrada parada a parada. Com "Seguir o agente" ligado, a câmera vai junto e abre o bairro de cada parada. A linha do tempo no rodapé e a narração mostram em que passo ele está.
-4. Quando o agente perguntar algo à Ana, a pergunta aparece no painel **Conversa**. Responda com um dos botões ou escreva a resposta.
-5. O selo no alto mostra "Reproduzindo" enquanto o mapa está atrás do agente e "Ao vivo" quando alcança. **Pular para o fim** alcança de uma vez.
+3. O robô sai da porta do canal e anda pelas ruas até cada lugar que o agente usa: o CRM, o cofre de consentimentos, o motor de risco, as APIs das seguradoras, o gateway de pagamentos… O caminho acende em laranja atrás dele, e as placas das paradas acendem quando ele passa. Com "Seguir o agente" ligado, a câmera de GPS fica baixa, atrás dele, com o robô no centro. Se você mexer na câmera, o seguimento pausa até religar.
+4. Quando o agente perguntar algo à Ana, a pergunta aparece no painel **Conversa** assim que o robô chega à parada dela. Responda com um dos botões ou escreva a resposta.
+5. No fim, a câmera sobe para a cidade inteira, com o caminho todo aceso, e fica livre para explorar.
+6. O selo no alto mostra "Reproduzindo" enquanto o mapa está atrás do agente e "Ao vivo" quando alcança. **Pular para o fim** alcança de uma vez.
 
-![A viagem com skill: o robô na parada 6, com o trecho percorrido aceso e a linha do tempo](assets/mapa/viagem.png)
+![A viagem com skill: o robô andando pelas ruas, com o caminho real aceso](assets/mapa/viagem.png)
 
-**Cenas prontas.** `/mapa?cena=6` deixa a barra pronta para a cena 6 e mostra o botão **Derrubar a API da Âncora**. Derrube a API: o farol vermelho sobe no bairro Parceiros e as rotas que passam por ali ficam interditadas. Depois, inicie a viagem e veja o desvio.
+**Cenas prontas.** `/mapa?cena=6` deixa a barra pronta para a cena 6 e mostra o botão **Derrubar a API da Âncora**. Derrube a API e o farol vermelho sobe do prédio dela. Depois, inicie a viagem: o robô vai até a Âncora, o prédio pulsa em vermelho e o agente segue com as outras seguradoras.
 
-![A cena 6: o farol da Âncora e as rotas interditadas](assets/mapa/incidente.png)
+![A cena 6: o farol da Âncora](assets/mapa/incidente.png)
 
 Depois, volte o mundo ao normal com `./scripts/incidente.sh reset`.
 
@@ -163,7 +164,7 @@ O seletor **Mapa / Raio-X**, na barra do mapa, troca a apresentação sem reinic
 
 ![O Modo Raio-X: o log de chamadas MCP ao lado da cidade como grafo](assets/raio-x/chamadas.png)
 
-- **No mapa**, a cidade vira o grafo: todos os nós aparecem como prédios, com as relações entre eles. Passe o mouse numa relação para ver o tipo.
+- **No mapa**, aparecem as relações do grafo como arcos entre as construções e, fora do GPS, os nomes de todas elas.
 - **Chamadas MCP:** cada `tools/list`, `skills/list`, `resources/read`, `prompts/get`, chamada de tool, passo do modelo e decisão de rota, na ordem em que aconteceram, com duração e status. Bloqueios do gateway aparecem com cadeado. Clique numa linha para ver o evento cru do barramento.
 - **Conversa:** a mesma do Modo Mapa. Quando o agente pergunta algo, as opções da Ana aparecem no topo do painel, em qualquer aba.
 - **Proveniência:** as decisões do agente (rota, recálculo e incidente), com motivo e regra, e os sistemas e dados que ele tocou. Clique num deles para ver fonte, data, responsável e confiança.

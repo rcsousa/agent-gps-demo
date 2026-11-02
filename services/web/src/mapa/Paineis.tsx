@@ -1,13 +1,12 @@
 // Painéis do Modo Mapa: o nó clicado, as rotas, a legenda e a conversa com a Ana.
 
 import { CheckmarkFilled, ErrorFilled, Send, WarningAltFilled } from '@carbon/icons-react';
-import { Button, Link, Tag, TextInput, Tile } from '@carbon/react';
-import { type ChangeEvent, type MouseEvent, type ReactNode, useState } from 'react';
+import { Button, Link, Tag, TextInput } from '@carbon/react';
+import { type ChangeEvent, type MouseEvent, type ReactNode, useEffect, useState } from 'react';
 
 import { api } from '../api';
 import { mensagens } from '../mensagens/pt-BR';
 import { Campos, Carregavel, useCarregar } from '../status/comum';
-import type { RotaDaJornada } from '../tipos';
 import type { EstadoDaViagem } from './viagem';
 
 const t = mensagens.mapa;
@@ -110,65 +109,13 @@ export function DetalheDoNo(props: { id: string; aoEscolher: (id: string) => voi
   );
 }
 
-export function CartaoDeRotas(props: {
-  rotas: RotaDaJornada[];
-  ativa: string | null;
-  aoDestacar: (id: string | null) => void;
-}) {
-  return (
-    <Tile className="mapa__cartao mapa__rotas" aria-label={t.rotas.titulo}>
-      <h2 className="mapa__cartao-titulo">{t.rotas.titulo}</h2>
-      <ul>
-        {props.rotas.map((r) => (
-          <li
-            key={r.id}
-            className={`mapa__rota${r.id === props.ativa ? ' mapa__rota--ativa' : ''}`}
-            onMouseEnter={() => props.aoDestacar(r.id)}
-            onMouseLeave={() => props.aoDestacar(null)}
-          >
-            <div className="mapa__rota-nome">
-              <strong>{r.nome}</strong>
-              {r.estimativa.bloqueada ? (
-                <Tag type="red" size="sm" renderIcon={ErrorFilled}>
-                  {t.interditada}
-                </Tag>
-              ) : (
-                r.id === props.ativa && (
-                  <Tag type="warm-gray" size="sm">
-                    {t.rotas.escolhida}
-                  </Tag>
-                )
-              )}
-            </div>
-            <span className="mapa__rota-numeros">
-              {r.estimativa.tempo_texto} · {t.rotas.risco(r.estimativa.risco)}
-              {r.estimativa.premio_anual_referencia ? ` · ${t.rotas.premio(r.estimativa.premio_anual_referencia)}` : ''}
-            </span>
-            {r.alertas.map((a, i) => (
-              <span key={i} className="mapa__rota-alerta">
-                {a.mensagem}
-              </span>
-            ))}
-          </li>
-        ))}
-      </ul>
-    </Tile>
-  );
-}
-
 export function Legenda() {
   return (
     <details className="mapa__cartao mapa__legenda">
       <summary className="mapa__cartao-titulo">{t.legenda.titulo}</summary>
       <ul>
         <li>
-          <span className="mapa__traco mapa__traco--ativa" /> {t.legenda.rotaAtiva}
-        </li>
-        <li>
-          <span className="mapa__traco mapa__traco--alternativa" /> {t.legenda.alternativa}
-        </li>
-        <li>
-          <span className="mapa__traco mapa__traco--interditada" /> {t.legenda.interditada}
+          <span className="mapa__traco mapa__traco--ativa" /> {t.legenda.rastro}
         </li>
         <li>
           <span className="mapa__amostra mapa__amostra--parada">1</span> {t.legenda.parada}
@@ -182,7 +129,13 @@ export function Legenda() {
         <li>
           <span className="mapa__amostra mapa__amostra--degradado">!</span> {t.legenda.degradado}
         </li>
-        <li className="apagado">{t.legenda.bairro}</li>
+        <li className="mapa__legenda-grupo">{t.legenda.construcoes}</li>
+        {t.legenda.estilos.map((e) => (
+          <li key={e} className="mapa__legenda-item">
+            {e}
+          </li>
+        ))}
+        <li className="apagado">{t.legenda.zoom}</li>
       </ul>
     </details>
   );
@@ -196,13 +149,18 @@ export function RespostaDaAna(props: {
 }) {
   const [texto, setTexto] = useState('');
   const [enviando, setEnviando] = useState(false);
+  // Respondida: os botões ficam desligados até a próxima pergunta (a resposta ainda vai chegar
+  // ao mapa pelo diretor de animações, e não pode haver resposta dupla).
+  const [respondida, setRespondida] = useState(false);
+  useEffect(() => setRespondida(false), [props.pergunta.texto]);
 
   async function responder(resposta: string) {
-    if (!resposta.trim()) return;
+    if (!resposta.trim() || respondida) return;
     setEnviando(true);
     try {
       await props.aoResponder(resposta.trim());
       setTexto('');
+      setRespondida(true);
     } finally {
       setEnviando(false);
     }
@@ -214,7 +172,13 @@ export function RespostaDaAna(props: {
       {props.compacta && <p className="mapa__pergunta">{props.pergunta.texto}</p>}
       <div className="mapa__opcoes">
         {props.pergunta.opcoes.map((opcao) => (
-          <Button key={opcao} kind="tertiary" size="sm" disabled={enviando} onClick={() => responder(opcao)}>
+          <Button
+            key={opcao}
+            kind="tertiary"
+            size="sm"
+            disabled={enviando || respondida}
+            onClick={() => responder(opcao)}
+          >
             {opcao}
           </Button>
         ))}
@@ -242,7 +206,7 @@ export function RespostaDaAna(props: {
           hasIconOnly
           renderIcon={Send}
           iconDescription={t.conversa.enviar}
-          disabled={enviando || !texto.trim()}
+          disabled={enviando || respondida || !texto.trim()}
         />
       </form>
     </div>

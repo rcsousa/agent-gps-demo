@@ -57,7 +57,8 @@ def viajar_pelo_roteiro(pg: Page, modo: str = "Com skill (GPS)", limite_s: int =
     respostas = 0
     for _ in range(limite_s * 2):
         pg.wait_for_timeout(500)
-        opcoes = pg.locator(".mapa__opcoes button")
+        # Só os botões ligados: depois de responder, eles ficam desligados até a próxima pergunta.
+        opcoes = pg.locator(".mapa__opcoes button:not([disabled])")
         if opcoes.count():
             opcoes.first.click()
             respostas += 1

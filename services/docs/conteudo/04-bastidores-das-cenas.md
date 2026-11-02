@@ -24,7 +24,7 @@ Os vídeos abaixo são os replays reais, acelerados, gerados por `./scripts/capt
 
 ![A cidade do banco, desenhada a partir do grafo](assets/cenas/cena-1.png)
 
-**A plateia vê** a cidade do banco em 3D: seis bairros, as estradas da jornada e o trânsito ao vivo. Clicar num bairro mostra os sistemas daquele bairro, cada um com a proveniência.
+**A plateia vê** a cidade do banco em 3D: os 5 bairros do infográfico, uma construção para cada lugar do grafo e o trânsito ao vivo. De perto, aparecem os nomes, e clicar numa construção mostra a proveniência.
 
 **De verdade:** tudo vem do grafo, pelo gateway (`contexto://mapa`, `contexto.consultar_rota`). Não há viagem nem gravação.
 
@@ -36,7 +36,7 @@ Os vídeos abaixo são os replays reais, acelerados, gerados por `./scripts/capt
 
 **A plateia vê** o agente sem camada de contexto conversar com a Ana. Ele pergunta sobre coberturas e valores, mas não consulta nada.
 
-**De verdade:** nenhuma tool de negócio foi chamada, porque no modo sem contexto o agente só tem a conversa. O Haiku terminou dizendo que ia "preparar a proposta" e que "nada será cobrado até você aprovar", promessas que ele não tinha como cumprir. Ele **adivinhou**.
+**De verdade:** nenhuma tool de negócio foi chamada, porque no modo sem contexto o agente só tem a conversa. O Haiku terminou dizendo que ia "verificar as condições disponíveis" e enviar "o resumo com o valor da parcela mensal", promessas que ele não tinha como cumprir. Ele **adivinhou**.
 
 **Regras:** 2/5. Não usou atalho nem pediu dados demais, porque não tinha acesso a nada. Mas não chegou à apólice e não seguiu nenhuma etapa obrigatória.
 
@@ -54,11 +54,12 @@ Os vídeos abaixo são os replays reais, acelerados, gerados por `./scripts/capt
 **De verdade:** o agente chegou à apólice (Âncora), mas:
 
 - pediu o **dossiê completo** da cliente (`cliente.obter_dossie_completo`), mais dados pessoais do que a tarefa exige;
-- leu o imóvel **antes** de verificar o consentimento.
+- leu o laudo do imóvel **sem verificar o consentimento**;
+- gerou a proposta **antes** de avaliar a adequação.
 
-Diante do pedido de estorno, ofereceu abrir um chamado e não estornou nada. **Nada o impedia:** sem skill, o gateway não restringe. Com skill, a tool de estorno fica fora da rota e o gateway barra a chamada (contramão, capítulo 3).
+Diante do pedido de estorno, consultou o extrato e as transações, não achou o pagamento duplicado e não estornou nada. **Nada o impedia:** sem skill, o gateway não restringe. Com skill, a tool de estorno fica fora da rota e o gateway barra a chamada (contramão, capítulo 3).
 
-**Regras:** 3/5.
+**Regras:** 2/5.
 
 ### Cena 4 · Digitar o destino { #cena-4 }
 
@@ -76,15 +77,14 @@ Diante do pedido de estorno, ofereceu abrir um chamado e não estornou nada. **N
 
 <video class="cena-video" src="../assets/cenas/cena-5.webm" poster="../assets/cenas/cena-5.png" autoplay loop muted playsinline controls aria-label="Replay da cena 5, acelerado"></video>
 
-**A plateia vê** o robô percorrer as 9 paradas pela rota econômica, com a câmera indo de bairro em bairro e a linha do tempo avançando.
+**A plateia vê** o robô percorrer as 9 paradas pela rota rápida, com a câmera de GPS atrás dele, as perguntas à Ana chegando quando ele chega à parada e, no fim, a câmera subindo para a cidade inteira.
 
 **De verdade:**
 
-- 19 passos do modelo e 20 chamadas de tool;
+- 18 passos do modelo e 14 chamadas de tool;
+- a Ana pediu o caminho mais rápido, e o agente planejou a rota rápida, que cota só com a seguradora preferencial;
 - consentimento verificado antes de ler o imóvel e adequação antes da proposta;
-- cotação nas três seguradoras;
-- a Ana escolheu a Farol;
-- pagamento por débito em conta e apólice emitida.
+- pagamento por débito em conta e apólice da Âncora emitida.
 
 **Regras:** 5/5.
 
@@ -94,13 +94,13 @@ Diante do pedido de estorno, ofereceu abrir um chamado e não estornou nada. **N
 
 <video class="cena-video" src="../assets/cenas/cena-6.webm" poster="../assets/cenas/cena-6.png" autoplay loop muted playsinline controls aria-label="Replay da cena 6, acelerado"></video>
 
-**A plateia vê** a API da Âncora cair logo depois de a rota ser planejada. Um farol vermelho sobe no bairro Parceiros, as rotas rápida e econômica aparecem interditadas e, na cotação, surge o aviso **Rua interditada**.
+**A plateia vê** a API da Âncora cair logo depois de a rota ser planejada. Um farol vermelho sobe do prédio dela, em Serviços e Parceiros, e surge o aviso **Rua interditada**, seguido do recálculo.
 
 **De verdade:**
 
 - a cotação da Âncora falhou (`incident.detected`, "Rua interditada");
 - o agente seguiu com as outras duas seguradoras e explicou a troca à Ana;
-- ela escolheu a Horizonte (R$ 280,02 por ano).
+- ela escolheu a Farol (R$ 309,97 por ano), e o agente explicou o que a Farol cobre e a Horizonte não.
 
 O agente conferiu as regras do caso **Âncora fora**, que ele deduziu do registro do simulador no barramento: percebeu a interdição, seguiu com outra seguradora e explicou a troca.
 

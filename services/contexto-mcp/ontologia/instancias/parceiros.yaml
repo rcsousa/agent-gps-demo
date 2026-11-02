@@ -1,5 +1,6 @@
-# Bairro Parceiros: seguradoras fictícias, suas APIs e SLAs, e os sistemas
-# internos do banco. O estado vivo (status, latência, custo) é o "trânsito"
+# Seguradoras fictícias, suas APIs e SLAs. As APIs de cotação e os SLAs
+# moram em Serviços e Parceiros; as APIs de emissão, em Pagamentos e Emissão.
+# O estado vivo (status, latência, custo) é o "trânsito"
 # que o simulador altera a partir da Fase 3.
 
 proveniencia_padrao:
@@ -69,49 +70,6 @@ entidades:
   - { id: sla-ancora, tipo: SLA, nome: "SLA da Âncora", descricao: "Disponibilidade de 99,9% e cotação em até 2 s.", atributos: { disponibilidade: 99.9, latencia_maxima_ms: 2000 } }
   - { id: sla-farol, tipo: SLA, nome: "SLA da Farol", descricao: "Disponibilidade de 99,5% e cotação em até 2 s.", atributos: { disponibilidade: 99.5, latencia_maxima_ms: 2000 } }
   - { id: sla-horizonte, tipo: SLA, nome: "SLA da Horizonte", descricao: "Disponibilidade de 99% e cotação em até 5 s.", atributos: { disponibilidade: 99.0, latencia_maxima_ms: 5000 } }
-
-  - id: sistema-crm
-    tipo: Sistema
-    nome: CRM Bússola
-    descricao: Cadastro, perfil e histórico de relacionamento.
-    atributos: { dono: Time de Dados de Clientes }
-    estado: { status: ok, latencia_ms: 120 }
-  - id: sistema-core-bancario
-    tipo: Sistema
-    nome: Core bancário
-    descricao: Contas, saldos e débitos.
-    atributos: { dono: Tecnologia de Core }
-    estado: { status: ok, latencia_ms: 200 }
-  - id: sistema-motor-risco
-    tipo: Sistema
-    nome: Motor de regras de risco
-    descricao: Avalia elegibilidade, adequação e alçadas.
-    atributos: { dono: Diretoria de Riscos }
-    estado: { status: ok, latencia_ms: 250 }
-  - id: sistema-cofre-consentimentos
-    tipo: Sistema
-    nome: Cofre de consentimentos
-    descricao: Guarda consentimentos e suas evidências.
-    atributos: { dono: Encarregado de Dados (DPO) }
-    estado: { status: ok, latencia_ms: 90 }
-  - id: sistema-gateway-pagamentos
-    tipo: Sistema
-    nome: Gateway de pagamentos
-    descricao: Processa débito em conta, cartão e Pix.
-    atributos: { dono: Meios de Pagamento }
-    estado: { status: ok, latencia_ms: 350, custo_estimado: 0.01 }
-  - id: sistema-registro-operacoes
-    tipo: Sistema
-    nome: Sistema de registro de operações
-    descricao: Registra aceites e apólices para fins regulatórios.
-    atributos: { dono: Diretoria de Compliance }
-    estado: { status: ok, latencia_ms: 300 }
-  - id: sistema-vistoria
-    tipo: Sistema
-    nome: Plataforma de vistorias
-    descricao: Agenda vistorias com empresas credenciadas.
-    atributos: { dono: Operações de Seguros, prazo_tipico_dias: 3 }
-    estado: { status: ok, latencia_ms: 600 }
 
 relacoes:
   - [seguradora-ancora, EXPOE, api-cotacao-ancora]

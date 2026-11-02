@@ -733,15 +733,28 @@ $altura-linha-do-tempo: 5.75rem;
     }
   }
 
+  // O selo do replay, "Pular para o fim" e "Gravar esta viagem" lado a lado, com fundo sólido:
+  // nada do mapa (nem os rótulos) aparece por trás deles.
   &__estado {
     position: absolute;
     z-index: 2;
     inset-block-start: $spacing-04;
     inset-inline-end: $spacing-04;
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
     gap: $spacing-03;
+    max-inline-size: 60%;
+
+    .cds--btn {
+      background: theme.$layer-01;
+      box-shadow: 0 1px 4px rgb(0 0 0 / 35%);
+    }
+
+    .cds--tag {
+      margin: 0;
+    }
   }
 
   &__avisos {
@@ -860,6 +873,7 @@ $altura-linha-do-tempo: 5.75rem;
 // --- Rótulos do mapa 3D: chips em HTML, legíveis no telão -----------------------------------
 .rotulos {
   position: absolute;
+  z-index: 1; // abaixo dos controles e avisos do mapa (z-index 2)
   inset: 0;
   pointer-events: none;
   overflow: hidden;
@@ -1060,6 +1074,7 @@ $altura-linha-do-tempo: 5.75rem;
 }
 
 .raiox {
+  @include type-style('body-compact-01');
   inline-size: 32rem;
   display: flex;
   flex-direction: column;
@@ -1069,6 +1084,24 @@ $altura-linha-do-tempo: 5.75rem;
 
   .cds--tabs {
     flex: none;
+  }
+
+  // As 5 abas cabem na largura do painel e a ocupam toda.
+  .cds--tab--list {
+    inline-size: 100%;
+  }
+
+  .cds--tabs__nav-item {
+    flex: 1 1 auto;
+  }
+
+  .cds--tabs__nav-link {
+    @include type-style('body-compact-01');
+    padding-inline: $spacing-03;
+  }
+
+  p {
+    @include type-style('body-compact-01');
   }
 
   &__aba.cds--tab-content {
@@ -1094,9 +1127,8 @@ $altura-linha-do-tempo: 5.75rem;
     padding: $spacing-02 $spacing-03;
     cursor: pointer;
     border-inline-start: 3px solid transparent;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.8125rem;
-    line-height: 1.25rem;
+    @include type-style('code-01');
+    line-height: 1.125rem;
 
     &:hover,
     &:focus-visible {
@@ -1147,9 +1179,9 @@ $altura-linha-do-tempo: 5.75rem;
 
   &__detalhe {
     grid-column: 2 / -1;
-    color: theme.$text-secondary;
+    @include type-style('helper-text-01');
     font-family: 'IBM Plex Sans', sans-serif;
-    font-size: 0.75rem;
+    color: theme.$text-secondary;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1236,7 +1268,7 @@ $altura-linha-do-tempo: 5.75rem;
     }
 
     dd {
-      @include type-style('heading-03');
+      @include type-style('heading-02');
 
       small {
         @include type-style('label-01');
@@ -1246,9 +1278,10 @@ $altura-linha-do-tempo: 5.75rem;
   }
 
   &__tabela {
+    @include type-style('body-compact-01');
     inline-size: 100%;
     border-collapse: collapse;
-    font-size: 0.8125rem;
+    font-size: 0.75rem;
 
     th,
     td {
@@ -1266,8 +1299,13 @@ $altura-linha-do-tempo: 5.75rem;
 
 // --- Placar ------------------------------------------------------------------------------
 .placar {
+  p {
+    @include type-style('helper-text-01');
+    color: theme.$text-secondary;
+  }
+
   &__subtitulo {
-    @include type-style('heading-compact-02');
+    @include type-style('heading-compact-01');
     margin-block-end: $spacing-02;
   }
 
@@ -1364,9 +1402,17 @@ $altura-linha-do-tempo: 5.75rem;
   background: theme.$layer-01;
   color: theme.$text-primary;
   box-shadow: 4px 0 12px rgb(0 0 0 / 40%);
+  @include type-style('body-compact-01');
 
   h3 {
-    @include type-style('heading-compact-01');
+    @include type-style('label-01');
+    color: theme.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  p {
+    @include type-style('body-compact-01');
   }
 
   &__cabecalho,
@@ -1378,7 +1424,7 @@ $altura-linha-do-tempo: 5.75rem;
   }
 
   &__titulo {
-    @include type-style('heading-03');
+    @include type-style('heading-02');
   }
 
   &__secao {
@@ -1389,12 +1435,13 @@ $altura-linha-do-tempo: 5.75rem;
     border-block-start: 1px solid theme.$border-subtle-01;
   }
 
+  // Número, nome e duração, e os 3 botões (ao vivo, bastidores e replay) na mesma linha.
   &__cenas li {
     display: grid;
-    grid-template-columns: 1.75rem 1fr auto auto;
+    grid-template-columns: 1.5rem minmax(0, 1fr) repeat(3, auto);
     align-items: center;
-    gap: $spacing-03;
-    padding: $spacing-02 $spacing-03;
+    column-gap: $spacing-02;
+    padding: $spacing-02 $spacing-02 $spacing-02 $spacing-03;
     border-inline-start: 3px solid transparent;
 
     &.apresentador__cena--atual {
@@ -1404,10 +1451,11 @@ $altura-linha-do-tempo: 5.75rem;
   }
 
   &__numero {
+    @include type-style('label-01');
     display: inline-grid;
     place-items: center;
-    inline-size: 1.5rem;
-    block-size: 1.5rem;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
     border-radius: 50%;
     background: $laranja-bussola;
     color: #fff;
@@ -1417,8 +1465,10 @@ $altura-linha-do-tempo: 5.75rem;
   &__nome {
     display: flex;
     flex-direction: column;
+    min-inline-size: 0;
 
     small {
+      @include type-style('helper-text-01');
       color: theme.$text-secondary;
     }
   }
@@ -1443,11 +1493,17 @@ $altura-linha-do-tempo: 5.75rem;
     gap: $spacing-03;
   }
 
+  // O toggle e, ao lado, o nome com a metáfora embaixo (sem repetir o nome no texto do toggle).
   &__incidentes li {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
     align-items: center;
     gap: $spacing-03;
-    padding: $spacing-02 $spacing-03;
+    padding: $spacing-03;
+
+    .cds--toggle__text {
+      display: none;
+    }
 
     &.apresentador__incidente--sugerido {
       background: rgb(242 101 34 / 14%);
@@ -1459,8 +1515,18 @@ $altura-linha-do-tempo: 5.75rem;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
-    gap: $spacing-01;
-    font-size: 0.8125rem;
+    gap: $spacing-02;
+    min-inline-size: 0;
+
+    strong {
+      @include type-style('body-compact-01');
+      font-weight: 600;
+      overflow-wrap: anywhere;
+    }
+
+    .cds--tag {
+      margin: 0;
+    }
   }
 }
 

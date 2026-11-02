@@ -1,40 +1,55 @@
 # Bairros (domínios) da cidade do Banco Bússola.
 #
-# Posições fixas, inspiradas no infográfico da demo: a plateia passa a
-# reconhecer os lugares ao longo da apresentação. Mundo de 1000 × 700
-# unidades, origem no canto superior esquerdo.
+# A cidade é uma grade de quadras cortada por ruas, com avenidas mais largas,
+# como num GPS. Cada bairro é uma região de quadras, distinguida só pela cor
+# do chão. As posições seguem o infográfico da demo: a plateia passa a
+# reconhecer os lugares ao longo da apresentação.
+# Mundo de 1000 × 700 unidades, origem no canto superior esquerdo.
 # Cores: paleta categórica de dados do Carbon, sem vermelho (reservado a
 # incidentes) e sem laranja (cor da marca).
 
 mundo: { largura: 1000, altura: 700 }
 
+# --8<-- [start:cidade]
+cidade:
+  colunas: 10               # quadras na horizontal
+  linhas: 7                 # quadras na vertical
+  lotes_por_quadra: [2, 2]  # cada quadra tem 2 × 2 lotes; cada lugar do grafo ocupa um
+  rua: 10                   # largura das ruas
+  avenida: 18               # largura das avenidas
+  # Avenidas: as linhas da grade (0 a 10, 0 a 7) que são mais largas; separam os bairros.
+  avenidas_verticais: [4, 8]
+  avenidas_horizontais: [5]
+# --8<-- [end:cidade]
+
 # --8<-- [start:bairros]
+# Os 5 bairros do infográfico, nas mesmas posições: em cima, Cliente e
+# Relacionamento, Regras e Governança e Produtos e Ofertas; embaixo, Serviços
+# e Parceiros (à beira do rio) e Pagamentos e Emissão.
+# quadras: [coluna inicial, linha inicial, coluna final, linha final), em quadras da grade.
 bairros:
   - id: cliente
-    nome: Cliente
+    nome: Cliente e Relacionamento
     cor: "#6929c4"      # Carbon purple 70
-    poligono: [[60, 60], [330, 40], [360, 250], [90, 300]]
-  - id: regulatorio
-    nome: Regulatório
+    quadras: [0, 0, 4, 5]
+  - id: governanca
+    nome: Regras e Governança
     cor: "#1192e8"      # Carbon cyan 50
-    poligono: [[380, 30], [640, 30], [625, 205], [395, 220]]
+    quadras: [4, 0, 8, 5]
   - id: produtos
-    nome: Produtos
+    nome: Produtos e Ofertas
     cor: "#005d5d"      # Carbon teal 70
-    poligono: [[690, 40], [950, 60], [940, 300], [700, 285]]
-  - id: risco
-    nome: Risco
-    cor: "#9f1853"      # Carbon magenta 70
-    poligono: [[395, 250], [655, 235], [665, 430], [405, 445]]
+    quadras: [8, 0, 10, 5]
   - id: parceiros
-    nome: Parceiros
+    nome: Serviços e Parceiros
     cor: "#198038"      # Carbon green 60
-    poligono: [[340, 480], [650, 470], [655, 670], [345, 680]]
-  - id: canais
-    nome: Canais e operação
+    quadras: [0, 5, 7, 7]
+  - id: pagamentos
+    nome: Pagamentos e Emissão
     cor: "#002d9c"      # Carbon blue 80
-    poligono: [[700, 330], [960, 340], [950, 660], [705, 650]]
+    quadras: [7, 5, 10, 7]
 # --8<-- [end:bairros]
 
 # Rio que corta a cidade na diagonal, à esquerda, como no infográfico.
+# As quadras que ele cruza viram água; as ruas que o atravessam, pontes.
 rio: [[0, 330], [150, 380], [260, 470], [300, 560], [285, 700]]

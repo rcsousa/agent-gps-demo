@@ -40,7 +40,7 @@ A **vistoria** e a **aprovação do especialista** são paradas opcionais. Elas 
 
 ### As rotas
 
-As três rotas passam pelas mesmas nove paradas. A assistida entra pela aprovação do especialista antes do pagamento. Diagrama gerado das instâncias da ontologia:
+As três rotas passam pelas mesmas nove paradas. A assistida entra pela aprovação do especialista antes do pagamento. As rotas guiam o agente (a skill escolhe e recalcula). No mapa, o que aparece é o caminho que ele realmente percorreu. Diagrama gerado das instâncias da ontologia:
 
 ![As 9 paradas e as 3 rotas](assets/diagramas/rotas.svg)
 

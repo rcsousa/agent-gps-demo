@@ -1,5 +1,6 @@
-# Bairro Canais e operação: por onde a cliente chega, quem atende os
-# pedágios (especialistas humanos), filas e meios de pagamento.
+# Canais e operação: por onde a cliente chega (bairro Cliente e
+# Relacionamento), quem atende os pedágios (especialistas humanos) e as filas
+# (Serviços e Parceiros) e os meios de pagamento (Pagamentos e Emissão).
 
 proveniencia_padrao:
   fonte: Catálogo de canais e operação

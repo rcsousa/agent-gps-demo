@@ -22,7 +22,7 @@ entidades:
   # --8<-- [start:paradas]
   - id: parada-intencao
     tipo: Parada
-    bairro: canais
+    bairro: cliente
     nome: Entender a intenção
     descricao: Classificar o pedido e escolher a skill de contratação de seguro.
     atributos: { numero: 1, tempo_base_s: 15 }
@@ -34,19 +34,19 @@ entidades:
     atributos: { numero: 2, tempo_base_s: 20 }
   - id: parada-consentimento
     tipo: Parada
-    bairro: regulatorio
+    bairro: governanca
     nome: Consentimento e LGPD
     descricao: Verificar se há base legal para usar os dados nessa oferta.
     atributos: { numero: 3, tempo_base_s: 15 }
   - id: parada-elegibilidade
     tipo: Parada
-    bairro: risco
+    bairro: governanca
     nome: Elegibilidade
     descricao: Regras do produto, imóvel, região e restrições cadastrais.
     atributos: { numero: 4, tempo_base_s: 25 }
   - id: parada-adequacao
     tipo: Parada
-    bairro: risco
+    bairro: produtos
     nome: Adequação da oferta
     descricao: O produto faz sentido para o perfil e a necessidade declarada.
     atributos: { numero: 5, tempo_base_s: 25 }
@@ -58,31 +58,31 @@ entidades:
     atributos: { numero: 6, tempo_base_s: 60 }
   - id: parada-proposta
     tipo: Parada
-    bairro: canais
+    bairro: produtos
     nome: Proposta e aceite
     descricao: Apresentar a oferta, explicar coberturas e registrar o aceite da cliente.
     atributos: { numero: 7, tempo_base_s: 90 }
   - id: parada-pagamento
     tipo: Parada
-    bairro: canais
+    bairro: pagamentos
     nome: Pagamento
     descricao: Débito em conta ou cartão.
     atributos: { numero: 8, tempo_base_s: 20 }
   - id: parada-emissao
     tipo: Parada
-    bairro: parceiros
+    bairro: pagamentos
     nome: Emissão
     descricao: Gerar a apólice com a seguradora e confirmar para a cliente.
     atributos: { numero: 9, tempo_base_s: 30 }
   - id: parada-aprovacao-humana
     tipo: Parada
-    bairro: canais
+    bairro: parceiros
     nome: Aprovação do especialista
     descricao: O pedágio. Um especialista humano aprova a proposta acima da alçada automática.
     atributos: { tempo_base_s: 420, opcional: true }
   - id: parada-vistoria
     tipo: Parada
-    bairro: risco
+    bairro: parceiros
     nome: Vistoria
     descricao: Desvio por obra. Entra na rota quando o imóvel está em área de risco alto.
     atributos: { tempo_base_s: 259200, opcional: true }
