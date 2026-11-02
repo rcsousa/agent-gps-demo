@@ -72,7 +72,7 @@ Cerca de 15 dessas tools são **de distração**: plausíveis, às vezes perigos
 
 **Tools desligadas pelo apresentador.** O simulador guarda no barramento (`bussola:tools:fora`) as tools que o apresentador desligou. Antes de rotear cada chamada, o gateway consulta esse conjunto. Uma tool desligada devolve erro sem chegar ao servidor, com `status: erro` e `motivo: desligada` na proveniência e no evento.
 
-**Cada chamada vira um evento.** O gateway publica no Redis Stream `bussola:eventos` uma entrada `tool.called` com os mesmos campos, mais os argumentos e o erro, quando há. É desse stream que o Raio-X (Fase 7) lê: o que aparece na tela é o que de fato trafegou.
+**Cada chamada vira um evento.** O gateway publica no Redis Stream `bussola:eventos` uma entrada `tool.called` com os mesmos campos, mais os argumentos e o erro, quando há. É desse stream que o Modo Raio-X lê: o que aparece na tela é o que de fato trafegou.
 
 ### O mundo simulado
 

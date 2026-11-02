@@ -122,7 +122,8 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 - as mensagens 1, 2 e 3, a Ana, o celular, as rotas e as seguradoras levam à cena correspondente, já no mapa;
 - as paradas 1 a 9 (no mapa ou na faixa) abrem o mapa no bairro daquela parada;
 - a placa, a camada de contexto, a skill, a proveniência e a tabela da metáfora levam ao capítulo destes bastidores;
-- o Modo Raio-X chega na Fase 7.
+- o seletor Mapa / Raio-X e a área "Modo Raio-X: transparência total" abrem o Raio-X;
+- as áreas de bastidores abrem o capítulo num painel ao lado, sem sair do infográfico.
 
 **Atalhos:** `Enter` inicia a demo, `M` abre o mapa, `S` abre o status e `B` abre os bastidores. `Tab` percorre as áreas.
 
@@ -176,12 +177,22 @@ O seletor **Mapa / Raio-X**, na barra do mapa, troca a apresentação sem reinic
 No mapa, a tecla **P** (ou o botão **Apresentador**) abre a gaveta do apresentador:
 
 - **Cenas 1 a 8**, com o tempo-alvo e o filtro "versão curta" (1, 4, 5, 6 e 8). **Ao vivo** limpa o mundo e prepara o mapa para a cena; a viagem começa no **Iniciar viagem**. **Replay** toca a gravação da cena. A cena 8 abre o Raio-X na última viagem com skill.
+- **Bastidores** (ícone de livro) abre o capítulo da cena num painel ao lado. Na barra do mapa, o mesmo atalho aparece como **Bastidores da cena**.
 - **Falas da Ana**, nas cenas 3 e 7: a do estorno e a da coleção de arte. Elas são enviadas como resposta quando o agente pergunta algo.
 - **Pedágio:** as aprovações pendentes, com aprovar e recusar e a contagem até a especialista Marina aprovar sozinha (30 s).
 - **Incidentes:** cada um com liga/desliga; o da cena atual aparece em destaque. Na cena 6, derrube a Âncora **durante** a viagem, para o recálculo acontecer ao vivo.
 - **Tools desligadas** e **Mundo limpo**, que volta tudo ao estado-base.
 
 ![A gaveta do apresentador](assets/raio-x/apresentador.png)
+
+### Regerar os vídeos e as capturas dos bastidores
+
+Os vídeos do capítulo 4 são os replays reais, acelerados. Depois de mudar o visual, regere sem gastar tokens (com a demo no ar):
+
+```bash
+./scripts/capturar-cenas.sh          # todas as cenas
+./scripts/capturar-cenas.sh 6 7      # só algumas
+```
 
 ### Gravar e tocar (replay offline)
 
