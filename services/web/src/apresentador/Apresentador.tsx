@@ -2,7 +2,7 @@
 // Prepara as cenas, muda o mundo pelo simulador, decide o pedágio e fala pela Ana.
 // Tudo o que ele faz vai ao simulador (o mundo) ou à resposta da Ana: nunca roteiriza o agente.
 
-import { Book, Close, Play, Renew, Reset } from '@carbon/icons-react';
+import { ArrowRight, Book, Close, Play, Renew, Reset } from '@carbon/icons-react';
 import { Button, IconButton, InlineNotification, Tag, Toggle } from '@carbon/react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -25,6 +25,8 @@ export function Apresentador(props: {
   real: EstadoDaViagem; // a viagem em curso: a pergunta pendente e o id para responder
   aoResponder: (texto: string) => Promise<void>;
   gravacoes: Record<string, string>; // cena → nome da gravação (replay)
+  aguardando: boolean; // o robô espera num balão (passo a passo)
+  aoSeguir: () => void;
 }) {
   const [curta, setCurta] = useState(false);
   const [incidentes, setIncidentes] = useState<IncidenteDoSimulador[]>([]);
@@ -96,6 +98,17 @@ export function Apresentador(props: {
           <Close />
         </IconButton>
       </header>
+
+      <Button
+        size="md"
+        renderIcon={ArrowRight}
+        className="apresentador__seguir"
+        disabled={!props.aguardando}
+        onClick={props.aoSeguir}
+        title={props.aguardando ? undefined : t.semBalao}
+      >
+        {t.seguirJornada}
+      </Button>
 
       {aviso && (
         <InlineNotification

@@ -25,6 +25,7 @@ import {
 } from './camadas';
 import { ESTILOS } from './construcoes';
 import { montarCena, type Ponto3, pontoDaPorta, suave, Z_CHAO, Z_RUA } from './cidade3d';
+import { Balao } from './Balao';
 import { useDiretor } from './diretor';
 import { LinhaDoTempo } from './LinhaDoTempo';
 import { Conversa, DetalheDoNo, Legenda } from './Paineis';
@@ -73,6 +74,7 @@ const CANAIS: Opcao[] = [
   { id: 'central', texto: t.barra.canais.central },
 ];
 const ROTEIRO = 'roteiro';
+const CHAVE_PASSO_A_PASSO = 'bussola:passo-a-passo';
 
 interface Visao {
   target: [number, number, number];
@@ -227,7 +229,11 @@ export function PaginaMapa() {
   // No replay ninguém responde.
   const real = useViagem(gravacao ? (replayPronto ? PREFIXO_GRAVACAO + replayPronto : null) : execucao);
   const replay = ehReplay(real.id);
-  const direcao = useDiretor(real, tempoDoTrecho);
+  // Passo a passo: o mapa para em cada balão até o apresentador mandar seguir. A escolha fica guardada.
+  const [passoAPasso, setPassoAPasso] = useState(() => localStorage.getItem(CHAVE_PASSO_A_PASSO) !== 'nao');
+  useEffect(() => localStorage.setItem(CHAVE_PASSO_A_PASSO, passoAPasso ? 'sim' : 'nao'), [passoAPasso]);
+  const nomeDoLugar = useCallback((id: string) => nos.get(id)?.nome ?? null, [nos]);
+  const direcao = useDiretor(real, tempoDoTrecho, passoAPasso, nomeDoLugar);
   const exibido = direcao.exibido;
 
   // --- Câmera -------------------------------------------------------------------------
@@ -545,6 +551,22 @@ export function PaginaMapa() {
     return () => window.removeEventListener('keydown', aoTeclar);
   }, []);
 
+  // Seguir com a jornada pelo teclado: Espaço, Enter ou →, quando o robô espera num balão.
+  const { aguardando, seguir: seguirJornada } = direcao;
+  useEffect(() => {
+    if (!aguardando) return;
+    const aoTeclar = (evento: KeyboardEvent) => {
+      const alvo = evento.target as HTMLElement;
+      if (alvo.closest('input, textarea, select, button, [role="tab"], [contenteditable="true"]')) return;
+      if (evento.key === ' ' || evento.key === 'Enter' || evento.key === 'ArrowRight') {
+        evento.preventDefault();
+        seguirJornada();
+      }
+    };
+    window.addEventListener('keydown', aoTeclar);
+    return () => window.removeEventListener('keydown', aoTeclar);
+  }, [aguardando, seguirJornada]);
+
   const [incidentesDaViagem, setIncidentesDaViagem] = useState<string[]>([]);
   const [gravada, setGravada] = useState<string | null>(null);
   useEffect(() => setGravada(null), [real.id]);
@@ -577,6 +599,8 @@ export function PaginaMapa() {
       data-fila={direcao.fila}
       data-camera={cameraSeguindo ? 'seguindo' : 'livre'}
       data-nivel={nivel.toFixed(1)}
+      data-balao={direcao.balao?.tipo ?? ''}
+      data-aguardando={direcao.aguardando ? 'sim' : 'nao'}
     >
       <div className="mapa__barra">
         <h1 id="titulo-mapa" className="mapa__titulo">
@@ -630,6 +654,18 @@ export function PaginaMapa() {
         <Button id="iniciar-viagem" size="md" renderIcon={Play} onClick={iniciar} disabled={emAndamento}>
           {emAndamento ? t.barra.emViagem : t.barra.iniciar}
         </Button>
+        <Toggle
+          id="passo-a-passo"
+          size="sm"
+          className="mapa__passo-a-passo"
+          labelText={t.passoAPasso}
+          labelA={t.passoAPasso}
+          labelB={t.passoAPasso}
+          hideLabel
+          title={t.passoAPassoAjuda}
+          toggled={passoAPasso}
+          onToggle={setPassoAPasso}
+        />
         <Button
           id="abrir-apresentador"
           kind={apresentador ? 'secondary' : 'ghost'}
@@ -687,7 +723,7 @@ export function PaginaMapa() {
               className="mapa__tela"
               onPointerDown={(e) => (inicioDoClique.current = [e.clientX, e.clientY])}
               onClick={(e) => {
-                if ((e.target as HTMLElement).closest('.rotulo')) return; // o rótulo trata o próprio clique
+                if ((e.target as HTMLElement).closest('.rotulo, .balao')) return; // o rótulo e o balão tratam o próprio clique
                 const [x0, y0] = inicioDoClique.current ?? [e.clientX, e.clientY];
                 if (Math.hypot(e.clientX - x0, e.clientY - y0) > 5) return; // foi arrasto
                 const caixa = e.currentTarget.getBoundingClientRect();
@@ -731,6 +767,15 @@ export function PaginaMapa() {
                   reservado={espacoDoRobo(robo, projetar)}
                 />
               )}
+              {projetar && robo && direcao.balao && (
+                <Balao
+                  balao={direcao.balao}
+                  posicao={projetar([robo[0], robo[1], Z_RUA + 0.3 + ALTURA_DO_ROBO])}
+                  largura={tamanho[0]}
+                  aguardando={direcao.aguardando}
+                  aoSeguir={direcao.seguir}
+                />
+              )}
             </div>
           )}
 
@@ -741,6 +786,8 @@ export function PaginaMapa() {
             real={{ ...exibido, id: real.id }}
             aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
             gravacoes={gravacoesPorCena(gravacoes)}
+            aguardando={direcao.aguardando}
+            aoSeguir={direcao.seguir}
           />
 
           <div className="mapa__estado">
@@ -758,8 +805,14 @@ export function PaginaMapa() {
               </Button>
             )}
             {real.id && !replay && (
-              <Tag type={direcao.fila > 0 ? 'warm-gray' : 'green'} size="md">
-                {direcao.fila > 0 ? t.reproduzindo(direcao.fila) : real.fim ? t.encerrada : t.aoVivo}
+              <Tag type={direcao.aguardando ? 'blue' : direcao.fila > 0 ? 'warm-gray' : 'green'} size="md">
+                {direcao.aguardando
+                  ? t.aguardando
+                  : direcao.fila > 0
+                    ? t.reproduzindo(direcao.fila)
+                    : real.fim
+                      ? t.encerrada
+                      : t.aoVivo}
               </Tag>
             )}
             {direcao.fila > 3 && (

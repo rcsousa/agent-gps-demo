@@ -1387,6 +1387,102 @@ $altura-linha-do-tempo: 5.75rem;
   @include type-style('body-compact-01');
 }
 
+// --- O balão de fala do robô ------------------------------------------------------------
+// Preso acima do pino, com o rabicho apontando para o robô. Vermelho só para falha e incidente,
+// sempre com ícone.
+.balao {
+  @include type-style('body-compact-01');
+  position: absolute;
+  z-index: 3;
+  max-inline-size: 20rem;
+  min-inline-size: 12rem;
+  transform: translate(-50%, -100%);
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-02;
+  padding: $spacing-03 $spacing-04;
+  background: #fff;
+  color: #161616;
+  border: 2px solid $laranja-bussola;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 14px rgb(0 0 0 / 35%);
+  pointer-events: auto;
+  animation: balao-entra 180ms ease-out;
+
+  // O rabicho: um losango na borda de baixo, deslocado até o robô.
+  &::after {
+    content: '';
+    position: absolute;
+    inset-block-end: -0.5rem;
+    inset-inline-start: calc(50% + var(--rabicho, 0px) - 0.5rem);
+    inline-size: 1rem;
+    block-size: 1rem;
+    background: #fff;
+    border-inline-end: 2px solid $laranja-bussola;
+    border-block-end: 2px solid $laranja-bussola;
+    transform: rotate(45deg);
+  }
+
+  &--erro {
+    border-color: #da1e28;
+
+    &::after {
+      border-color: #da1e28;
+    }
+  }
+
+  &--recalculo,
+  &--pedagio {
+    border-color: #1d3557;
+
+    &::after {
+      border-color: #1d3557;
+    }
+  }
+
+  &__texto {
+    display: flex;
+    gap: $spacing-02;
+    align-items: flex-start;
+    font-weight: 600;
+  }
+
+  &__icone {
+    flex: none;
+    margin-block-start: 0.125rem;
+    color: #da1e28;
+  }
+
+  &__detalhe {
+    @include type-style('code-01');
+    color: #525252;
+    overflow-wrap: anywhere;
+  }
+
+  &__seguir {
+    align-self: flex-end;
+
+    kbd {
+      @include type-style('label-01');
+      margin-inline-start: $spacing-03;
+      padding: 0 $spacing-02;
+      border: 1px solid rgb(255 255 255 / 50%);
+      border-radius: 0.25rem;
+    }
+  }
+}
+
+@keyframes balao-entra {
+  from {
+    opacity: 0;
+    transform: translate(-50%, calc(-100% + 0.5rem));
+  }
+}
+
+.mapa__passo-a-passo {
+  align-self: center;
+}
+
 // --- Painel do apresentador (gaveta no mapa) ----------------------------------------------
 .apresentador {
   position: absolute;
@@ -1471,6 +1567,11 @@ $altura-linha-do-tempo: 5.75rem;
       @include type-style('helper-text-01');
       color: theme.$text-secondary;
     }
+  }
+
+  &__seguir {
+    max-inline-size: none;
+    inline-size: 100%;
   }
 
   &__fala {

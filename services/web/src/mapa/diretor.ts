@@ -4,14 +4,21 @@
 //
 // O robô anda pelas ruas a cada evento que o leva a um lugar: um step.started (a placa da
 // parada) ou um tool.called (o prédio do sistema chamado). O tempo do trecho vem da distância.
+//
+// Ao chegar, o robô abre um balão de fala (tools, incidentes, recálculos e pedágio). No passo a
+// passo, o diretor espera o apresentador mandar seguir; o agente, não: ele continua trabalhando,
+// e o mapa só mostra o próximo evento real quando o apresentador pede.
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import type { EventoDaExecucao } from '../tipos';
+import { type Balao, balaoDoEvento, EVENTOS_COM_BALAO } from './baloes';
 import { type EstadoDaViagem, noDaTool, reduzir, VIAGEM_VAZIA } from './viagem';
 
 const PAUSA_NA_PARADA_MS = 600;
 const PULSO_MS = 350;
+// Sem o passo a passo, o balão fica esse tempo na tela e some sozinho.
+const BALAO_MS = 1100;
 
 // --8<-- [start:retencao]
 const RETENCAO_MS: Record<string, number> = {
@@ -54,6 +61,9 @@ export interface Direcao {
   partida: string | null; // o lugar de onde o robô saiu
   trechos: Trecho[]; // todos os trechos já começados, na ordem: o último é o atual
   fila: number; // eventos reais ainda não mostrados
+  balao: Balao | null; // o balão de fala aberto agora
+  aguardando: boolean; // o mapa está parado, esperando o apresentador mandar seguir
+  seguir: () => void;
   pularParaOFim: () => void;
 }
 
@@ -67,6 +77,8 @@ function destino(evento: EventoDaExecucao): string | null {
 export function useDiretor(
   real: EstadoDaViagem,
   tempoDoTrecho: (de: string, para: string) => number | null, // ms, ou null se não há caminho
+  passoAPasso: boolean,
+  nomeDoLugar: (id: string) => string | null,
 ): Direcao {
   const [exibido, despachar] = useReducer(reduzir, VIAGEM_VAZIA);
   const [cursor, setCursor] = useState(0);
@@ -78,10 +90,27 @@ export function useDiretor(
   const lugarAtual = useRef<string | null>(null);
   const tempo = useRef(tempoDoTrecho);
   tempo.current = tempoDoTrecho;
+  const nome = useRef(nomeDoLugar);
+  nome.current = nomeDoLugar;
+  const passo = useRef(passoAPasso);
+  passo.current = passoAPasso;
+  const timerDoBalao = useRef<number | undefined>(undefined);
+  const [balao, setBalao] = useState<Balao | null>(null);
+  const [aguardando, setAguardando] = useState(false);
+
+  const avancar = useCallback(() => {
+    window.clearTimeout(timerDoBalao.current);
+    setBalao(null);
+    setAguardando(false);
+    setCursor((c) => c + 1);
+  }, []);
 
   // Nova execução: o diretor recomeça do zero.
   useEffect(() => {
     window.clearTimeout(timer.current);
+    window.clearTimeout(timerDoBalao.current);
+    setBalao(null);
+    setAguardando(false);
     aplicado.current = -1;
     lugarAtual.current = null;
     despachar({ tipo: 'reiniciar', id: real.id });
@@ -92,6 +121,8 @@ export function useDiretor(
   }, [real.id]);
 
   const eventos: EventoDaExecucao[] = real.eventos;
+  const totalDeEventos = useRef(0);
+  totalDeEventos.current = eventos.length;
   useEffect(() => {
     if (cursor >= eventos.length || aplicado.current === cursor) return;
     aplicado.current = cursor;
@@ -113,12 +144,55 @@ export function useDiretor(
       }
     }
     despachar({ tipo: 'evento', evento });
-    const espera = pular ? 0 : andar + (RETENCAO_MS[evento.tipo] ?? 0);
-    timer.current = window.setTimeout(() => setCursor((c) => c + 1), espera);
-  }, [cursor, eventos, pular]);
+    const retencao = RETENCAO_MS[evento.tipo] ?? 0;
+    const comBalao = !pular && EVENTOS_COM_BALAO.has(evento.tipo);
+    if (!comBalao) {
+      timer.current = window.setTimeout(avancar, pular ? 0 : andar + retencao);
+      return;
+    }
+    // O balão abre quando o robô chega. No passo a passo, o diretor espera o apresentador.
+    const lugar = para ?? lugarAtual.current;
+    const fala = balaoDoEvento(evento, lugar ? nome.current(lugar) : null);
+    timerDoBalao.current = window.setTimeout(() => {
+      setBalao(fala);
+      if (passo.current) setAguardando(true);
+      else timer.current = window.setTimeout(avancar, Math.max(retencao, BALAO_MS));
+    }, andar);
+  }, [cursor, eventos, pular, avancar]);
 
-  useEffect(() => () => window.clearTimeout(timer.current), []);
+  // Desligar o passo a passo com o balão esperando: a viagem segue sozinha.
+  useEffect(() => {
+    if (!passoAPasso && aguardando) avancar();
+  }, [passoAPasso, aguardando, avancar]);
 
-  const pularParaOFim = useCallback(() => setPular(true), []);
-  return { exibido, partida, trechos, fila: Math.max(eventos.length - cursor, 0), pularParaOFim };
+  useEffect(
+    () => () => {
+      window.clearTimeout(timer.current);
+      window.clearTimeout(timerDoBalao.current);
+    },
+    [],
+  );
+
+  const seguir = useCallback(() => {
+    if (aguardando) avancar();
+  }, [aguardando, avancar]);
+  const pularParaOFim = useCallback(() => {
+    window.clearTimeout(timer.current);
+    window.clearTimeout(timerDoBalao.current);
+    setBalao(null);
+    setAguardando(false);
+    setPular(true);
+    // O evento atual (talvez esperando o balão) termina já; os próximos passam sem tempo.
+    setCursor((c) => (aplicado.current === c && c < totalDeEventos.current ? c + 1 : c));
+  }, []);
+  return {
+    exibido,
+    partida,
+    trechos,
+    fila: Math.max(eventos.length - cursor, 0),
+    balao,
+    aguardando,
+    seguir,
+    pularParaOFim,
+  };
 }
