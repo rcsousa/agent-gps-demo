@@ -129,31 +129,31 @@ No pedágio (`alcada-ana-excedida`), a proposta exige um especialista. Depois de
 
 ### O Modo Mapa
 
-<http://localhost:8080/mapa> mostra a cidade do banco em 3D, desenhada a partir do grafo, com os seis bairros, as três estradas da jornada, as nove paradas e o trânsito ao vivo.
+<http://localhost:8080/mapa> mostra a cidade do banco: ruas, avenidas, o rio com pontes e uma construção para cada lugar do grafo. São casas no bairro Cliente, lojas e o shopping em Produtos, fábricas em Risco, prédios públicos no Regulatório, torres e prédios técnicos em Parceiros e escritórios em Canais. O trânsito é ao vivo.
 
-![A cidade em 3D, com os bairros e as estradas da jornada](assets/mapa/cidade.png)
+![A cidade em grade, com uma construção por lugar do banco](assets/mapa/cidade.png)
 
-**Navegar:** arraste para mover, use a roda para o zoom e o botão direito para mudar a inclinação ou girar. "Enquadrar a cidade" volta à vista inicial, alinhada ao norte.
+**Navegar:** arraste para mover, use a roda para o zoom e o botão direito para mudar a inclinação ou girar. "Enquadrar a cidade" volta à vista inicial, alinhada ao norte. Clique no nome de um bairro para ir até ele.
 
-**Abrir um bairro:** clique no nome ou na placa do bairro, ou aproxime bem o zoom. Os sistemas daquele bairro aparecem como prédios com placas, e o status fica no telhado. Clique numa placa ou num prédio para ver os atributos, o estado vivo, a **proveniência** e os vizinhos. "Voltar à cidade" fecha o bairro.
+**De perto, aparecem os nomes das construções.** Clique em uma para ver os atributos, o estado vivo, a **proveniência** e os vizinhos.
 
-![O bairro Parceiros aberto: as APIs das seguradoras e os sistemas do banco](assets/mapa/bairro.png)
+![De perto, os nomes dos lugares de Parceiros: as APIs das seguradoras e os sistemas do banco](assets/mapa/bairro.png)
 
-![O detalhe de um sistema, com a proveniência](assets/mapa/no.png)
+![O detalhe de um lugar, com a proveniência](assets/mapa/no.png)
 
 **Fazer uma viagem:**
 
 1. Na barra de viagem, escolha o **modo** (com skill, sem skill ou sem contexto), o **canal** e o **modelo**. A opção "Roteiro (ensaio sem LLM)" não gasta tokens.
 2. Clique em **Iniciar viagem**. O endereço muda para `/mapa?execucao=<id>`, e dá para abrir o mesmo link em outra tela.
-3. O robô percorre a estrada parada a parada. Com "Seguir o agente" ligado, a câmera vai junto e abre o bairro de cada parada. A linha do tempo no rodapé e a narração mostram em que passo ele está.
+3. O robô sai da porta do canal e anda pelas ruas até cada lugar que o agente usa: o CRM, o cofre de consentimentos, o motor de risco, as APIs das seguradoras, o gateway de pagamentos… O caminho acende em laranja atrás dele, e as placas das paradas acendem quando ele passa. Com "Seguir o agente" ligado, a câmera vai junto.
 4. Quando o agente perguntar algo à Ana, a pergunta aparece no painel **Conversa**. Responda com um dos botões ou escreva a resposta.
 5. O selo no alto mostra "Reproduzindo" enquanto o mapa está atrás do agente e "Ao vivo" quando alcança. **Pular para o fim** alcança de uma vez.
 
-![A viagem com skill: o robô na parada 6, com o trecho percorrido aceso e a linha do tempo](assets/mapa/viagem.png)
+![A viagem com skill: o robô andando pelas ruas, com o caminho real aceso](assets/mapa/viagem.png)
 
-**Cenas prontas.** `/mapa?cena=6` deixa a barra pronta para a cena 6 e mostra o botão **Derrubar a API da Âncora**. Derrube a API: o farol vermelho sobe no bairro Parceiros e as rotas que passam por ali ficam interditadas. Depois, inicie a viagem e veja o desvio.
+**Cenas prontas.** `/mapa?cena=6` deixa a barra pronta para a cena 6 e mostra o botão **Derrubar a API da Âncora**. Derrube a API e o farol vermelho sobe do prédio dela. Depois, inicie a viagem: o robô vai até a Âncora, o prédio pulsa em vermelho e o agente segue com as outras seguradoras.
 
-![A cena 6: o farol da Âncora e as rotas interditadas](assets/mapa/incidente.png)
+![A cena 6: o farol da Âncora](assets/mapa/incidente.png)
 
 Depois, volte o mundo ao normal com `./scripts/incidente.sh reset`.
 

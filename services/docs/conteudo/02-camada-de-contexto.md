@@ -32,7 +32,13 @@ As posições seguem o infográfico da demo. A plateia passa a reconhecer os lug
 --8<-- "bairros.yaml:bairros"
 ```
 
-Dentro de cada bairro, os nós são distribuídos por layout de forças, com semente fixa, e encaixados numa grade de quadras. O resultado fica salvo em `ontologia/layout.json`, e um teste garante que ele corresponde à ontologia. Relações entre bairros viram **avenidas**.
+A cidade é uma grade de quadras cortada por ruas e avenidas, e cada bairro é uma região dela:
+
+```yaml
+--8<-- "bairros.yaml:cidade"
+```
+
+Cada lugar do grafo ocupa um lote do seu bairro, com a porta na rua, e vira uma construção no mapa. Lugares ligados ficam perto, pelo layout de forças, com semente fixa. O resultado fica salvo em `ontologia/layout.json`, e um teste garante que ele corresponde à ontologia. Veja o capítulo 6.
 
 ### O mapa em uma imagem
 

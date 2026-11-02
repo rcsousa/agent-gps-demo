@@ -327,9 +327,9 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
 - Mapa no estilo do infográfico: cidade ilustrada e isométrica, cores suaves, rio e áreas verdes, cercada pela moldura neutra do Carbon.
 - Cada bairro com uma cor de destaque discreta, tirada da paleta de dados do Carbon.
 - Trânsito com semáforo de status: verde, amarelo e vermelho dessaturados, sempre acompanhados de ícone ou rótulo, nunca só cor.
-- Rota ativa como linha grossa animada; rotas alternativas tracejadas, com etiqueta de tempo, custo e risco.
+- O caminho real do agente como linha laranja, acesa trecho a trecho atrás do robô (as rotas alternativas não aparecem no mapa).
 - O agente como o robô do Banco Bússola dentro de um pino, com movimento suave.
-- Zoom semântico: longe mostra bairros, perto mostra nós e arestas do grafo com rótulos.
+- Zoom semântico: de longe, os bairros e as paradas; de perto, o nome de cada construção. No Raio-X, as arestas do grafo.
 - Navegação livre: arrastar, zoom, clicar em nó para ver detalhes e proveniência, e "seguir o agente" ligado ou desligado.
 - Animações de 200 a 600 ms, nunca bloqueando a leitura.
 
@@ -340,23 +340,24 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
   - `/mapa` é o Modo Mapa, que aceita `?execucao=<id>` para acompanhar uma viagem, `?cena=N` para o preset de uma cena e `?parada=N` para abrir numa parada;
   - `/status` é o dashboard.
 - **A cidade é o grafo:**
-  - `contexto://mapa`, `contexto.consultar_rota` e `contexto.consultar_entidade`, pelo caminho `web` → `agent` (`/api/mapa`, `/api/mapa/rotas`, `/api/mapa/entidade/{id}`) → `mcp-gateway`;
-  - o web relê a cidade e as rotas a cada 5 s, e isso é o trânsito.
-- **Cidade em 3D com deck.gl (`OrbitView`)**, sobre as coordenadas próprias da cidade (1000 × 700), sem mapa-base geográfico:
-  - câmera inclinada, bairros em relevo, prédios e árvores gerados com semente fixa, rio, avenidas e as estradas da jornada em curva;
-  - rótulos em HTML (IBM Plex, a partir de 14 px), com declutter.
-- **Dois níveis:**
-  - na **cidade**, aparecem bairros, estradas, paradas, faróis de incidente (só de infraestrutura) e o robô;
-  - no **bairro aberto**, aparecem os sistemas do bairro como prédios com o status no telhado e placas.
-
-  Um bairro se abre ao clicar nele, com o zoom bem próximo ou quando o agente chega a uma parada dele, com "Seguir o agente".
+  - `contexto://mapa` e `contexto.consultar_entidade`, pelo caminho `web` → `agent` (`/api/mapa`, `/api/mapa/entidade/{id}`) → `mcp-gateway`;
+  - o web relê a cidade a cada 5 s, e isso é o trânsito.
+- **Uma cidade em grade, como num GPS** (ajuste antes da Fase 9):
+  - 8 × 8 quadras, ruas e avenidas mais largas; cada bairro é uma região de quadras e se distingue só pela cor do chão;
+  - cada lugar do grafo ocupa um lote do seu bairro, com a porta na rua (`layout.json` v2), e vira uma construção, sem nenhum prédio decorativo;
+  - as construções têm o estilo do bairro: casas (Cliente), lojas e shopping (Produtos), fábricas (Risco), prédios públicos (Regulatório), torres e prédios técnicos (Parceiros) e escritórios (Canais);
+  - as paradas viram placas nas esquinas; o rio corta quadras, e as ruas que o atravessam são pontes;
+  - o deck.gl (`OrbitView`) desenha as coordenadas próprias da cidade (1000 × 700), sem mapa-base geográfico, com as construções em `SimpleMeshLayer`;
+  - rótulos em HTML (IBM Plex, a partir de 14 px), com declutter: de longe, os bairros e as paradas; de perto, as construções.
+- **As 3 rotas não aparecem no mapa.** O que aparece é o caminho real do robô. A escolha e o recálculo continuam como eventos (o recálculo também como aviso).
 - **A viagem é dirigida só pelo SSE da execução**, por um **diretor de animações**:
-  - os eventos reais são reproduzidos na ordem, com tempo mínimo (o robô leva 1,6 s entre paradas);
+  - os eventos reais são reproduzidos na ordem, com tempo mínimo;
+  - a cada `step.started` e a cada `tool.called`, o robô anda pelas ruas até a placa da parada ou até o prédio do sistema chamado, com o tempo proporcional à distância (0,6 a 1,8 s);
   - o selo mostra "Reproduzindo · +N eventos" ou "Ao vivo", e há "Pular para o fim";
   - a conversa usa o estado real, sem atraso;
   - uma linha do tempo das 9 paradas e uma linha de narração ficam no rodapé.
 
-  Cada evento tem uma animação correspondente, documentada nos bastidores (capítulo 6). Os modos sem contexto e sem skill não planejam rota: o robô fica no ponto de partida e os arcos mostram os sistemas chamados.
+  Cada evento tem uma animação correspondente, documentada nos bastidores (capítulo 6). Sem contexto, o robô fica parado na porta do canal; sem skill, ele anda de sistema em sistema, sem placas de parada nem roteiro.
 - **Barra de viagem no próprio mapa:**
   - modo, canal e modelo, com o roteiro como ensaio sem LLM, e o botão "Iniciar viagem";
   - o painel **Conversa**, para responder pela Ana.
@@ -368,8 +369,8 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
 
 - **Seletor Mapa / Raio-X na barra** (`?visao=raio-x`): a mesma execução, o mesmo diretor de animações e o mesmo SSE. Trocar de modo não reinicia a viagem.
 - **No Raio-X, a cidade é o grafo:**
-  - todos os nós aparecem como prédios-sistema, mais baixos fora do bairro aberto;
-  - todas as relações aparecem, com o tipo ao passar o mouse.
+  - os nomes de todas as construções aparecem, com declutter;
+  - as relações do grafo aparecem como arcos finos entre as construções.
 - **O painel do Raio-X tem as abas do infográfico:**
   - Chamadas MCP: o log de `tools/list`, `skills/list`, `skills/get`, `resources/read`, `prompts/get`, tools, passos do modelo e decisões, com o evento cru ao clicar;
   - Conversa;
@@ -510,7 +511,8 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Barramento de eventos: Redis Streams (serviço `bus`)
 - [x] Grafo recarregado com o estado-base a cada subida (serviço `seed`)
 - [x] Personagens: a Ana em todos os incidentes ao vivo; sete clientes-cenário para testes e placar
-- [x] Modo Mapa em deck.gl, sem MapLibre: cidade 3D (`OrbitView`) sobre as coordenadas próprias do grafo, não geográficas, com os sistemas só no bairro aberto
+- [x] Modo Mapa em deck.gl, sem MapLibre: cidade 3D (`OrbitView`) sobre as coordenadas próprias do grafo, não geográficas
+- [x] Cidade em grade (quadras, ruas e avenidas), bairros só pela cor do chão, uma construção por lugar do grafo no estilo do bairro, o robô andando pelas ruas até cada lugar que o agente usa e sem as 3 rotas no mapa
 - [x] Ritmo do mapa: fila de animações com tempo mínimo por evento, sem criar nem reordenar eventos
 - [x] Infográfico de abertura: a versão horizontal (`docs/assets/infografico_horizontal.jpeg`)
 - [x] Painel do apresentador como gaveta no próprio mapa (tecla P), numa tela só
