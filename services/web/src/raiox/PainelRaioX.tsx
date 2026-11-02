@@ -3,7 +3,7 @@
 
 import { CheckmarkFilled, ErrorFilled, Locked } from '@carbon/icons-react';
 import { CodeSnippet, Link, Tab, TabList, TabPanel, TabPanels, Tabs } from '@carbon/react';
-import { type MouseEvent, useMemo, useState } from 'react';
+import { type MouseEvent, useEffect, useMemo, useRef, useState } from 'react';
 
 import { mensagens } from '../mensagens/pt-BR';
 import { Conversa, RespostaDaAna } from '../mapa/Paineis';
@@ -23,6 +23,19 @@ function IconeDoStatus({ status }: { status: Registro['status'] }) {
 }
 
 function Chamadas(props: { lista: Registro[]; aoAbrir: (r: Registro) => void }) {
+  // O log acompanha a viagem: a cada linha nova, rola até o fim (a não ser que alguém esteja lendo acima).
+  const fim = useRef<HTMLLIElement>(null);
+  const seguindo = useRef(true);
+  useEffect(() => {
+    const aba = fim.current?.closest('.raiox__aba');
+    if (!aba) return;
+    const aoRolar = () => (seguindo.current = aba.scrollHeight - aba.scrollTop - aba.clientHeight < 80);
+    aba.addEventListener('scroll', aoRolar);
+    return () => aba.removeEventListener('scroll', aoRolar);
+  }, [props.lista.length > 0]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (seguindo.current) fim.current?.scrollIntoView({ block: 'nearest' });
+  }, [props.lista.length]);
   if (!props.lista.length) return <p className="apagado">{t.semExecucao}</p>;
   return (
     <ol className="raiox__log" aria-live="polite">
@@ -40,6 +53,7 @@ function Chamadas(props: { lista: Registro[]; aoAbrir: (r: Registro) => void }) 
           </button>
         </li>
       ))}
+      <li ref={fim} aria-hidden />
     </ol>
   );
 }

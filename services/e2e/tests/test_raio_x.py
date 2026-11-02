@@ -70,15 +70,19 @@ def test_apresentador_muda_o_mundo_e_decide_o_pedagio(pagina, mundo_limpo):
     pagina.click("#viagem-modelo")
     pagina.get_by_role("option", name="Roteiro (ensaio sem LLM)").click()
     pagina.click("#iniciar-viagem")
+    # Responde pela Ana até o pedágio aparecer na gaveta; aprova e segue até o fim da viagem.
     ticket = gaveta.locator(".apresentador__ticket")
-    ticket.wait_for(timeout=60000)
-    ticket.get_by_role("button", name="Aprovar").click()
-    for _ in range(120):
+    aprovou = False
+    for _ in range(240):
         pagina.wait_for_timeout(500)
         if pagina.locator(".mapa__opcoes button").count():
             pagina.locator(".mapa__opcoes button").first.click()
-        if pagina.locator("#iniciar-viagem").is_enabled():
+        if not aprovou and ticket.count():
+            ticket.get_by_role("button", name="Aprovar").click()
+            aprovou = True
+        if aprovou and pagina.locator("#iniciar-viagem").is_enabled():
             break
+    assert aprovou, "O pedágio não apareceu na gaveta do apresentador."
     assert _api("GET", f"/api/execucoes/{pagina.locator('.mapa').get_attribute('data-execucao')}")["apolice"]
 
 
@@ -88,7 +92,7 @@ def test_replay_offline_de_uma_gravacao(pagina, mundo_limpo):
     execucao = pagina.locator(".mapa").get_attribute("data-execucao")
     _api("POST", "/api/gravacoes", {"execucao": execucao, "nome": "e2e-replay", "incidentes": []})
     try:
-        pagina.goto(f"{WEB}/mapa?gravacao=e2e-replay", wait_until="networkidle")
+        pagina.goto(f"{WEB}/mapa?gravacao=e2e-replay", wait_until="load")
         pagina.wait_for_function("document.querySelector('.mapa').dataset.execucao === 'gravacao:e2e-replay'")
         assert pagina.locator(".mapa__selo-replay").inner_text().startswith("Replay")
         pular = pagina.get_by_role("button", name="Pular para o fim")
