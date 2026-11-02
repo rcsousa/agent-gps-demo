@@ -38,6 +38,7 @@ import {
 import { ESTILOS } from './construcoes';
 import { montarCena, type Ponto3, pontoDaPorta, suave, Z_CHAO, Z_RUA } from './cidade3d';
 import { Balao } from './Balao';
+import { Medidor } from './Medidor';
 import { useDiretor } from './diretor';
 import { movimentoReduzido, useTelao } from '../telao';
 import { LinhaDoTempo } from './LinhaDoTempo';
@@ -66,6 +67,8 @@ const TEMPO_DA_CAMERA_MS = 220;
 const AVANCO_DA_CAMERA = 45;
 // O giro é mais lento que o resto da câmera: a cada esquina, o mapa vira sem dar tontura.
 const TEMPO_DO_GIRO_MS = 650;
+// Depois do último movimento, o relógio ainda corre esse tempo (a câmera e o giro assentam).
+const TEMPO_PARA_ASSENTAR_MS = 2500;
 // rotationOrbit = SENTIDO_DO_GIRO × rumo deixa a direção da viagem para cima na tela.
 const SENTIDO_DO_GIRO = -1;
 const PASSO_DO_GIRO = 15;
@@ -97,6 +100,13 @@ const CANAIS: Opcao[] = [
   { id: 'central', texto: t.barra.canais.central },
 ];
 const ROTEIRO = 'roteiro';
+
+// Uma função estável que sempre chama a versão mais nova: para os pedaços memorizados da página.
+function useEstavel<A extends unknown[], R>(fn: (...a: A) => R): (...a: A) => R {
+  const ref = useRef(fn);
+  ref.current = fn;
+  return useCallback((...a: A) => ref.current(...a), []);
+}
 const CHAVE_PASSO_A_PASSO = 'bussola:passo-a-passo';
 
 interface Visao {
@@ -377,8 +387,16 @@ export function PaginaMapa() {
   // --- Relógio: só corre enquanto há o que animar ----------------------------------------
   const [agora, setAgora] = useState(() => performance.now());
   const ultimoPulso = exibido.pulsos.at(-1)?.quando ?? 0;
+  // Com a viagem parada (o balão esperando o apresentador, a Ana pensando), o relógio para: nada se
+  // move, e a página não re-renderiza à toa. Ele volta a cada mudança (evento exibido ou trecho novo)
+  // e corre o tempo do trecho, mais um pouco para a câmera assentar.
+  const [ultimaMudanca, setUltimaMudanca] = useState(() => performance.now());
+  useEffect(() => setUltimaMudanca(performance.now()), [exibido, direcao.trechos, direcao.balao]);
+  const fimDoTrecho = trechoAtual ? trechoAtual.inicio + trechoAtual.duracao : 0;
+  const algoSeMove = agora - Math.max(ultimaMudanca, fimDoTrecho) < TEMPO_PARA_ASSENTAR_MS;
   const animando =
-    Boolean(exibido.id && (!exibido.fim || direcao.fila > 0)) || agora - ultimoPulso < DURACAO_DO_PULSO_MS;
+    (Boolean(exibido.id && (!exibido.fim || direcao.fila > 0)) && algoSeMove) ||
+    agora - ultimoPulso < DURACAO_DO_PULSO_MS;
   useEffect(() => {
     if (!animando) return;
     let quadro = 0;
@@ -586,10 +604,13 @@ export function PaginaMapa() {
     setIncidenteAplicado(false);
   }, [cena]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const opcoesDeModelo: Opcao[] = [
-    ...(modelo?.modelos ?? []).map((m) => ({ id: m.id, texto: t.barra.modelo(m.id) })),
-    { id: ROTEIRO, texto: t.barra.roteiro },
-  ];
+  const opcoesDeModelo: Opcao[] = useMemo(
+    () => [
+      ...(modelo?.modelos ?? []).map((m) => ({ id: m.id, texto: t.barra.modelo(m.id) })),
+      { id: ROTEIRO, texto: t.barra.roteiro },
+    ],
+    [modelo],
+  );
   const modeloEscolhido = escolhaDeModelo ?? modelo?.modelo ?? ROTEIRO;
 
   async function iniciar() {
@@ -607,6 +628,7 @@ export function PaginaMapa() {
       const busca = new URLSearchParams({ execucao: id });
       if (cena) busca.set('cena', cena);
       if (raioX) busca.set('visao', 'raio-x');
+      if (parametro('fps')) busca.set('fps', parametro('fps') as string);
       navegar(`/mapa?${busca.toString()}`);
     } catch {
       setErro(t.erroIniciar);
@@ -671,6 +693,145 @@ export function PaginaMapa() {
   const ultimoRecalculo = exibido.recalculos.at(-1);
   const noSelecionado = selecionado ? nos.get(selecionado) : undefined;
 
+  // A barra não muda a cada quadro da animação: memorizada, ela não re-renderiza com o relógio
+  // (os dropdowns do Carbon custam caro). As ações usam sempre a versão mais nova (useEstavel).
+  const iniciarEstavel = useEstavel(iniciar);
+  const derrubarEstavel = useEstavel(derrubar);
+  const trocarVisaoEstavel = useEstavel(trocarVisao);
+  const barra = useMemo(
+    () => (
+          <div className="mapa__barra">
+            <h1 id="titulo-mapa" className="mapa__titulo">
+              {raioX ? mensagens.raioX.raioX : t.titulo}
+            </h1>
+            <ContentSwitcher
+              className="mapa__visao"
+              size="md"
+              selectedIndex={raioX ? 1 : 0}
+              onChange={({ index }: { index?: number }) => trocarVisaoEstavel(index === 1)}
+              aria-label={mensagens.raioX.alternar}
+            >
+              <Switch name="mapa" text={mensagens.raioX.mapa} />
+              <Switch name="raio-x" text={mensagens.raioX.raioX} />
+            </ContentSwitcher>
+            <Dropdown
+              id="viagem-modo"
+              size="md"
+              titleText={t.barra.modo}
+              label={t.barra.modo}
+              items={MODOS}
+              itemToString={(o: Opcao | null) => o?.texto ?? ''}
+              selectedItem={MODOS.find((o) => o.id === modo)}
+              onChange={({ selectedItem }: { selectedItem: Opcao | null }) => selectedItem && setModo(selectedItem.id)}
+              disabled={emAndamento}
+            />
+            <Dropdown
+              id="viagem-canal"
+              size="md"
+              titleText={t.barra.canal}
+              label={t.barra.canal}
+              items={CANAIS}
+              itemToString={(o: Opcao | null) => o?.texto ?? ''}
+              selectedItem={CANAIS.find((o) => o.id === canal)}
+              onChange={({ selectedItem }: { selectedItem: Opcao | null }) => selectedItem && setCanal(selectedItem.id)}
+              disabled={emAndamento}
+            />
+            <Dropdown
+              id="viagem-modelo"
+              size="md"
+              titleText={t.barra.modeloRotulo}
+              label={t.barra.modeloRotulo}
+              items={opcoesDeModelo}
+              itemToString={(o: Opcao | null) => o?.texto ?? ''}
+              selectedItem={opcoesDeModelo.find((o) => o.id === modeloEscolhido) ?? null}
+              onChange={({ selectedItem }: { selectedItem: Opcao | null }) =>
+                selectedItem && setEscolhaDeModelo(selectedItem.id)
+              }
+              disabled={emAndamento}
+            />
+            <Button id="iniciar-viagem" size="md" renderIcon={Play} onClick={iniciarEstavel} disabled={emAndamento}>
+              {emAndamento ? t.barra.emViagem : t.barra.iniciar}
+            </Button>
+            <Toggle
+              id="passo-a-passo"
+              size="sm"
+              className="mapa__passo-a-passo"
+              labelText={t.passoAPasso}
+              labelA={t.passoAPasso}
+              labelB={t.passoAPasso}
+              hideLabel
+              title={t.passoAPassoAjuda}
+              toggled={passoAPasso}
+              onToggle={setPassoAPasso}
+            />
+            <Button
+              id="abrir-apresentador"
+              kind={apresentador ? 'secondary' : 'ghost'}
+              size="md"
+              renderIcon={PresentationFile}
+              onClick={() => setApresentador((a) => !a)}
+              aria-pressed={apresentador}
+            >
+              {mensagens.apresentador.abrir}
+            </Button>
+            {cena && (
+              <div className="mapa__cena">
+                <Tag type="warm-gray" size="md">
+                  {t.cena(cena)}
+                </Tag>
+                <Button
+                  id="bastidores-da-cena"
+                  kind="ghost"
+                  size="md"
+                  renderIcon={Book}
+                  onClick={() =>
+                    abrirBastidores({
+                      capitulo: CAPITULO_DAS_CENAS,
+                      ancora: `cena-${cena}`,
+                      titulo: mensagens.bastidores.cena(cena, mensagens.apresentador.nomes[cena] ?? ''),
+                    })
+                  }
+                >
+                  {mensagens.bastidores.daCena}
+                </Button>
+                {preset.incidente && (
+                  <Button kind="danger--tertiary" size="md" onClick={derrubarEstavel} disabled={incidenteAplicado}>
+                    {incidenteAplicado ? t.incidenteAplicado : t.incidentes[preset.incidente]}
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [raioX, modo, canal, opcoesDeModelo, modeloEscolhido, emAndamento, passoAPasso, apresentador, cena, preset.incidente, incidenteAplicado],
+  );
+
+  // Os painéis só mudam com os eventos da viagem (não com o relógio da animação): memorizados.
+  const aoEscolherNo = useEstavel((id: string) => {
+    setSelecionado(id);
+    const ponto = pontoDoNo(id);
+    if (ponto) voar(ponto, ZOOM_SEGUINDO + 0.2);
+  });
+  const conversa = useMemo(() => (replay ? { ...exibido, pergunta: null } : exibido), [replay, exibido]);
+  const painelLateral = useMemo(
+    () =>
+      raioX ? (
+        <PainelRaioX
+          viagem={exibido}
+          conversa={conversa}
+          nos={nos}
+          aoResponder={responderPelaAna}
+          aoEscolherNo={aoEscolherNo}
+        />
+      ) : (
+        <Conversa viagem={conversa} aoResponder={responderPelaAna} />
+      ),
+    [raioX, exibido, conversa, nos, responderPelaAna, aoEscolherNo],
+  );
+  const linhaDoTempo = useMemo(() => <LinhaDoTempo paradas={paradas} viagem={exibido} />, [paradas, exibido]);
+  const legenda = useMemo(() => <Legenda />, []);
+
   return (
     <section
       className="mapa"
@@ -688,108 +849,7 @@ export function PaginaMapa() {
       data-balao={direcao.balao?.tipo ?? ''}
       data-aguardando={direcao.aguardando ? 'sim' : 'nao'}
     >
-      <div className="mapa__barra">
-        <h1 id="titulo-mapa" className="mapa__titulo">
-          {raioX ? mensagens.raioX.raioX : t.titulo}
-        </h1>
-        <ContentSwitcher
-          className="mapa__visao"
-          size="md"
-          selectedIndex={raioX ? 1 : 0}
-          onChange={({ index }: { index?: number }) => trocarVisao(index === 1)}
-          aria-label={mensagens.raioX.alternar}
-        >
-          <Switch name="mapa" text={mensagens.raioX.mapa} />
-          <Switch name="raio-x" text={mensagens.raioX.raioX} />
-        </ContentSwitcher>
-        <Dropdown
-          id="viagem-modo"
-          size="md"
-          titleText={t.barra.modo}
-          label={t.barra.modo}
-          items={MODOS}
-          itemToString={(o: Opcao | null) => o?.texto ?? ''}
-          selectedItem={MODOS.find((o) => o.id === modo)}
-          onChange={({ selectedItem }: { selectedItem: Opcao | null }) => selectedItem && setModo(selectedItem.id)}
-          disabled={emAndamento}
-        />
-        <Dropdown
-          id="viagem-canal"
-          size="md"
-          titleText={t.barra.canal}
-          label={t.barra.canal}
-          items={CANAIS}
-          itemToString={(o: Opcao | null) => o?.texto ?? ''}
-          selectedItem={CANAIS.find((o) => o.id === canal)}
-          onChange={({ selectedItem }: { selectedItem: Opcao | null }) => selectedItem && setCanal(selectedItem.id)}
-          disabled={emAndamento}
-        />
-        <Dropdown
-          id="viagem-modelo"
-          size="md"
-          titleText={t.barra.modeloRotulo}
-          label={t.barra.modeloRotulo}
-          items={opcoesDeModelo}
-          itemToString={(o: Opcao | null) => o?.texto ?? ''}
-          selectedItem={opcoesDeModelo.find((o) => o.id === modeloEscolhido) ?? null}
-          onChange={({ selectedItem }: { selectedItem: Opcao | null }) =>
-            selectedItem && setEscolhaDeModelo(selectedItem.id)
-          }
-          disabled={emAndamento}
-        />
-        <Button id="iniciar-viagem" size="md" renderIcon={Play} onClick={iniciar} disabled={emAndamento}>
-          {emAndamento ? t.barra.emViagem : t.barra.iniciar}
-        </Button>
-        <Toggle
-          id="passo-a-passo"
-          size="sm"
-          className="mapa__passo-a-passo"
-          labelText={t.passoAPasso}
-          labelA={t.passoAPasso}
-          labelB={t.passoAPasso}
-          hideLabel
-          title={t.passoAPassoAjuda}
-          toggled={passoAPasso}
-          onToggle={setPassoAPasso}
-        />
-        <Button
-          id="abrir-apresentador"
-          kind={apresentador ? 'secondary' : 'ghost'}
-          size="md"
-          renderIcon={PresentationFile}
-          onClick={() => setApresentador((a) => !a)}
-          aria-pressed={apresentador}
-        >
-          {mensagens.apresentador.abrir}
-        </Button>
-        {cena && (
-          <div className="mapa__cena">
-            <Tag type="warm-gray" size="md">
-              {t.cena(cena)}
-            </Tag>
-            <Button
-              id="bastidores-da-cena"
-              kind="ghost"
-              size="md"
-              renderIcon={Book}
-              onClick={() =>
-                abrirBastidores({
-                  capitulo: CAPITULO_DAS_CENAS,
-                  ancora: `cena-${cena}`,
-                  titulo: mensagens.bastidores.cena(cena, mensagens.apresentador.nomes[cena] ?? ''),
-                })
-              }
-            >
-              {mensagens.bastidores.daCena}
-            </Button>
-            {preset.incidente && (
-              <Button kind="danger--tertiary" size="md" onClick={derrubar} disabled={incidenteAplicado}>
-                {incidenteAplicado ? t.incidenteAplicado : t.incidentes[preset.incidente]}
-              </Button>
-            )}
-          </div>
-        )}
-      </div>
+      {barra}
 
       <div className="mapa__corpo">
         <div ref={area} className="mapa__area">
@@ -855,6 +915,7 @@ export function PaginaMapa() {
                   escala={telao.escala}
                 />
               )}
+              {parametro('fps') === '1' && <Medidor rotulos={rotulos.length} camadas={listaDeCamadas.length} />}
               {projetar && robo && direcao.balao && (
                 <Balao
                   balao={direcao.balao}
@@ -941,7 +1002,7 @@ export function PaginaMapa() {
             )}
           </div>
 
-          <Legenda />
+          {legenda}
 
           <div className="mapa__controles">
             <Toggle
@@ -999,27 +1060,10 @@ export function PaginaMapa() {
             </IconButton>
           </div>
 
-          <LinhaDoTempo paradas={paradas} viagem={exibido} />
+          {linhaDoTempo}
         </div>
 
-        {raioX ? (
-          <PainelRaioX
-            viagem={exibido}
-            conversa={replay ? { ...exibido, pergunta: null } : exibido}
-            nos={nos}
-            aoResponder={responderPelaAna}
-            aoEscolherNo={(id) => {
-              setSelecionado(id);
-              const ponto = pontoDoNo(id);
-              if (ponto) voar(ponto, ZOOM_SEGUINDO + 0.2);
-            }}
-          />
-        ) : (
-          <Conversa
-            viagem={replay ? { ...exibido, pergunta: null } : exibido}
-            aoResponder={responderPelaAna}
-          />
-        )}
+        {painelLateral}
       </div>
 
       {noSelecionado && (

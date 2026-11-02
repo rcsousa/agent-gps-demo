@@ -66,6 +66,10 @@ export const mensagens = {
     inclinarMais: 'Inclinar mais (ver mais de lado)',
     inclinarMenos: 'Inclinar menos (ver mais de cima)',
     norte: (graus: number) => (graus ? `Bússola: rumo ${graus}°. Clique para o norte ficar para cima` : 'Bússola: norte para cima'),
+    medidor: {
+      linha: (fps: number, quadroMs: number, rotulos: number, camadas: number) =>
+        `${fps} quadros/s · pior quadro ${quadroMs} ms · ${rotulos} rótulos · ${camadas} camadas`,
+    },
     passoAPasso: 'Passo a passo',
     passoAPassoAjuda: 'O robô para em cada sistema que o agente chama, até você mandar seguir (Espaço).',
     aguardando: 'Aguardando o apresentador',
