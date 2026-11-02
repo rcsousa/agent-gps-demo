@@ -1,6 +1,7 @@
-// Tela de abertura: o infográfico como grande navegador da demo (deep zoom + áreas clicáveis).
+// Tela de abertura: o infográfico como grande navegador da demo (deep zoom + áreas clicáveis),
+// com um painel ao lado que apresenta a demo, a camada de contexto e o impacto medido.
 
-import { Add, ArrowRight, Subtract, ZoomFit } from '@carbon/icons-react';
+import { Add, ArrowRight, Launch, SidePanelClose, SidePanelOpen, Subtract, ZoomFit } from '@carbon/icons-react';
 import { Button, IconButton, InlineNotification } from '@carbon/react';
 import OpenSeadragon from 'openseadragon';
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -11,6 +12,7 @@ import { navegar } from '../navegacao';
 import dados from './hotspots.json';
 
 const t = mensagens.abertura;
+const p = t.painel;
 
 type Destino =
   | { tipo: 'mapa'; cena?: number; parada?: number; visao?: 'raio-x' }
@@ -53,6 +55,11 @@ export function Abertura() {
   const [retangulos, setRetangulos] = useState<Record<string, Retangulo>>({});
   const [ativa, setAtiva] = useState<string | null>(null);
   const [emBreve, setEmBreve] = useState(false);
+  // Sempre começa aberto: o apresentador recolhe quando quiser o infográfico inteiro.
+  const [painelAberto, setPainelAberto] = useState(true);
+  // Recolher ou mostrar o painel muda o tamanho do palco: o infográfico volta a caber inteiro.
+  // O palco pode mudar de tamanho em mais de um passo: reenquadra em cada resize de uma janela curta.
+  const reenquadrarAte = useRef(0);
 
   // Cada área acompanha o pan e o zoom: coordenadas do infográfico -> pixels da tela.
   const reposicionar = useCallback(() => {
@@ -83,12 +90,22 @@ export function Abertura() {
     visor.current = v;
     v.addHandler('open', reposicionar);
     v.addHandler('animation', reposicionar);
-    v.addHandler('resize', reposicionar);
+    v.addHandler('resize', () => {
+      if (performance.now() < reenquadrarAte.current) v.viewport.goHome(true);
+      reposicionar();
+    });
     return () => {
       v.destroy();
       visor.current = null;
     };
   }, [reposicionar]);
+
+  useEffect(() => {
+    reenquadrarAte.current = performance.now() + 800;
+    // E uma vez no fim, com o palco já no tamanho final.
+    const fim = window.setTimeout(() => visor.current?.viewport.goHome(true), 400);
+    return () => window.clearTimeout(fim);
+  }, [painelAberto]);
 
   const abrir = useCallback((area: Area) => {
     if (area.destino.tipo === 'bastidores') {
@@ -101,7 +118,7 @@ export function Abertura() {
     else setEmBreve(true);
   }, []);
 
-  // Atalhos do apresentador: Enter inicia, M mapa, S status, B bastidores.
+  // Atalhos do apresentador: Enter inicia, M mapa, S status, B bastidores, I painel.
   useEffect(() => {
     const aoTeclar = (evento: KeyboardEvent) => {
       const alvo = evento.target as HTMLElement;
@@ -110,6 +127,7 @@ export function Abertura() {
       if (tecla === 'enter' || tecla === 'm') navegar('/mapa');
       if (tecla === 's') navegar('/status');
       if (tecla === 'b') navegar('/bastidores/');
+      if (tecla === 'i') setPainelAberto((aberto) => !aberto);
     };
     window.addEventListener('keydown', aoTeclar);
     return () => window.removeEventListener('keydown', aoTeclar);
@@ -119,8 +137,69 @@ export function Abertura() {
   const r = area ? retangulos[area.id] : undefined;
 
   return (
-    <section className="abertura" aria-label={t.rotulo}>
+    <section className={`abertura${painelAberto ? ' abertura--com-painel' : ''}`} aria-label={t.rotulo}>
       <h1 className="cds--visually-hidden">{t.rotulo}</h1>
+      {painelAberto && (
+        <aside className="abertura__painel" aria-label={p.rotulo}>
+          <div className="abertura__painel-conteudo">
+            <p className="abertura__sobretitulo">{p.sobretitulo}</p>
+            <h2 className="abertura__titulo">{p.titulo}</h2>
+            <p className="abertura__texto">{p.demo}</p>
+
+            <h3 className="abertura__secao">{p.porQue}</h3>
+            <ul className="abertura__metafora">
+              {p.metafora.map(([termo, texto]) => (
+                <li key={termo}>
+                  <strong>{termo}</strong> {texto}
+                </li>
+              ))}
+            </ul>
+
+            <h3 className="abertura__secao">{p.impacto}</h3>
+            <div className="abertura__numeros">
+              {p.numeros.map((n) => (
+                <div key={n.rotulo} className="abertura__numero">
+                  <span className="abertura__numero-rotulo">{n.rotulo}</span>
+                  <span className="abertura__numero-valor">{n.valor}</span>
+                  <span className="abertura__numero-detalhe">{n.detalhe}</span>
+                </div>
+              ))}
+            </div>
+            <p className="abertura__ressalva">{p.ressalva}</p>
+            <p className="abertura__fonte">
+              {p.fonte}{' '}
+              <button
+                type="button"
+                className="abertura__link"
+                onClick={() =>
+                  abrirBastidores({ capitulo: '01-o-problema', ancora: 'e-com-um-modelo-de-verdade', titulo: p.comoMedimos })
+                }
+              >
+                {p.comoMedimos}
+                <Launch />
+              </button>
+            </p>
+          </div>
+
+          <div className="abertura__iniciar">
+            {emBreve && (
+              <InlineNotification
+                kind="info"
+                lowContrast
+                title={t.emBreve}
+                subtitle={t.emBreveDetalhe}
+                onClose={() => setEmBreve(false)}
+              />
+            )}
+            <Button size="lg" renderIcon={ArrowRight} onClick={() => navegar('/mapa')}>
+              {t.iniciar}
+            </Button>
+            <span className="abertura__atalhos">{t.atalhos}</span>
+          </div>
+        </aside>
+      )}
+
+      <div className="abertura__palco">
       <div ref={recipiente} className="abertura__visor" />
       <div className="abertura__areas">
         {AREAS.map((a) => {
@@ -154,6 +233,14 @@ export function Abertura() {
       </div>
 
       <div className="abertura__controles">
+        <IconButton
+          kind="secondary"
+          label={painelAberto ? p.recolher : p.mostrar}
+          onClick={() => setPainelAberto((aberto) => !aberto)}
+          aria-expanded={painelAberto}
+        >
+          {painelAberto ? <SidePanelClose /> : <SidePanelOpen />}
+        </IconButton>
         <IconButton kind="secondary" label={t.aproximar} onClick={() => visor.current?.viewport.zoomBy(1.4)}>
           <Add />
         </IconButton>
@@ -165,20 +252,14 @@ export function Abertura() {
         </IconButton>
       </div>
 
-      <div className="abertura__iniciar">
-        {emBreve && (
-          <InlineNotification
-            kind="info"
-            lowContrast
-            title={t.emBreve}
-            subtitle={t.emBreveDetalhe}
-            onClose={() => setEmBreve(false)}
-          />
-        )}
-        <span className="abertura__atalhos">{t.atalhos}</span>
-        <Button size="lg" renderIcon={ArrowRight} onClick={() => navegar('/mapa')}>
-          {t.iniciar}
-        </Button>
+      {!painelAberto && (
+        <div className="abertura__iniciar abertura__iniciar--flutuante">
+          <span className="abertura__atalhos">{t.atalhos}</span>
+          <Button size="lg" renderIcon={ArrowRight} onClick={() => navegar('/mapa')}>
+            {t.iniciar}
+          </Button>
+        </div>
+      )}
       </div>
     </section>
   );
