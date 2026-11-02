@@ -24,7 +24,12 @@ O infográfico abaixo é o grande navegador da demo. Ele abre o site na rota `/`
 
 - **Imagem com pan e zoom**, em deep zoom (OpenSeadragon). O infográfico horizontal (2198×1446 px, `docs/assets/infografico_horizontal.jpeg`) é versionado no repositório, e os tiles são gerados no build do Docker (`vips dzsave`).
 - **Áreas clicáveis em SVG por cima da imagem**, com coordenadas em porcentagem num `hotspots.json`. Ao passar o mouse, a área acende com um tooltip Carbon.
-- **Botão "Iniciar demo"** fixo e atalhos de teclado para o apresentador.
+- **Painel sobre a demo, à esquerda** (cerca de 38% da largura; o infográfico fica à direita). Sempre começa aberto e recolhe pelo botão ou pela tecla **I**, devolvendo a tela inteira ao infográfico. Conteúdo, no arquivo de mensagens:
+  - a demo em duas frases;
+  - por que uma camada de contexto: o mapa (contexto), o trânsito (incidentes) e o GPS (skills);
+  - o impacto medido com os modelos reais (01/11/2026, 3 repetições): precisão do Haiku de 59% para 99% das regras com skill (Opus sem skill: 89%); custo de US$ 12 por 1.000 contratações com o Haiku com skill, contra US$ 523 com o Opus com skill; e a garantia do gateway. Com a ressalva de que a skill custa cerca do dobro de tokens, e o link "Como medimos" para o capítulo 1.
+  - Os números são fixos, com a data da medição: o placar ao vivo só tem as viagens do dia.
+- **Botão "Iniciar demo"** no pé do painel (flutuante, com o painel recolhido) e atalhos de teclado para o apresentador.
 - **Acessibilidade:** cada área tem rótulo, ordem de foco e navegação por teclado.
 
 **Mapa de áreas clicáveis**
@@ -555,4 +560,5 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Telão Full HD, com modo telão (tecla T) e atalhos (tecla `?`); ensaio de palco automático e o capítulo 9, "O dia da apresentação" (Fase 9)
 - [x] Na cena 6, a API cai com a viagem em curso: só assim o recálculo acontece ao vivo (aplicada antes, o agente planeja desviando)
 - [x] Toda opção que um incidente tira do caminho é explicada à cliente, mesmo com o incidente ativo antes da viagem (skills `cotacao-multisseguradora` e `desvios.md`, ajuste da Fase 9)
+- [x] Abertura com o painel sobre a demo à esquerda (contexto, impacto medido em precisão e custo), sempre aberto, recolhível pela tecla I
 - [x] Os bastidores voltam à demo: "Voltar à demo" no menu (abertura e Modo Mapa) e botões no início; no painel lateral, os links abrem na aba inteira

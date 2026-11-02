@@ -364,7 +364,7 @@ No container, o WebGL é por software: a página fica cerca de 80% ociosa espera
 
 ### A tela de abertura: o infográfico navegável
 
-Em `/`, o infográfico oficial (`docs/assets/infografico_horizontal.jpeg`, 2198 × 1446) abre com zoom e pan do OpenSeadragon. Os tiles são gerados no build do Docker do `web`, com `vips dzsave`, num estágio Debian.
+Em `/`, o infográfico oficial (`docs/assets/infografico_horizontal.jpeg`, 2198 × 1446) abre à direita, com zoom e pan do OpenSeadragon. À esquerda, um painel apresenta a demo, a camada de contexto e o impacto medido em precisão e custo. Ele sempre começa aberto e recolhe pela tecla **I**; ao recolher ou mostrar, o infográfico se reenquadra no novo espaço. Os tiles são gerados no build do Docker do `web`, com `vips dzsave`, num estágio Debian.
 
 As 38 áreas clicáveis estão em `services/web/src/abertura/hotspots.json`, em porcentagem da imagem, e acompanham o pan e o zoom. Cada área leva a um de três destinos:
 

@@ -17,12 +17,47 @@ export const mensagens = {
   abertura: {
     rotulo: 'Mapa da demo: o infográfico navegável',
     iniciar: 'Iniciar demo',
-    atalhos: 'Enter inicia · M mapa · S status · B bastidores',
+    atalhos: 'Enter inicia · M mapa · S status · B bastidores · I painel',
     aproximar: 'Aproximar',
     afastar: 'Afastar',
     enquadrar: 'Ver o infográfico inteiro',
     emBreve: 'O Modo Raio-X chega na Fase 7.',
     emBreveDetalhe: 'Por enquanto, o dashboard de status mostra cada chamada, tool e skill por dentro.',
+    painel: {
+      rotulo: 'Sobre a demo',
+      recolher: 'Recolher o painel (I)',
+      mostrar: 'Mostrar o painel (I)',
+      sobretitulo: 'Demo · GPS de Contexto',
+      titulo: 'Agentes que chegam mais longe, porque entendem o caminho.',
+      demo: 'Um agente de IA contrata um seguro residencial para a Ana, cliente do Banco Bússola. Cada passo dele aparece numa cidade: o que ele consulta, as regras que segue e o que faz quando algo dá errado no caminho.',
+      porQue: 'Por que uma camada de contexto',
+      metafora: [
+        ['O mapa', 'é a camada de contexto: o que existe no banco, as regras de cada etapa e de onde vem cada dado.'],
+        ['O trânsito', 'são os incidentes ao vivo: uma seguradora fora do ar, um consentimento vencido, um valor acima da alçada.'],
+        ['O GPS', 'são as skills: o caminho, a ordem das paradas e o que fazer quando algo muda.'],
+      ] as [string, string][],
+      impacto: 'Impacto medido',
+      numeros: [
+        {
+          valor: '59% → 99%',
+          rotulo: 'Precisão',
+          detalhe: 'das regras do banco cumpridas pelo Haiku, sem e com skill. O Opus, sem skill, fica em 89%.',
+        },
+        {
+          valor: 'US$ 12',
+          rotulo: 'Custo',
+          detalhe: 'por 1.000 contratações com o Haiku com skill, contra US$ 523 com o Opus com skill: cerca de 44 vezes menos.',
+        },
+        {
+          valor: 'Bloqueado',
+          rotulo: 'Garantia',
+          detalhe: 'o que sai da rota é barrado pelo gateway. Não depende da boa vontade do modelo.',
+        },
+      ],
+      ressalva: 'A skill custa cerca do dobro de tokens, mas sem ela o Haiku não fez nenhuma execução perfeita.',
+      fonte: 'Medido com os modelos reais em 01/11/2026, 3 repetições de cada caso.',
+      comoMedimos: 'Como medimos',
+    },
   },
   mapa: {
     titulo: 'Modo Mapa',
@@ -327,6 +362,7 @@ export const mensagens = {
     lista: [
       ['Enter', 'Na abertura: inicia a demo'],
       ['M / S / B', 'Na abertura: abre o mapa, o status ou os bastidores'],
+      ['I', 'Na abertura: recolhe e mostra o painel sobre a demo'],
       ['P', 'Abre e fecha o painel do apresentador'],
       ['Espaço / Enter / →', 'Segue com a jornada quando o robô espera num balão'],
       ['T', 'Liga e desliga o modo telão (tudo maior, para ler de longe)'],

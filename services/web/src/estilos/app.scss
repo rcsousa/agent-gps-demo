@@ -511,7 +511,162 @@ $papel: #f4f1ea;
 .abertura {
   position: absolute;
   inset: 0;
+  display: flex;
   background: theme.$background;
+
+  // O painel sobre a demo, à esquerda; o infográfico ocupa o resto.
+  &__painel {
+    flex: 0 0 38%;
+    max-inline-size: 48rem;
+    display: flex;
+    flex-direction: column;
+    background: theme.$layer-01;
+    border-inline-end: 1px solid theme.$border-subtle-01;
+    min-block-size: 0;
+  }
+
+  &__painel-conteudo {
+    flex: 1;
+    overflow-y: auto;
+    padding: $spacing-06 $spacing-07 $spacing-05;
+  }
+
+  &__sobretitulo {
+    @include type-style('label-02');
+    color: $laranja-bussola;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-block-end: $spacing-03;
+  }
+
+  &__titulo {
+    @include type-style('heading-04');
+    margin-block-end: $spacing-04;
+  }
+
+  &__texto {
+    @include type-style('body-02');
+    color: theme.$text-secondary;
+  }
+
+  &__secao {
+    @include type-style('heading-02');
+    margin-block: $spacing-05 $spacing-04;
+    padding-block-start: $spacing-05;
+    border-block-start: 1px solid theme.$border-subtle-01;
+  }
+
+  &__metafora {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-03;
+    @include type-style('body-02');
+    color: theme.$text-secondary;
+
+    li {
+      padding-inline-start: $spacing-04;
+      border-inline-start: 3px solid $laranja-bussola;
+    }
+
+    strong {
+      color: theme.$text-primary;
+      font-weight: 600;
+    }
+  }
+
+  &__numeros {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: $spacing-03;
+  }
+
+  &__numero {
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-02;
+    padding: $spacing-04;
+    // Sobre o fundo do painel (e não num cartão mais claro), o laranja da marca passa no contraste AA.
+    border: 1px solid theme.$border-subtle-01;
+    border-block-start: 3px solid $laranja-bussola;
+  }
+
+  &__numero-rotulo {
+    @include type-style('label-01');
+    color: theme.$text-secondary;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+
+  &__numero-valor {
+    @include type-style('heading-03');
+    font-weight: 600;
+    color: $laranja-bussola;
+    white-space: nowrap;
+  }
+
+  &__numero-detalhe {
+    @include type-style('body-compact-01');
+    color: theme.$text-secondary;
+  }
+
+  &__ressalva {
+    @include type-style('body-compact-01');
+    margin-block-start: $spacing-04;
+  }
+
+  &__fonte {
+    @include type-style('helper-text-01');
+    color: theme.$text-secondary;
+    margin-block-start: $spacing-03;
+  }
+
+  &__link {
+    all: unset;
+    cursor: pointer;
+    color: theme.$link-primary;
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-02;
+
+    &:hover {
+      text-decoration: underline;
+    }
+
+    &:focus-visible {
+      outline: 2px solid theme.$focus;
+    }
+  }
+
+  // No telão a fonte-base já sobe 25%: o texto corrido desce um degrau para o painel caber em 1080p.
+  @at-root html.telao & {
+    &__texto,
+    &__metafora {
+      @include type-style('body-01');
+    }
+
+    &__numero-detalhe {
+      @include type-style('helper-text-01');
+    }
+  }
+
+  &__palco {
+    position: relative;
+    flex: 1;
+    min-inline-size: 0;
+  }
+
+  // Tela estreita: o painel vai para baixo do infográfico.
+  @media (max-width: 1100px) {
+    flex-direction: column-reverse;
+
+    &__painel {
+      flex: 0 0 auto;
+      max-inline-size: none;
+      max-block-size: 50%;
+      border-inline-end: 0;
+      border-block-start: 1px solid theme.$border-subtle-01;
+    }
+  }
 
   &__visor {
     position: absolute;
@@ -568,25 +723,43 @@ $papel: #f4f1ea;
     inset-block-start: $spacing-05;
     inset-inline-end: $spacing-05;
     display: flex;
-    flex-direction: column;
     gap: $spacing-02;
   }
 
   &__iniciar {
-    position: absolute;
-    inset-block-end: $spacing-06;
-    inset-inline-end: $spacing-06;
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
     gap: $spacing-03;
+    padding: $spacing-04 $spacing-07 $spacing-05;
+    border-block-start: 1px solid theme.$border-subtle-01;
+
+    .cds--btn {
+      max-inline-size: none;
+      inline-size: 100%;
+    }
+
+    &--flutuante {
+      position: absolute;
+      inset-block-end: $spacing-06;
+      inset-inline-end: $spacing-06;
+      align-items: flex-end;
+      padding: 0;
+      border: 0;
+
+      .cds--btn {
+        inline-size: auto;
+      }
+
+      .abertura__atalhos {
+        background: rgb(22 22 22 / 70%);
+        padding: $spacing-02 $spacing-03;
+      }
+    }
   }
 
   &__atalhos {
     @include type-style('helper-text-01');
     color: theme.$text-secondary;
-    background: rgb(22 22 22 / 70%);
-    padding: $spacing-02 $spacing-03;
   }
 }
 

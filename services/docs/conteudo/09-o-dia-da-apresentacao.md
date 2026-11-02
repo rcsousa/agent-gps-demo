@@ -1,7 +1,7 @@
 # 9. O dia da apresentação
 
 !!! abstract "Resumo executivo"
-    O roteiro de fala cena a cena (o que dizer, o que clicar e quanto tempo leva) e o checklist do dia: a véspera, os 30 minutos antes, os atalhos e os planos B e C. A demo inteira leva cerca de 12 minutos; a versão curta (cenas 1, 4, 5, 6 e 8), cerca de 8. Para imprimir, use o comando de impressão do navegador: cada cena sai numa página.
+    O roteiro de fala cena a cena (o que dizer, o que clicar e quanto tempo leva) e o checklist do dia: a véspera, os 30 minutos antes, os atalhos e os planos B e C. A demo inteira leva cerca de 13 minutos, com a abertura; a versão curta (abertura e cenas 1, 4, 5, 6 e 8), cerca de 9. Para imprimir, use o comando de impressão do navegador: cada cena sai numa página.
 
 ## Aprofundamento técnico
 
@@ -15,6 +15,7 @@
 | Tecla | O que faz |
 | --- | --- |
 | `Enter` | Na abertura: inicia a demo |
+| `I` | Na abertura: recolhe e mostra o painel sobre a demo |
 | `P` | Abre e fecha o painel do apresentador |
 | `Espaço` / `Enter` / `→` | Segue com a jornada quando o robô espera num balão |
 | `T` | Liga e desliga o modo telão |
@@ -22,6 +23,14 @@
 | `?` | Mostra os atalhos |
 
 ### Roteiro de fala, cena a cena { .roteiro }
+
+#### Abertura · 1 min { .cena-impressa }
+
+**Mostre:** a abertura, com o painel à esquerda e o infográfico à direita.
+
+**Diga:** "Um agente de IA vai contratar um seguro residencial para a Ana. Para isso, ele precisa de um mapa, que é a camada de contexto, e de um GPS, que são as skills. Medimos com os modelos reais: com skill, o modelo menor cumpre 99% das regras do banco, contra 59% sem ela, e custa US$ 12 a cada mil contratações, 44 vezes menos que o maior. Vamos ver por quê."
+
+**Clique:** **I** recolhe o painel, se quiser o infográfico inteiro para apontar as cenas.
 
 #### Cena 1 · A cidade · 1 min { .cena-impressa }
 
