@@ -46,7 +46,8 @@ const LUZ = new LightingEffect({
   sol: new DirectionalLight({ color: [255, 250, 240], intensity: 1.6, direction: [-2, -4, -6] }),
 });
 const INCLINACAO = 52;
-const GIRO = -14;
+// Sem giro: o norte fica para cima e a profundidade vem só da inclinação da câmera.
+const GIRO = 0;
 // A partir desse zoom (relativo à cidade inteira), o bairro sob o centro da câmera se abre.
 const NIVEL_DO_BAIRRO = 0.85;
 // Os rótulos não invadem a linha do tempo do rodapé (5,75rem).
