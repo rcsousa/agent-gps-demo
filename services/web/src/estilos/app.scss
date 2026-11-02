@@ -547,6 +547,7 @@ $papel: #f4f1ea;
 // --- Modo Mapa ----------------------------------------------------------------------
 
 $largura-conversa: 24rem;
+$altura-linha-do-tempo: 5.75rem;
 
 .mapa {
   position: absolute;
@@ -663,8 +664,19 @@ $largura-conversa: 24rem;
   }
 
   &__legenda {
-    inset-block-end: $spacing-04;
+    inset-block-end: calc($altura-linha-do-tempo + $spacing-04);
     inset-inline-start: $spacing-04;
+    background: theme.$layer-01;
+    color: theme.$text-primary;
+
+    summary {
+      cursor: pointer;
+      margin-block-end: 0;
+    }
+
+    &[open] summary {
+      margin-block-end: $spacing-03;
+    }
 
     li {
       display: flex;
@@ -715,6 +727,21 @@ $largura-conversa: 24rem;
     &--alternativa {
       border-block-start: 2px dashed #9a9a9a;
     }
+
+    &--interditada {
+      border-block-start: 3px dashed rgb(208 76 76);
+    }
+  }
+
+  &__estado {
+    position: absolute;
+    z-index: 2;
+    inset-block-start: $spacing-04;
+    inset-inline-end: $spacing-04;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: $spacing-03;
   }
 
   &__avisos {
@@ -736,7 +763,7 @@ $largura-conversa: 24rem;
   &__controles {
     position: absolute;
     z-index: 2;
-    inset-block-end: $spacing-04;
+    inset-block-end: calc($altura-linha-do-tempo + $spacing-04);
     inset-inline-end: $spacing-04;
     display: flex;
     align-items: center;
@@ -827,5 +854,194 @@ $largura-conversa: 24rem;
     display: flex;
     gap: $spacing-02;
     align-items: flex-end;
+  }
+}
+
+// --- Rótulos do mapa 3D: chips em HTML, legíveis no telão -----------------------------------
+.rotulos {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.rotulo {
+  all: unset;
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-02;
+  padding: 0.25rem 0.625rem;
+  border-radius: 1rem;
+  background: rgb(255 255 255 / 94%);
+  color: #161616;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.25rem;
+  white-space: nowrap;
+  box-shadow: 0 1px 4px rgb(0 0 0 / 28%);
+  pointer-events: auto;
+  transition: opacity 0.3s;
+
+  &:is(button) {
+    cursor: pointer;
+  }
+
+  &:is(button):focus-visible {
+    outline: 2px solid #0f62fe;
+    outline-offset: 2px;
+  }
+
+  &__numero {
+    display: inline-grid;
+    place-items: center;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid $laranja-bussola;
+    color: $laranja-bussola;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  &__icone {
+    inline-size: 1rem;
+    block-size: 1rem;
+  }
+
+  &--bairro {
+    font-size: 1.125rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 0.3rem 0.875rem;
+    background: rgb(29 53 87 / 88%);
+    color: #fff;
+  }
+
+  &--esmaecido {
+    opacity: 0.55;
+  }
+
+  &--feita .rotulo__numero,
+  &--atual .rotulo__numero {
+    background: $laranja-bussola;
+    color: #fff;
+  }
+
+  &--atual {
+    background: $laranja-bussola;
+    color: #fff;
+    font-weight: 600;
+    z-index: 1;
+
+    .rotulo__numero {
+      border-color: #fff;
+    }
+  }
+
+  &--incidente {
+    background: rgb(208 76 76);
+    color: #fff;
+    font-weight: 600;
+    z-index: 2;
+  }
+
+  &--incidente.rotulo--degradado {
+    background: rgb(214 158 56);
+    color: #161616;
+  }
+
+  &--pedagio {
+    background: #1d3557;
+    color: #fff;
+  }
+
+  &--sistema {
+    font-size: 0.875rem;
+  }
+
+  &--sistema.rotulo--fora .rotulo__icone {
+    color: rgb(208 76 76);
+  }
+}
+
+// --- Linha do tempo da jornada (rodapé do mapa) ------------------------------------------------
+.linha-do-tempo {
+  position: absolute;
+  z-index: 2;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: $altura-linha-do-tempo;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-02;
+  padding: $spacing-03 $spacing-05;
+  background: rgb(22 22 22 / 92%);
+  color: #f4f4f4;
+
+  &__narracao {
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-size: 1rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__paradas {
+    display: grid;
+    grid-template-columns: repeat(9, 1fr);
+    gap: $spacing-02;
+  }
+
+  &__parada {
+    display: flex;
+    align-items: center;
+    gap: $spacing-02;
+    padding: $spacing-02 $spacing-03;
+    border-block-start: 3px solid #525252;
+    font-size: 0.8125rem;
+    color: #a8a8a8;
+    min-inline-size: 0;
+
+    &--feita {
+      border-block-start-color: $laranja-bussola;
+      color: #f4f4f4;
+    }
+
+    &--atual {
+      border-block-start-color: $laranja-bussola;
+      background: rgb(242 101 34 / 22%);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    &--incidente {
+      border-block-start-color: rgb(208 76 76);
+    }
+
+    &--incidente .linha-do-tempo__icone {
+      color: rgb(255 120 120);
+    }
+  }
+
+  &__icone {
+    flex: none;
+    inline-size: 1rem;
+    block-size: 1rem;
+  }
+
+  &__numero {
+    font-weight: 700;
+  }
+
+  &__nome {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

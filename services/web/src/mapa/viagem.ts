@@ -28,12 +28,21 @@ export interface EstadoDaViagem {
   motivoDaRota: string | null;
   recalculos: { de: string; para: string; motivo: string; regra: string }[];
   parada: string | null;
+  paradaInfo: { numero: number | null; nome: string; bairro: string } | null;
   visitadas: string[];
+  ultimaTool: { tool: string; ok: boolean } | null;
   pulsos: Pulso[];
-  incidentes: { metafora: string; descricao: string; entidade: string | null; tool: string }[];
+  incidentes: {
+    metafora: string;
+    descricao: string;
+    entidade: string | null;
+    tool: string;
+    parada: string | null; // onde o robô estava quando o incidente apareceu
+  }[];
   pedagio: boolean;
   pergunta: { texto: string; opcoes: string[] } | null;
   mensagens: Mensagem[];
+  eventos: EventoDaExecucao[]; // todos, na ordem: a fila do diretor de animações
   fim: { status: string; apolice: string | null; custo: number | null; duracao: number; erro: string | null } | null;
 }
 
@@ -48,12 +57,15 @@ export const VIAGEM_VAZIA: EstadoDaViagem = {
   motivoDaRota: null,
   recalculos: [],
   parada: null,
+  paradaInfo: null,
   visitadas: [],
+  ultimaTool: null,
   pulsos: [],
   incidentes: [],
   pedagio: false,
   pergunta: null,
   mensagens: [],
+  eventos: [],
   fim: null,
 };
 
@@ -74,11 +86,12 @@ export function noDaTool(tool: string, argumentos: Record<string, unknown> = {})
   return null;
 }
 
-type Acao = { tipo: 'evento'; evento: EventoDaExecucao } | { tipo: 'reiniciar'; id: string | null };
+export type Acao = { tipo: 'evento'; evento: EventoDaExecucao } | { tipo: 'reiniciar'; id: string | null };
 
-function reduzir(estado: EstadoDaViagem, acao: Acao): EstadoDaViagem {
+export function reduzir(anterior: EstadoDaViagem, acao: Acao): EstadoDaViagem {
   if (acao.tipo === 'reiniciar') return { ...VIAGEM_VAZIA, id: acao.id };
   const { tipo, dados } = acao.evento;
+  const estado = { ...anterior, eventos: [...anterior.eventos, acao.evento] };
   switch (tipo) {
     case 'run.started':
       return { ...estado, modo: dados.modo, canal: dados.canal, modelo: dados.modelo, provedor: dados.provedor };
@@ -99,20 +112,28 @@ function reduzir(estado: EstadoDaViagem, acao: Acao): EstadoDaViagem {
       return {
         ...estado,
         parada: dados.id,
+        paradaInfo: { numero: dados.numero ?? null, nome: dados.nome, bairro: dados.bairro },
         visitadas: estado.visitadas.includes(dados.id) ? estado.visitadas : [...estado.visitadas, dados.id],
       };
     case 'tool.called': {
+      const ultimaTool = { tool: dados.tool, ok: dados.status === 'ok' };
       const no = noDaTool(dados.tool, dados.argumentos);
-      if (!no) return estado;
+      if (!no) return { ...estado, ultimaTool };
       const pulso = { no, quando: performance.now(), ok: dados.status === 'ok' };
-      return { ...estado, pulsos: [...estado.pulsos.slice(-20), pulso] };
+      return { ...estado, ultimaTool, pulsos: [...estado.pulsos.slice(-20), pulso] };
     }
     case 'incident.detected':
       return {
         ...estado,
         incidentes: [
           ...estado.incidentes,
-          { metafora: dados.metafora, descricao: dados.descricao, entidade: dados.entidade, tool: dados.tool },
+          {
+            metafora: dados.metafora,
+            descricao: dados.descricao,
+            entidade: dados.entidade,
+            tool: dados.tool,
+            parada: estado.parada,
+          },
         ],
       };
     case 'human.required':
