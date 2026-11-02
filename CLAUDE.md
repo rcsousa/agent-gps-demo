@@ -10,7 +10,7 @@ A especificação completa está em `docs/spec.md`. Ela é a fonte da verdade: l
 - **Modelos:** Anthropic ou Azure OpenAI, escolhidos por `LLM_PROVIDER=anthropic|azure_openai`. Uma interface única no `agent`; trocar de provedor não muda nenhum fluxo.
 - **Backend 100% Python** (FastAPI e SDK oficial do MCP). Front em React + TypeScript.
 - **UI em IBM Carbon** (`@carbon/react`), cores neutras e aparência profissional. Tipografia IBM Plex.
-- **Mapas e grafos engajadores, bonitos e navegáveis** (deck.gl em vista ortográfica, sobre as coordenadas do grafo; OpenSeadragon no infográfico de abertura): pan, zoom, clique em nós, zoom semântico.
+- **Mapas e grafos engajadores, bonitos e navegáveis** (deck.gl com a cidade em 3D sobre as coordenadas do grafo; OpenSeadragon no infográfico de abertura): pan, zoom, clique em nós, zoom semântico.
 - **Idioma: somente português do Brasil** em tudo que o usuário vê (UI, skills, ontologia, narração, bastidores). Textos da UI centralizados num arquivo de mensagens. Identificadores de código podem ficar em inglês.
 - **Segredos só em `.env`**, nunca no código. Manter `.env.example` atualizado.
 
@@ -30,7 +30,7 @@ A especificação completa está em `docs/spec.md`. Ela é a fonte da verdade: l
 - Cor de destaque laranja (aprox. `#F26522`), azul-marinho de apoio, cinzas neutros do Carbon na moldura. Vermelho só para incidentes, sempre com ícone e rótulo.
 - O agente é o **robô** do infográfico. No mapa, aparece como um robô dentro de um pino.
 - Seguradoras fictícias: Âncora, Farol e Horizonte.
-- Referência visual oficial: `docs/assets/mapa-da-demo.png` (infográfico). Ele é a tela de abertura do site (rota `/`), com deep zoom e áreas clicáveis definidas em `hotspots.json`.
+- Referência visual oficial: `docs/assets/infografico_horizontal.jpeg` (infográfico). Ele é a tela de abertura do site (rota `/`), com deep zoom e áreas clicáveis definidas em `hotspots.json`.
 
 ## Entregável obrigatório: bastidores
 

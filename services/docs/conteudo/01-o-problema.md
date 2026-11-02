@@ -5,7 +5,7 @@
 
     A demo roda **a mesma tarefa** nos três jeitos, com a mesma cliente: "Quero contratar um seguro residencial para meu apartamento."
 
-![A viagem com skill no Modo Mapa: a rota planejada, as 9 paradas e a apólice emitida](assets/mapa/viagem.png)
+![A viagem com skill no Modo Mapa: o robô percorre a rota planejada, parada a parada](assets/mapa/viagem.png)
 
 ## Aprofundamento técnico
 

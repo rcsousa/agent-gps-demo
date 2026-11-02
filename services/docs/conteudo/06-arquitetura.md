@@ -222,58 +222,85 @@ web ──► agent /api/mapa/entidade/{id}  ──► gateway ──► context
 web ──► agent /api/execucoes/{id}/eventos  (SSE)    ──► a viagem
 ```
 
-A cidade e as rotas são relidas a cada 5 s: esse é o **trânsito**. Quando o simulador derruba a API da Âncora, o nó fica vermelho, com o ícone ✕. As rotas que passam por ele aparecem como interditadas, antes mesmo de qualquer viagem.
+A cidade e as rotas são relidas a cada 5 s: esse é o **trânsito**. Quando o simulador derruba a API da Âncora, um **farol** vermelho, com o ícone ✕ e o nome do sistema, sobe do bairro Parceiros. As rotas que passam por ele aparecem como interditadas, antes mesmo de qualquer viagem. Os faróis valem só para infraestrutura: sistemas, APIs, filas, canais e regras. O estado de um dado de cliente, como um consentimento revogado, aparece só dentro do bairro.
 
-**Por que deck.gl em vista ortográfica, e não MapLibre:**
-- A cidade usa coordenadas próprias (1000 × 700, gravadas no grafo pelo seed), não latitude e longitude.
-- Um mapa geográfico pediria uma projeção falsa e um mapa-base vazio.
-- O deck.gl, com `OrthographicView`, desenha direto essas coordenadas em WebGL, com pan, zoom, seleção por clique e transições.
+**Uma cidade em 3D, sem MapLibre:**
+- A cidade usa coordenadas próprias (1000 × 700, gravadas no grafo pelo seed), não latitude e longitude. Um mapa geográfico pediria uma projeção falsa e um mapa-base vazio.
+- O deck.gl, com `OrbitView`, desenha essas coordenadas em WebGL, com a câmera inclinada (cerca de 50°) e alinhada ao norte, sem giro: o 3D vem só da perspectiva. Tem luz ambiente e direcional, pan, zoom e seleção por clique.
+- Os prédios genéricos são decoração gerada com semente fixa (`cidade3d.ts`): sempre os mesmos, na cor de cada bairro, fora das avenidas, das estradas e dos nós.
+- Os nomes são **chips em HTML** (IBM Plex, a partir de 14 px), projetados da cena para a tela, e não texto desenhado no WebGL. Os que se sobreporiam ficam de fora, por prioridade (farol, parada, bairro, sistema), e nenhum cobre o robô.
 
-**As camadas, de baixo para cima:**
+**Dois níveis de leitura:**
+
+| Nível | O que aparece | Como se chega |
+| --- | --- | --- |
+| Cidade | Bairros em relevo, prédios, rio, avenidas, as estradas da jornada, as 9 paradas, os faróis de incidente e o robô | A vista inicial, "Enquadrar a cidade" ou "Voltar à cidade" |
+| Bairro aberto | Os nós daquele bairro viram **prédios-sistema**, com altura pela categoria, o status no telhado e placas com o nome. As relações internas aparecem no chão, e as do nó selecionado com outros bairros viram arcos | Ao clicar no bairro, ao aproximar bem o zoom, ou quando o agente chega a uma parada daquele bairro, com "Seguir o agente" ligado |
+
+O bairro aberto não é um estado guardado: ele deriva da câmera. Perto o bastante, abre o bairro que está sob o centro da tela.
+
+**As camadas:**
 
 | Camada | deck.gl | De onde vem |
 | --- | --- | --- |
-| Bairros, rio e avenidas | `PolygonLayer`, `PathLayer`, `LineLayer` | `contexto://mapa` |
-| Arestas do grafo | `LineLayer` (a partir de um certo zoom) | `contexto://mapa` |
-| Rotas disponíveis, tracejadas | `PathLayer` + `PathStyleExtension` | `contexto.consultar_rota` |
-| Rota da viagem e o rastro animado | `PathLayer` + `TripsLayer` | `route.planned` / `route.recalculated` |
-| Nós com semáforo e ícone de status | `ScatterplotLayer` + `TextLayer` | status do nó no grafo |
-| Paradas numeradas | `ScatterplotLayer` + `TextLayer` | paradas da rota |
-| Pulsos nos sistemas chamados | `ScatterplotLayer` | `tool.called` |
-| Robô e pino de chegada | `IconLayer` (SVG próprio) | `step.started` / `run.finished` |
+| Chão, rio, bairros em relevo, avenidas | `SolidPolygonLayer` extrudada, `PathLayer` | `contexto://mapa` |
+| Prédios e árvores | `SolidPolygonLayer` extrudada, `ColumnLayer` | gerados a partir dos bairros (decoração) |
+| Prédios-sistema e telhados de status | `SolidPolygonLayer` extrudada | os nós do bairro aberto e seu status |
+| Estradas da jornada | `PathLayer` + `PathStyleExtension` (curvas Catmull-Rom) | `contexto.consultar_rota` |
+| Trecho já percorrido | `TripsLayer`, até a posição do robô | `route.planned` / `step.started` |
+| Paradas | marcos 3D (`SolidPolygonLayer`) | paradas da rota |
+| Faróis de incidente | colunas finas (`SolidPolygonLayer`) e anel | status dos nós de infraestrutura |
+| Chamadas do agente | `ArcLayer` do robô ao sistema e pulso no chão | `tool.called` |
+| Robô e pino de chegada | `IconLayer` (SVG próprio), sempre por cima | `step.started` / `run.finished` |
 
-**Zoom semântico:**
-- de longe, aparecem os bairros e seus nomes;
-- ao aproximar, surgem as arestas e depois os nomes dos nós;
-- bem perto, aparece o tipo de cada relação.
+### O diretor de animações
 
-Os nomes que se sobreporiam ficam de fora até haver espaço. As paradas e os nós com problema têm prioridade.
+O agente pode andar mais rápido do que a plateia consegue acompanhar: o roteiro termina em cerca de 9 s. Por isso, o mapa não aplica os eventos no instante em que chegam. O **diretor** (`mapa/diretor.ts`) os reproduz **na ordem**, com um tempo mínimo para cada um:
 
-**Toda animação é um evento.** O mapa não anima nada por conta própria:
+| Evento | Tempo mínimo no mapa |
+| --- | --- |
+| `step.started` | 1,6 s de deslocamento pela estrada e 0,6 s parado na parada |
+| `route.planned` | 1,3 s |
+| `incident.detected`, `route.recalculated` | 1,6 s |
+| `human.required` | 1,2 s |
+| `tool.called` | 0,35 s (o arco e o pulso) |
+| Conversa e fim | imediato |
+
+**Por que isso é honesto:**
+- nenhum evento é criado e a ordem não muda;
+- o mapa só fica alguns segundos **atrás** do agente, e o selo mostra "Reproduzindo · +N eventos" até alcançar e passar a "Ao vivo";
+- "Pular para o fim" alcança o presente de uma vez;
+- a conversa com a Ana usa o estado real, sem atraso: dá para responder enquanto o mapa ainda anima.
+
+Abrir um link `/mapa?execucao=<id>` antigo reproduz a viagem inteira desde o início, pelo mesmo caminho.
+
+**A linha do tempo no rodapé** espelha a faixa "As 9 paradas" do infográfico: cada parada aparece como feita, atual ou pendente, e fica vermelha se um incidente apareceu ali. Acima dela, uma linha de narração diz o passo, por exemplo "Parada 6 · Cotação — chamou seguradoras.cotar_seguro".
+
+**Toda animação é um evento:**
 
 | Evento (SSE) | O que acontece no mapa |
 | --- | --- |
 | `run.started` | O robô aparece no ponto de partida do canal (app, agência ou central) |
 | `skill.loaded` | O painel Conversa mostra o navegador, isto é, a skill ativa |
-| `route.planned` | A rota escolhida vira a linha laranja com rastro animado, e um aviso mostra o motivo da escolha |
-| `step.started` | O robô anda até a parada em 600 ms e ela fica laranja. Com "Seguir o agente", a câmera vai junto |
-| `tool.called` | Um pulso no nó do sistema chamado: laranja se deu certo, vermelho se falhou |
-| `incident.detected` | Um aviso vermelho com ícone e a metáfora (Rua interditada, Contramão...) e um anel no nó |
-| `route.recalculated` | Um aviso de recálculo, com motivo e regra, e a troca da linha da rota |
+| `route.planned` | A estrada escolhida fica laranja, e um aviso mostra o motivo da escolha |
+| `step.started` | O robô percorre a estrada até a parada e o trecho percorrido acende. A parada cresce e a linha do tempo avança. Com "Seguir o agente", a câmera vai junto e abre o bairro |
+| `tool.called` | Um arco do robô até o sistema chamado e um pulso no chão: laranja se deu certo, vermelho se falhou |
+| `incident.detected` | Um aviso vermelho com ícone e a metáfora (Rua interditada, Contramão...), e a parada fica vermelha na linha do tempo |
+| `route.recalculated` | Um aviso de recálculo, com motivo e regra, e a troca da estrada |
 | `human.required` | O pedágio aparece na parada de aprovação |
 | `client.asked` / `agent.message` | A pergunta e as opções aparecem no painel Conversa, para responder pela Ana |
 | `run.finished` | O pino de chegada com o número da apólice, ou o motivo da parada, com duração, custo e modelo |
 
-Nos modos sem contexto e sem skill, o agente não planeja rota. Por isso, o mapa mostra só os pulsos nos sistemas e a conversa. A ausência da linha laranja é o próprio argumento: **sem GPS, não há rota**.
+Nos modos sem contexto e sem skill, o agente não planeja rota. O robô fica no ponto de partida e os arcos saem dele para os sistemas que ele chama. A narração diz "Sem GPS: o agente não planejou rota". A ausência da estrada laranja é o próprio argumento: **sem GPS, não há rota**.
 
 ### A tela de abertura: o infográfico navegável
 
-Em `/`, o infográfico oficial (`docs/assets/mapa-da-demo.png`, 4096 × 6144) abre em deep zoom com o OpenSeadragon. Os tiles são gerados no build do Docker do `web`, com `vips dzsave`, num estágio Debian. O PNG original fica só no repositório.
+Em `/`, o infográfico oficial (`docs/assets/infografico_horizontal.jpeg`, 2198 × 1446) abre com zoom e pan do OpenSeadragon. Os tiles são gerados no build do Docker do `web`, com `vips dzsave`, num estágio Debian.
 
-As 36 áreas clicáveis estão em `services/web/src/abertura/hotspots.json`, em porcentagem da imagem, e acompanham o pan e o zoom. Cada área leva a um de três destinos:
+As 38 áreas clicáveis estão em `services/web/src/abertura/hotspots.json`, em porcentagem da imagem, e acompanham o pan e o zoom. Cada área leva a um de três destinos:
 - uma cena do mapa (`/mapa?cena=N`);
-- uma parada (`/mapa?parada=N`);
-- um capítulo destes bastidores.
+- uma parada (`/mapa?parada=N`, que abre o bairro da parada);
+- um capítulo destes bastidores. A tabela "A metáfora", por exemplo, leva ao capítulo 8.
 
 ### Catálogo de eventos
 

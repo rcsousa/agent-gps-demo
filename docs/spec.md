@@ -18,11 +18,11 @@ Três mensagens precisam sair da sala:
 
 O infográfico abaixo é o grande navegador da demo. Ele abre o site na rota `/` e cada área da imagem leva à cena ou ao capítulo de bastidores correspondente.
 
-![Mapa da demo GPS de Contexto](assets/mapa-da-demo.png)
+![Mapa da demo GPS de Contexto](assets/infografico_horizontal.jpeg)
 
 **Como funciona**
 
-- **Imagem com pan e zoom**, em deep zoom (OpenSeadragon). O original em 4096×6144 px é versionado no repositório, e os tiles são gerados no build do Docker (`vips dzsave`), o que mantém o zoom nítido no telão.
+- **Imagem com pan e zoom**, em deep zoom (OpenSeadragon). O infográfico horizontal (2198×1446 px, `docs/assets/infografico_horizontal.jpeg`) é versionado no repositório, e os tiles são gerados no build do Docker (`vips dzsave`).
 - **Áreas clicáveis em SVG por cima da imagem**, com coordenadas em porcentagem num `hotspots.json`. Ao passar o mouse, a área acende com um tooltip Carbon.
 - **Botão "Iniciar demo"** fixo e atalhos de teclado para o apresentador.
 - **Acessibilidade:** cada área tem rótulo, ordem de foco e navegação por teclado.
@@ -36,8 +36,9 @@ O infográfico abaixo é o grande navegador da demo. Ele abre o site na rota `/`
 | 3. A skill é a porta de entrada | Cena 4 |
 | Placa (Skills, Contexto, Regras, Resultados) | Capítulos de bastidores correspondentes |
 | Seletor Modo Mapa / Modo Raio-X | Demo aberta no modo escolhido (o Raio-X chega na Fase 7) |
-| Paradas 1 a 9 no mapa e na faixa "As 9 paradas" | Demo posicionada naquela parada |
+| Paradas 1 a 9 no mapa e na faixa "As 9 paradas" | Demo posicionada naquela parada, com o bairro aberto |
 | Ana e o celular | Início da jornada (cena 1) |
+| A metáfora: mapa, trânsito, regras e GPS | Bastidores, capítulo 8 (a tabela de equivalências) |
 | Rotas disponíveis | Cena 4, na escolha de rota |
 | Âncora, Farol, Horizonte | Cena 6, incidente na seguradora |
 | Por trás da navegação: a camada de contexto | Bastidores, capítulo 2 |
@@ -341,8 +342,21 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
 - **A cidade é o grafo:**
   - `contexto://mapa`, `contexto.consultar_rota` e `contexto.consultar_entidade`, pelo caminho `web` → `agent` (`/api/mapa`, `/api/mapa/rotas`, `/api/mapa/entidade/{id}`) → `mcp-gateway`;
   - o web relê a cidade e as rotas a cada 5 s, e isso é o trânsito.
-- **deck.gl em vista ortográfica**, sobre as coordenadas próprias da cidade (1000 × 700), sem mapa-base geográfico.
-- **A viagem é dirigida só pelo SSE da execução:** cada evento tem uma animação correspondente, documentada nos bastidores (capítulo 6). Os modos sem contexto e sem skill não planejam rota, então o mapa mostra só os pulsos nos sistemas chamados.
+- **Cidade em 3D com deck.gl (`OrbitView`)**, sobre as coordenadas próprias da cidade (1000 × 700), sem mapa-base geográfico:
+  - câmera inclinada, bairros em relevo, prédios e árvores gerados com semente fixa, rio, avenidas e as estradas da jornada em curva;
+  - rótulos em HTML (IBM Plex, a partir de 14 px), com declutter.
+- **Dois níveis:**
+  - na **cidade**, aparecem bairros, estradas, paradas, faróis de incidente (só de infraestrutura) e o robô;
+  - no **bairro aberto**, aparecem os sistemas do bairro como prédios com o status no telhado e placas.
+
+  Um bairro se abre ao clicar nele, com o zoom bem próximo ou quando o agente chega a uma parada dele, com "Seguir o agente".
+- **A viagem é dirigida só pelo SSE da execução**, por um **diretor de animações**:
+  - os eventos reais são reproduzidos na ordem, com tempo mínimo (o robô leva 1,6 s entre paradas);
+  - o selo mostra "Reproduzindo · +N eventos" ou "Ao vivo", e há "Pular para o fim";
+  - a conversa usa o estado real, sem atraso;
+  - uma linha do tempo das 9 paradas e uma linha de narração ficam no rodapé.
+
+  Cada evento tem uma animação correspondente, documentada nos bastidores (capítulo 6). Os modos sem contexto e sem skill não planejam rota: o robô fica no ponto de partida e os arcos mostram os sistemas chamados.
 - **Barra de viagem no próprio mapa:**
   - modo, canal e modelo, com o roteiro como ensaio sem LLM, e o botão "Iniciar viagem";
   - o painel **Conversa**, para responder pela Ana.
@@ -354,7 +368,7 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
 
 ### Identidade visual do Banco Bússola
 
-O infográfico do Mapa da demo é a referência visual oficial. A marca é laranja e o agente é um robô simpático com um mapa nas mãos.
+O infográfico do Mapa da demo (`docs/assets/infografico_horizontal.jpeg`) é a referência visual oficial. A marca é laranja e o agente é um robô simpático com um mapa nas mãos.
 
 - **Símbolo:** bússola de traço grosso, com agulha inclinada, sobre um quadrado laranja de cantos arredondados. Funciona em 16 px (favicon) e no telão.
 - **Logotipo:** "Banco" em cima e "Bússola" em destaque, em laranja.
@@ -446,7 +460,9 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Barramento de eventos: Redis Streams (serviço `bus`)
 - [x] Grafo recarregado com o estado-base a cada subida (serviço `seed`)
 - [x] Personagens: a Ana em todos os incidentes ao vivo; sete clientes-cenário para testes e placar
-- [x] Modo Mapa em deck.gl com vista ortográfica, sem MapLibre: a cidade usa as coordenadas próprias do grafo, não geográficas
+- [x] Modo Mapa em deck.gl, sem MapLibre: cidade 3D (`OrbitView`) sobre as coordenadas próprias do grafo, não geográficas, com os sistemas só no bairro aberto
+- [x] Ritmo do mapa: fila de animações com tempo mínimo por evento, sem criar nem reordenar eventos
+- [x] Infográfico de abertura: a versão horizontal (`docs/assets/infografico_horizontal.jpeg`)
 - [x] Pedágio: o apresentador aprova pelo simulador, e a especialista aprova sozinha depois de 30 s
 - [x] Cenas de falha sob medida: desligar tools pelo painel de status, via simulador
 - [x] Cerca de 15 tools de distração no gateway para a cena 3 (ver Incidentes)
