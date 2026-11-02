@@ -65,3 +65,10 @@ def viajar_pelo_roteiro(pg: Page, modo: str = "Com skill (GPS)", limite_s: int =
         if pg.locator("#iniciar-viagem").is_enabled():
             return respostas
     raise AssertionError("A viagem não terminou no tempo limite.")
+
+
+def esperar_a_fila(pg: Page, limite_s: int = 120) -> None:
+    """Espera o diretor de animações mostrar todos os eventos da viagem."""
+    pg.wait_for_function(
+        "document.querySelector('.mapa').dataset.fila === '0'", timeout=limite_s * 1000
+    )
