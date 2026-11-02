@@ -59,7 +59,7 @@ def criar_servidor(checagens: dict[str, Checagem] | None = None, config: Config 
         tipo: Annotated[str | None, Field(description="Tipo da ontologia, por exemplo Seguradora.")] = None,
         bairro: Annotated[
             str | None,
-            Field(description="Bairro: cliente, produtos, risco, regulatorio, parceiros ou canais."),
+            Field(description="Bairro: cliente, governanca, produtos, parceiros ou pagamentos."),
         ] = None,
         limite: Annotated[int, Field(ge=1, le=50)] = 20,
     ) -> m.RespostaBusca:
@@ -120,7 +120,11 @@ def criar_servidor(checagens: dict[str, Checagem] | None = None, config: Config 
     async def mapa() -> str:
         grafo = await repo.mapa()
         nos = [
-            {**n, "porta": layout["portas"].get(n["id"]), "estilo": estilo(n["id"], n["tipo"], n["bairro"])}
+            {
+                **n,
+                "porta": layout["portas"].get(n["id"]),
+                "estilo": estilo(n["id"], n["tipo"], n["bairro"], n.get("nome", "")),
+            }
             for n in grafo["nos"]
         ]
         return json.dumps(

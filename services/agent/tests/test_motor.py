@@ -112,7 +112,8 @@ def _gateway(metas: list[dict]) -> MCPServer:
     def consultar_rota(ctx: Context, rota: str | None = None) -> dict[str, Any]:
         guardar(ctx)
         paradas = [
-            {"ordem": i, "numero": i, "id": f"p{i}", "nome": f"Parada {i}", "bairro": "risco"} for i in (1, 2)
+            {"ordem": i, "numero": i, "id": f"p{i}", "nome": f"Parada {i}", "bairro": "cliente"}
+            for i in (1, 2)
         ]
         estimativa = {"tempo_texto": "~5 min", "risco": "baixo", "bloqueada": False}
         return {

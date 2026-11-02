@@ -8,50 +8,50 @@
 
 # --8<-- [start:tipos]
 tipos:
-  # --- Bairro Cliente -------------------------------------------------
+  # --- Cliente e Relacionamento ---------------------------------------
   Cliente:            { bairro: cliente, exibicao: Cliente }
   Conta:              { bairro: cliente, exibicao: Conta }
   Relacionamento:     { bairro: cliente, exibicao: Relacionamento }
   ProdutoContratado:  { bairro: cliente, exibicao: Produto contratado }
   Consentimento:      { bairro: cliente, exibicao: Consentimento }
   Imovel:             { bairro: cliente, exibicao: Imóvel }
+  Canal:              { bairro: cliente, exibicao: Canal }
+  Jornada:            { bairro: cliente, exibicao: Jornada }
+  Rota:               { bairro: cliente, exibicao: Rota }
 
-  # --- Bairro Produtos ------------------------------------------------
+  # --- Regras e Governança --------------------------------------------
+  Politica:           { bairro: governanca, exibicao: Política }
+  Norma:              { bairro: governanca, exibicao: Norma }
+  BaseLegal:          { bairro: governanca, exibicao: Base legal }
+  ExigenciaRegistro:  { bairro: governanca, exibicao: Exigência de registro }
+  FinalidadeDados:    { bairro: governanca, exibicao: Finalidade de uso de dados }
+  RegraElegibilidade: { bairro: governanca, exibicao: Regra de elegibilidade }
+  RegraAdequacao:     { bairro: governanca, exibicao: Regra de adequação }
+  Score:              { bairro: governanca, exibicao: Score }
+  LimiteAlcada:       { bairro: governanca, exibicao: Limite de alçada }
+  AreaRisco:          { bairro: governanca, exibicao: Área de risco }
+
+  # --- Produtos e Ofertas ---------------------------------------------
   ProdutoSeguro:      { bairro: produtos, exibicao: Produto de seguro }
   Cobertura:          { bairro: produtos, exibicao: Cobertura }
   Assistencia:        { bairro: produtos, exibicao: Assistência }
   Franquia:           { bairro: produtos, exibicao: Franquia }
 
-  # --- Bairro Risco ---------------------------------------------------
-  RegraElegibilidade: { bairro: risco, exibicao: Regra de elegibilidade }
-  RegraAdequacao:     { bairro: risco, exibicao: Regra de adequação }
-  Score:              { bairro: risco, exibicao: Score }
-  LimiteAlcada:       { bairro: risco, exibicao: Limite de alçada }
-  AreaRisco:          { bairro: risco, exibicao: Área de risco }
-
-  # --- Bairro Regulatório ---------------------------------------------
-  Politica:           { bairro: regulatorio, exibicao: Política }
-  Norma:              { bairro: regulatorio, exibicao: Norma }
-  BaseLegal:          { bairro: regulatorio, exibicao: Base legal }
-  ExigenciaRegistro:  { bairro: regulatorio, exibicao: Exigência de registro }
-  FinalidadeDados:    { bairro: regulatorio, exibicao: Finalidade de uso de dados }
-
-  # --- Bairro Parceiros -----------------------------------------------
+  # --- Serviços e Parceiros -------------------------------------------
   Seguradora:         { bairro: parceiros, exibicao: Seguradora }
   ApiCotacao:         { bairro: parceiros, exibicao: API de cotação }
-  ApiEmissao:         { bairro: parceiros, exibicao: API de emissão }
   SLA:                { bairro: parceiros, exibicao: SLA }
-  Sistema:            { bairro: parceiros, exibicao: Sistema }
+  Especialista:       { bairro: parceiros, exibicao: Especialista humano }
+  Fila:               { bairro: parceiros, exibicao: Fila }
 
-  # --- Bairro Canais e operação ---------------------------------------
-  Canal:              { bairro: canais, exibicao: Canal }
-  Especialista:       { bairro: canais, exibicao: Especialista humano }
-  Fila:               { bairro: canais, exibicao: Fila }
-  MeioPagamento:      { bairro: canais, exibicao: Meio de pagamento }
-  Jornada:            { bairro: canais, exibicao: Jornada }
-  Rota:               { bairro: canais, exibicao: Rota }
+  # --- Pagamentos e Emissão -------------------------------------------
+  MeioPagamento:      { bairro: pagamentos, exibicao: Meio de pagamento }
+  ApiEmissao:         { bairro: pagamentos, exibicao: API de emissão }
 
-  # --- Paradas: ficam no bairro do trecho que executam ----------------
+  # --- Variáveis: cada instância diz o seu bairro ---------------------
+  # Sistemas moram no bairro do domínio que servem (o CRM com o cliente,
+  # o motor de risco com as regras); paradas, no bairro do trecho que executam.
+  Sistema:            { bairro: variavel, exibicao: Sistema }
   Parada:             { bairro: variavel, exibicao: Parada }
 # --8<-- [end:tipos]
 

@@ -61,9 +61,11 @@ def test_estilo_vem_do_bairro_e_do_tipo():
     assert estilo("cliente-ana", "Cliente", "cliente") == "casa"
     assert estilo("x", "ProdutoSeguro", "produtos") == "shopping"
     assert estilo("x", "Seguradora", "parceiros") == "torre"
-    assert estilo("x", "RegraElegibilidade", "risco") == "fabrica"
-    assert estilo("canal-app", "Canal", "canais") == "torre"
-    assert estilo("x", "Rota", "canais") is None
+    assert estilo("sistema-motor-risco", "Sistema", "governanca") == "central"
+    assert estilo("canal-app", "Canal", "cliente") == "torre"
+    assert estilo("x", "Rota", "cliente") is None
+    assert estilo("imovel-x", "Imovel", "cliente", "Apartamento da Ana") == "residencial"
+    assert estilo("x", "Cobertura", "produtos") in {"loja", "galeria"}
 
 
 def test_layout_versionado_esta_em_dia():

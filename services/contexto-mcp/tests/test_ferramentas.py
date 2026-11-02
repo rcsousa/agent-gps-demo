@@ -116,9 +116,9 @@ def test_recurso_do_mapa():
             return await cliente.read_resource("contexto://mapa")
 
     mapa = json.loads(asyncio.run(ler()).contents[0].text)
-    assert len(mapa["bairros"]) == 6
+    assert len(mapa["bairros"]) == 5
     assert len(mapa["nos"]) == len(carregar_ontologia().entidades)
     assert all(isinstance(n["x"], (int, float)) and isinstance(n["y"], (int, float)) for n in mapa["nos"])
     assert mapa["rio"] and mapa["cidade"]["quadras"] and len(mapa["bairros"][0]["poligono"]) == 4
     crm = next(n for n in mapa["nos"] if n["id"] == "sistema-crm")
-    assert crm["porta"] and crm["estilo"] == "tecnico"
+    assert crm["porta"] and crm["estilo"] == "sede" and crm["bairro"] == "cliente"

@@ -16,7 +16,27 @@ def test_tamanho_dentro_da_faixa_da_spec(ontologia):
 
 def test_todo_bairro_tem_entidades(ontologia):
     assert {e.bairro for e in ontologia.entidades.values()} == {b.id for b in ontologia.bairros}
-    assert len(ontologia.bairros) == 6
+    assert len(ontologia.bairros) == 5
+
+
+# Cada sistema mora no bairro do domínio que serve, como no infográfico.
+BAIRRO_DE_CADA_SISTEMA = {
+    "sistema-crm": "cliente",
+    "sistema-core-bancario": "cliente",
+    "sistema-motor-risco": "governanca",
+    "sistema-cofre-consentimentos": "governanca",
+    "sistema-registro-operacoes": "governanca",
+    "sistema-gateway-pagamentos": "pagamentos",
+    "sistema-vistoria": "parceiros",
+}
+
+
+def test_cada_sistema_no_bairro_do_seu_dominio(ontologia):
+    sistemas = {i: e.bairro for i, e in ontologia.entidades.items() if e.tipo == "Sistema"}
+    assert sistemas == BAIRRO_DE_CADA_SISTEMA
+    assert ontologia.entidades["canal-app"].bairro == "cliente"
+    assert ontologia.entidades["regra-imovel-residencial"].bairro == "governanca"
+    assert ontologia.entidades["api-emissao-ancora"].bairro == "pagamentos"
 
 
 def test_proveniencia_completa_em_nos_e_relacoes(ontologia):

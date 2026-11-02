@@ -11,6 +11,7 @@ Uso: ./scripts/gerar-layout.sh (roda `python -m contexto_mcp.layout` no containe
 
 import json
 import math
+import zlib
 from pathlib import Path
 
 import networkx as nx
@@ -197,32 +198,59 @@ def gerar_layout(ontologia: Ontologia) -> dict:
 
 
 # Estilo da construção de cada lugar: vem do bairro (e, em alguns, do tipo).
-ESTILO_POR_BAIRRO = {
-    "cliente": "casa",
-    "produtos": "loja",
-    "risco": "fabrica",
-    "regulatorio": "publico",
-    "parceiros": "tecnico",
-    "canais": "escritorio",
+# A forma de cada construção vem do tipo (e, em alguns casos, do id). Tipos sem
+# forma própria ganham uma variante do bairro, sorteada com semente pelo id:
+# o bairro tem cara de bairro, mas as construções não são todas iguais.
+ESTILO_POR_ID = {
+    "canal-app": "torre",
+    "canal-internet-banking": "torre",
+    "canal-agencia": "agencia",
+    "canal-central": "escritorio",
+    "sistema-crm": "sede",
+    "sistema-core-bancario": "sede",
+    "sistema-motor-risco": "central",
+    "sistema-cofre-consentimentos": "central",
+    "sistema-registro-operacoes": "central",
+    "sistema-gateway-pagamentos": "datacenter",
+    "sistema-vistoria": "oficina",
 }
-ESTILO_POR_TIPO = {
+ESTILO_POR_TIPO: dict[str, str | None] = {
+    "Cliente": "casa",
+    "Politica": "publico",
+    "BaseLegal": "publico",
+    "Norma": "cupula",
     "ProdutoSeguro": "shopping",
     "Seguradora": "torre",
-    "Canal": "loja",
-    "MeioPagamento": "loja",
+    "ApiCotacao": "tecnico",
+    "SLA": "tecnico",
+    "Especialista": "escritorio",
+    "Fila": "escritorio",
+    "MeioPagamento": "agencia",
+    "ApiEmissao": "cartorio",
     "Parada": "placa",
     "Rota": None,
     "Jornada": None,
 }
-ESTILO_POR_ID = {"canal-app": "torre", "canal-central": "escritorio"}
+VARIANTES_DO_BAIRRO = {
+    "cliente": ("casa", "sobrado", "residencial"),
+    "governanca": ("escritorio", "publico", "escritorio"),
+    "produtos": ("loja", "galeria", "loja"),
+    "parceiros": ("escritorio", "tecnico"),
+    "pagamentos": ("agencia", "escritorio"),
+}
+# Imóveis: a forma segue o que a cliente tem (apartamento, casa, sobrado...).
+IMOVEL = (("apartamento", "residencial"), ("cobertura", "residencial"), ("sobrado", "sobrado"))
 
 
-def estilo(ident: str, tipo: str, bairro: str) -> str | None:
+def estilo(ident: str, tipo: str, bairro: str, nome: str = "") -> str | None:
     if ident in ESTILO_POR_ID:
         return ESTILO_POR_ID[ident]
     if tipo in ESTILO_POR_TIPO:
         return ESTILO_POR_TIPO[tipo]
-    return ESTILO_POR_BAIRRO.get(bairro, "escritorio")
+    if tipo == "Imovel":
+        return next((forma for chave, forma in IMOVEL if chave in nome.lower()), "casa")
+    variantes = VARIANTES_DO_BAIRRO.get(bairro, ("escritorio",))
+    return variantes[zlib.crc32(ident.encode()) % len(variantes)]
 
 
 def serializar(layout: dict) -> str:

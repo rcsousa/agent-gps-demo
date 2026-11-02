@@ -31,6 +31,6 @@ def test_ordem_da_skill_tem_todas_as_tools_do_workflow():
 
 def test_ontologia_e_rotas():
     ontologia = diagramas.ontologia(RAIZ)
-    assert "Consentimento" in ontologia and "Regulatório" in ontologia
+    assert "Consentimento" in ontologia and "Regras e Governança" in ontologia
     rotas = diagramas.rotas(RAIZ)
     assert "Rota assistida" in rotas and "9 · Emissão" in rotas

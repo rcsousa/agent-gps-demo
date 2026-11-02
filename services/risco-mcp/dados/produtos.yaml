@@ -1,5 +1,5 @@
 # Parâmetros de risco por produto, usados pelo motor de regras.
-# Espelham as regras da ontologia (bairro Risco) que cada produto EXIGE.
+# Espelham as regras da ontologia (bairro Regras e Governança) que cada produto EXIGE.
 
 produtos:
   produto-residencial-ancora:
