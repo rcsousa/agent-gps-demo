@@ -31,7 +31,8 @@ x-dominio:
 services:
   # ---------------------------------------------------------------- front
   web:
-    build: ./services/web
+    # Contexto na raiz: o build gera os tiles do infográfico (docs/assets) para a tela de abertura.
+    build: { context: ., dockerfile: services/web/Dockerfile }
     restart: unless-stopped
     networks: [bussola]
     ports: ["${WEB_PORT:-8080}:80"]

@@ -1,0 +1,473 @@
+{
+ "largura": 4096,
+ "altura": 6144,
+ "areas": [
+  {
+   "id": "mensagem-1",
+   "rotulo": "1. Sem mapa, o agente adivinha",
+   "descricao": "Cena 2: o agente sem camada de contexto.",
+   "x": 1.41,
+   "y": 9.06,
+   "largura": 32.05,
+   "altura": 7.06,
+   "destino": {
+    "tipo": "mapa",
+    "cena": 2
+   }
+  },
+  {
+   "id": "mensagem-2",
+   "rotulo": "2. Com mapa e GPS, o agente escolhe rotas",
+   "descricao": "Cenas 3 e 5: o contraste entre sem skill e com skill.",
+   "x": 34.49,
+   "y": 9.06,
+   "largura": 30.65,
+   "altura": 7.06,
+   "destino": {
+    "tipo": "mapa",
+    "cena": 3
+   }
+  },
+  {
+   "id": "mensagem-3",
+   "rotulo": "3. A skill é a porta de entrada",
+   "descricao": "Cena 4: o agente descobre as skills e escolhe a rota.",
+   "x": 66.17,
+   "y": 9.06,
+   "largura": 23.62,
+   "altura": 7.06,
+   "destino": {
+    "tipo": "mapa",
+    "cena": 4
+   }
+  },
+  {
+   "id": "placa-skills",
+   "rotulo": "Placa: Skills",
+   "descricao": "Bastidores, capítulo 3: skills como GPS.",
+   "x": 90.16,
+   "y": 6.62,
+   "largura": 9.0,
+   "altura": 2.19,
+   "destino": {
+    "tipo": "bastidores",
+    "capitulo": "03-skills-como-gps"
+   }
+  },
+  {
+   "id": "placa-contexto",
+   "rotulo": "Placa: Contexto",
+   "descricao": "Bastidores, capítulo 2: a camada de contexto.",
+   "x": 90.16,
+   "y": 8.88,
+   "largura": 9.0,
+   "altura": 2.25,
+   "destino": {
+    "tipo": "bastidores",
+    "capitulo": "02-camada-de-contexto"
+   }
+  },
+  {
+   "id": "placa-regras",
+   "rotulo": "Placa: Regras",
+   "descricao": "Bastidores, capítulo 5: ontologia, skills e regras da jornada.",
+   "x": 90.16,
+   "y": 11.19,
+   "largura": 9.0,
+   "altura": 2.19,
+   "destino": {
+    "tipo": "bastidores",
+    "capitulo": "05-anatomia-da-jornada"
+   }
+  },
+  {
+   "id": "placa-resultados",
+   "rotulo": "Placa: Resultados",
+   "descricao": "Bastidores, capítulo 1: o que muda com e sem contexto.",
+   "x": 90.16,
+   "y": 13.44,
+   "largura": 9.0,
+   "altura": 2.31,
+   "destino": {
+    "tipo": "bastidores",
+    "capitulo": "01-o-problema"
+   }
+  },
+  {
+   "id": "modo-mapa",
+   "rotulo": "Modo Mapa",
+   "descricao": "Abre a demo no Modo Mapa.",
+   "x": 71.7,
+   "y": 17.5,
+   "largura": 12.84,
+   "altura": 2.62,
+   "destino": {
+    "tipo": "mapa"
+   }
+  },
+  {
+   "id": "modo-raio-x",
+   "rotulo": "Modo Raio-X",
+   "descricao": "O Modo Raio-X chega na Fase 7.",
+   "x": 84.72,
+   "y": 17.5,
+   "largura": 12.75,
+   "altura": 2.62,
+   "destino": {
+    "tipo": "em-breve",
+    "fase": 7
+   }
+  },
+  {
+   "id": "ana",
+   "rotulo": "Ana e o celular",
+   "descricao": "Cena 1: o início da jornada, com a Ana.",
+   "x": 1.41,
+   "y": 20.94,
+   "largura": 17.34,
+   "altura": 23.75,
+   "destino": {
+    "tipo": "mapa",
+    "cena": 1
+   }
+  },
+  {
+   "id": "rotas",
+   "rotulo": "Rotas disponíveis",
+   "descricao": "Cena 4: a escolha da rota.",
+   "x": 77.32,
+   "y": 20.81,
+   "largura": 20.34,
+   "altura": 12.19,
+   "destino": {
+    "tipo": "mapa",
+    "cena": 4
+   }
+  },
+  {
+   "id": "ancora",
+   "rotulo": "Âncora Seguros",
+   "descricao": "Cena 6: incidente na seguradora.",
+   "x": 40.11,
+   "y": 39.88,
+   "largura": 5.62,
+   "altura": 4.0,
+   "destino": {
+    "tipo": "mapa",
+    "cena": 6
+   }
+  },
+  {
+   "id": "farol",
+   "rotulo": "Farol Seguros",
+   "descricao": "Cena 6: incidente na seguradora.",
+   "x": 48.55,
+   "y": 40.12,
+   "largura": 6.0,
+   "altura": 4.0,
+   "destino": {
+    "tipo": "mapa",
+    "cena": 6
+   }
+  },
+  {
+   "id": "horizonte",
+   "rotulo": "Horizonte Seguros",
+   "descricao": "Cena 6: incidente na seguradora.",
+   "x": 56.42,
+   "y": 40.12,
+   "largura": 6.37,
+   "altura": 3.75,
+   "destino": {
+    "tipo": "mapa",
+    "cena": 6
+   }
+  },
+  {
+   "id": "camada-de-contexto",
+   "rotulo": "Por trás da navegação: a camada de contexto",
+   "descricao": "Bastidores, capítulo 2.",
+   "x": 1.41,
+   "y": 61.56,
+   "largura": 37.21,
+   "altura": 23.75,
+   "destino": {
+    "tipo": "bastidores",
+    "capitulo": "02-camada-de-contexto"
+   }
+  },
+  {
+   "id": "proveniencia",
+   "rotulo": "A proveniência governa a consequência",
+   "descricao": "Cena 7: o pedágio, e os bastidores.",
+   "x": 2.62,
+   "y": 85.5,
+   "largura": 35.61,
+   "altura": 4.5,
+   "destino": {
+    "tipo": "mapa",
+    "cena": 7
+   }
+  },
+  {
+   "id": "skill-gps",
+   "rotulo": "A skill é o GPS",
+   "descricao": "Bastidores, capítulo 3.",
+   "x": 39.36,
+   "y": 61.56,
+   "largura": 23.62,
+   "altura": 28.56,
+   "destino": {
+    "tipo": "bastidores",
+    "capitulo": "03-skills-como-gps"
+   }
+  },
+  {
+   "id": "raio-x",
+   "rotulo": "Modo Raio-X: transparência total",
+   "descricao": "Cena 8: o Modo Raio-X chega na Fase 7.",
+   "x": 63.73,
+   "y": 61.56,
+   "largura": 35.33,
+   "altura": 28.56,
+   "destino": {
+    "tipo": "em-breve",
+    "fase": 7
+   }
+  },
+  {
+   "id": "parada-1-mapa",
+   "rotulo": "Parada 1: Entender a intenção",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 17.9,
+   "y": 29.19,
+   "largura": 4.12,
+   "altura": 2.75,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 1
+   }
+  },
+  {
+   "id": "parada-2-mapa",
+   "rotulo": "Parada 2: Identificar a cliente",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 26.71,
+   "y": 26.69,
+   "largura": 4.12,
+   "altura": 2.75,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 2
+   }
+  },
+  {
+   "id": "parada-3-mapa",
+   "rotulo": "Parada 3: Consentimento e LGPD",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 38.43,
+   "y": 22.88,
+   "largura": 4.12,
+   "altura": 2.75,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 3
+   }
+  },
+  {
+   "id": "parada-4-mapa",
+   "rotulo": "Parada 4: Elegibilidade",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 49.77,
+   "y": 25.69,
+   "largura": 4.12,
+   "altura": 2.75,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 4
+   }
+  },
+  {
+   "id": "parada-5-mapa",
+   "rotulo": "Parada 5: Adequação da oferta",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 43.58,
+   "y": 29.5,
+   "largura": 4.12,
+   "altura": 2.75,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 5
+   }
+  },
+  {
+   "id": "parada-6-mapa",
+   "rotulo": "Parada 6: Cotação",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 44.8,
+   "y": 35.0,
+   "largura": 4.12,
+   "altura": 2.75,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 6
+   }
+  },
+  {
+   "id": "parada-7-mapa",
+   "rotulo": "Parada 7: Proposta e aceite",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 63.54,
+   "y": 33.81,
+   "largura": 4.12,
+   "altura": 2.75,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 7
+   }
+  },
+  {
+   "id": "parada-8-mapa",
+   "rotulo": "Parada 8: Pagamento",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 76.29,
+   "y": 36.75,
+   "largura": 4.12,
+   "altura": 2.75,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 8
+   }
+  },
+  {
+   "id": "parada-9-mapa",
+   "rotulo": "Parada 9: Emissão da apólice",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 86.88,
+   "y": 36.88,
+   "largura": 4.12,
+   "altura": 2.75,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 9
+   }
+  },
+  {
+   "id": "parada-1-faixa",
+   "rotulo": "Parada 1: Entender a intenção",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 2.06,
+   "y": 51.25,
+   "largura": 10.12,
+   "altura": 8.62,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 1
+   }
+  },
+  {
+   "id": "parada-2-faixa",
+   "rotulo": "Parada 2: Identificar a cliente",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 12.65,
+   "y": 51.25,
+   "largura": 10.12,
+   "altura": 8.62,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 2
+   }
+  },
+  {
+   "id": "parada-3-faixa",
+   "rotulo": "Parada 3: Consentimento e LGPD",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 22.96,
+   "y": 51.25,
+   "largura": 10.12,
+   "altura": 8.62,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 3
+   }
+  },
+  {
+   "id": "parada-4-faixa",
+   "rotulo": "Parada 4: Elegibilidade",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 33.74,
+   "y": 51.25,
+   "largura": 10.12,
+   "altura": 8.62,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 4
+   }
+  },
+  {
+   "id": "parada-5-faixa",
+   "rotulo": "Parada 5: Adequação da oferta",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 44.8,
+   "y": 51.25,
+   "largura": 10.12,
+   "altura": 8.62,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 5
+   }
+  },
+  {
+   "id": "parada-6-faixa",
+   "rotulo": "Parada 6: Cotação",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 55.76,
+   "y": 51.25,
+   "largura": 10.12,
+   "altura": 8.62,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 6
+   }
+  },
+  {
+   "id": "parada-7-faixa",
+   "rotulo": "Parada 7: Proposta e aceite",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 66.73,
+   "y": 51.25,
+   "largura": 10.12,
+   "altura": 8.62,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 7
+   }
+  },
+  {
+   "id": "parada-8-faixa",
+   "rotulo": "Parada 8: Pagamento",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 77.79,
+   "y": 51.25,
+   "largura": 10.12,
+   "altura": 8.62,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 8
+   }
+  },
+  {
+   "id": "parada-9-faixa",
+   "rotulo": "Parada 9: Emissão da apólice",
+   "descricao": "Abre o mapa posicionado nesta parada.",
+   "x": 88.57,
+   "y": 51.25,
+   "largura": 10.12,
+   "altura": 8.62,
+   "destino": {
+    "tipo": "mapa",
+    "parada": 9
+   }
+  }
+ ]
+}

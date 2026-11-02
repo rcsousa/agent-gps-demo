@@ -1,14 +1,19 @@
 import { Content, Header, HeaderMenuItem, HeaderName, HeaderNavigation, Theme } from '@carbon/react';
 
+import { Abertura } from './abertura/Abertura';
 import { SimboloBussola } from './componentes/SimboloBussola';
+import { PaginaMapa } from './mapa/PaginaMapa';
 import { mensagens } from './mensagens/pt-BR';
+import { aoClicarLink, usePagina } from './navegacao';
 import { PaginaStatus } from './status/PaginaStatus';
 
 export function App() {
+  const pagina = usePagina();
+  const t = mensagens.navegacao;
   return (
     <Theme theme="g100">
       <Header aria-label={mensagens.marca.nome}>
-        <HeaderName href="/" prefix="">
+        <HeaderName href="/" prefix="" onClick={aoClicarLink('/')}>
           <span className="marca">
             <SimboloBussola className="marca__simbolo" />
             <span>
@@ -16,16 +21,31 @@ export function App() {
             </span>
           </span>
         </HeaderName>
-        <HeaderNavigation aria-label={mensagens.navegacao.rotulo}>
-          <HeaderMenuItem href="/status" isActive>
-            {mensagens.navegacao.status}
+        <HeaderNavigation aria-label={t.rotulo}>
+          <HeaderMenuItem href="/mapa" isActive={pagina === 'mapa'} onClick={aoClicarLink('/mapa')}>
+            {t.mapa}
           </HeaderMenuItem>
-          <HeaderMenuItem href="/bastidores/">{mensagens.navegacao.bastidores}</HeaderMenuItem>
+          <HeaderMenuItem href="/status" isActive={pagina === 'status'} onClick={aoClicarLink('/status')}>
+            {t.status}
+          </HeaderMenuItem>
+          <HeaderMenuItem href="/bastidores/">{t.bastidores}</HeaderMenuItem>
         </HeaderNavigation>
       </Header>
-      <Content className="pagina">
-        <PaginaStatus />
-      </Content>
+      {pagina === 'abertura' && (
+        <main className="pagina-cheia">
+          <Abertura />
+        </main>
+      )}
+      {pagina === 'mapa' && (
+        <main className="pagina-cheia">
+          <PaginaMapa />
+        </main>
+      )}
+      {pagina === 'status' && (
+        <Content className="pagina">
+          <PaginaStatus />
+        </Content>
+      )}
     </Theme>
   );
 }
