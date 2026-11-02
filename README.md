@@ -52,7 +52,9 @@ Sem chave de API, o provedor `roteiro` faz um ensaio determinístico pelas mesma
 ./scripts/agente.sh executar --modo com_skill --provedor roteiro --canal agencia --auto
 ```
 
-Para medir com o modelo real (gasta tokens): `./scripts/experimento.sh rodar`. Relatórios em [`docs/experimentos/`](docs/experimentos/).
+O modelo padrão é o Claude Haiku 5.5. O Opus 5.5 pode ser escolhido no seletor do painel (`/status`). Cada execução mostra o custo em US$.
+
+Para medir com o modelo real (gasta tokens): `./scripts/experimento.sh rodar [--modelo claude-haiku-5-5] [--repeticoes 3]`, depois `comparar`. Relatórios em [`docs/experimentos/`](docs/experimentos/).
 
 Modos: `sem_contexto`, `sem_skill` e `com_skill`. Canais: `app` (padrão), `agencia` e `central`. Com o modelo configurado no `.env` (padrão: Claude Opus 5.5 no Microsoft Foundry, com `ANTHROPIC_FOUNDRY_BASE_URL` e `ANTHROPIC_FOUNDRY_API_KEY`), rode sem `--provedor`.
 

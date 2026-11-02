@@ -18,7 +18,9 @@ class Config(ConfigBase):
     anthropic_foundry_base_url: str = ""
     anthropic_foundry_api_key: str = ""
     # Na API, o id do modelo; no Foundry, o nome do deployment.
-    anthropic_model: str = "claude-opus-5-5"
+    anthropic_model: str = "claude-haiku-5-5"
+    # Outros modelos (deployments) que uma execução pode pedir, separados por vírgula.
+    anthropic_modelos: str = ""
     anthropic_effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
     # Fallback do lado do servidor quando o modelo recusa: ligado por padrão.
     anthropic_fallbacks: bool = True
@@ -27,7 +29,19 @@ class Config(ConfigBase):
     azure_openai_deployment: str = ""
     azure_openai_api_version: str = ""
 
+    # Preço por token, em US$, de cada modelo: {"modelo": {"entrada": ..., "saida": ...}}.
+    llm_precos: dict[str, dict[str, float]] = {}
+    # Cache de prompt: leitura a uma fração do preço de entrada; escrita com acréscimo.
+    cache_leitura_fator: float = 0.1
+    cache_escrita_fator: float = 1.25
+
     max_passos: int = 40
+
+    @property
+    def modelos_anthropic(self) -> list[str]:
+        """O modelo padrão primeiro, depois os outros permitidos, sem repetir."""
+        outros = [m.strip() for m in self.anthropic_modelos.split(",") if m.strip()]
+        return list(dict.fromkeys([self.anthropic_model, *outros]))
 
     @property
     def llm_configurado(self) -> bool:

@@ -220,7 +220,7 @@ Com um incidente aplicado antes ou durante a viagem, o agente percebe e recalcul
 # ◆ rota recalculada: rota-rapida → rota-economica · ...
 ```
 
-O canal escolhe a persona: `--canal app` (padrão), `agencia` ou `central`.
+O canal escolhe a persona: `--canal app` (padrão), `agencia` ou `central`. O modelo padrão é o Haiku 5.5. Para trocar o modelo de todas as próximas execuções, use o seletor no indicador de LLM do dashboard, ou `curl -X PUT localhost:8080/api/llm/modelo -H 'Content-Type: application/json' -d '{"modelo": "claude-opus-5-5"}'`. Para uma execução só, `--modelo claude-opus-5-5`. O fim da viagem mostra o custo em US$.
 
 ```bash
 ./scripts/agente.sh executar --modo com_skill --provedor roteiro --canal agencia --auto
@@ -247,8 +247,14 @@ curl -s -X POST localhost:8080/api/execucoes/<id>/resposta -H 'Content-Type: app
 ```bash
 ./scripts/experimento.sh rodar                       # 5 incidentes x 2 modos (~15 min)
 ./scripts/experimento.sh rodar vistoria-zona-sul     # só um incidente
-./scripts/experimento.sh analisar 2026-11-01         # a tabela de regras cumpridas
+./scripts/experimento.sh analisar 2026-11-01-claude-opus-5-5   # regras por caso, somando as repetições
+
+# Comparar modelos: cada execução pode pedir um modelo de ANTHROPIC_MODELOS
+./scripts/experimento.sh rodar --modelo claude-haiku-5-5 --repeticoes 3
+./scripts/experimento.sh comparar 2026-11-01-claude-opus-5-5 2026-11-01-claude-haiku-5-5
 ```
+
+O `comparar` mostra também o custo, pelos preços do `.env`. Mudar os preços ou os fatores de cache e comparar de novo não gasta tokens: o custo é recalculado a partir dos tokens gravados.
 
 Os eventos completos ficam em `experimentos/<data>/`, fora do git. O relatório da primeira rodada está em `docs/experimentos/`.
 

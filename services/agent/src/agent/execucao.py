@@ -24,6 +24,7 @@ from redis.asyncio import Redis
 
 from agent import prompts
 from agent.config import Config
+from agent.custos import custo
 from agent.ferramentas import PERGUNTAR_CLIENTE, TOOLS_DA_VIAGEM, TOOLS_DE_SKILL
 from agent.incidentes import detectar
 from agent.llm.base import ChamadaTool, DefinicaoTool, ErroProvedor, ResultadoTool, SessaoLLM, Uso
@@ -45,7 +46,9 @@ log = logging.getLogger("agent.execucao")
 Modo = Literal["sem_contexto", "sem_skill", "com_skill"]
 MODOS: tuple[str, ...] = ("sem_contexto", "sem_skill", "com_skill")
 CHAVE = "bussola:execucoes:"
+CHAVE_MODELO = "bussola:llm:modelo"
 LISTA = "bussola:execucoes"
+NOMES_DE_SKILL = tuple(t.nome for t in TOOLS_DE_SKILL)
 MOTIVOS_DE_BLOQUEIO = {
     "fora_da_skill",
     "fora_de_ordem",
@@ -66,6 +69,8 @@ class Metricas:
     incidentes: int = 0
     tokens: dict[str, int] = field(default_factory=lambda: asdict(Uso()))
     duracao_s: float = 0.0
+    # Custo em US$ pelos preços do modelo (None se o modelo não tem preço configurado).
+    custo_usd: dict[str, Any] | None = None
 
 
 @dataclass
@@ -114,17 +119,26 @@ class Motor:
     # --- Ciclo de vida -------------------------------------------------------------
 
     async def iniciar(
-        self, modo: str, provedor: str | None = None, pedido: str | None = None, canal: str | None = None
+        self,
+        modo: str,
+        provedor: str | None = None,
+        pedido: str | None = None,
+        canal: str | None = None,
+        modelo: str | None = None,
     ) -> Execucao:
         if modo not in MODOS:
             raise ValueError(f"Modo desconhecido: {modo}. Use um de: {', '.join(MODOS)}.")
         ultimo = await self.redis.xrevrange(STREAM, count=1)
+        provedor = provedor or self.config.llm_provider
+        if not modelo and provedor == "anthropic":
+            modelo = await self.modelo_atual()
         execucao = Execucao(
             id=uuid.uuid4().hex[:10],
             modo=modo,
-            provedor=provedor or self.config.llm_provider,
+            provedor=provedor,
             pedido=pedido or prompts.PEDIDO_PADRAO,
             canal=canal or prompts.CANAL_PADRAO,
+            modelo=modelo or "",
             cursor_eventos=ultimo[0][0] if ultimo else "0-0",
         )
         await self.salvar(execucao)
@@ -139,6 +153,21 @@ class Motor:
             nomes = [p.name for p in (await gateway.list_prompts()).prompts]
         prefixo = prompts.PREFIXO_PROMPT_DE_CANAL
         return sorted(n.removeprefix(prefixo) for n in nomes if n.startswith(prefixo))
+
+    async def modelo_atual(self) -> str:
+        """O modelo das próximas execuções: o escolhido no painel, ou o padrão do .env."""
+        try:
+            escolhido = await self.redis.get(CHAVE_MODELO)
+        except Exception:  # noqa: BLE001
+            escolhido = None
+        return escolhido if escolhido in self.config.modelos_anthropic else self.config.anthropic_model
+
+    async def definir_modelo(self, modelo: str) -> None:
+        if modelo not in self.config.modelos_anthropic:
+            raise ValueError(
+                f"Modelo não permitido: {modelo}. Use um de: {', '.join(self.config.modelos_anthropic)}."
+            )
+        await self.redis.set(CHAVE_MODELO, modelo)
 
     async def salvar(self, execucao: Execucao) -> None:
         await self.redis.set(CHAVE + execucao.id, json.dumps(asdict(execucao), ensure_ascii=False))
@@ -180,6 +209,7 @@ class Motor:
         finally:
             execucao.pergunta = None
             execucao.metricas.duracao_s = round(time.perf_counter() - inicio, 2)
+            execucao.metricas.custo_usd = custo(self.config, execucao.modelo, execucao.metricas.tokens)
             await self.salvar(execucao)
             await viagem.publicar(
                 "run.finished",
@@ -214,7 +244,7 @@ class _Viagem:
     async def dirigir(self) -> None:
         execucao, config = self.execucao, self.motor.config
         # run.started é sempre o primeiro evento da execução, antes de qualquer conversa com o gateway.
-        execucao.modelo, execucao.status = modelo_de(execucao.provedor, config), "rodando"
+        execucao.modelo, execucao.status = modelo_de(execucao.provedor, config, execucao.modelo), "rodando"
         await self.motor.salvar(execucao)
         await self.publicar(
             "run.started",
@@ -240,7 +270,13 @@ class _Viagem:
             await self.publicar("prompt.loaded", evento_persona)
             sistema = prompts.montar_sistema(execucao.modo, persona, list(self.skills.values()))
             sessao = self.motor.fabrica_sessao(
-                execucao.provedor, execucao.modo, sistema, execucao.pedido, config, canal=execucao.canal
+                execucao.provedor,
+                execucao.modo,
+                sistema,
+                execucao.pedido,
+                config,
+                canal=execucao.canal,
+                modelo=execucao.modelo,
             )
             execucao.modelo = sessao.modelo
             await self.motor.salvar(execucao)
@@ -296,10 +332,11 @@ class _Viagem:
             return [PERGUNTAR_CLIENTE]
         if modo == "sem_skill":
             return [PERGUNTAR_CLIENTE, *self.tools_gateway.values()]
-        if self.execucao.skill is None:
-            return [PERGUNTAR_CLIENTE, *TOOLS_DE_SKILL]
-        permitidas = [t for n, t in sorted(self.tools_gateway.items()) if n in self.permitidas]
-        return [PERGUNTAR_CLIENTE, *TOOLS_DE_SKILL, *TOOLS_DA_VIAGEM, *permitidas]
+        # A lista não muda durante a conversa: mudar as tools invalida o raciocínio já feito
+        # (pensamento preservado). Por isso o modelo vê, desde o início, as tools de alguma skill;
+        # o host as recusa até a skill ser carregada, e o gateway aplica a skill e a ordem depois.
+        relevantes = [t for n, t in sorted(self.tools_gateway.items()) if n in self.relevantes]
+        return [PERGUNTAR_CLIENTE, *TOOLS_DE_SKILL, *TOOLS_DA_VIAGEM, *relevantes]
 
     # --- Execução de cada chamada -------------------------------------------------------
 
@@ -312,6 +349,14 @@ class _Viagem:
             "navegacao.iniciar_parada": self._iniciar_parada,
             "navegacao.recalcular_rota": self._recalcular_rota,
         }
+        sem_skill_ainda = self.execucao.modo == "com_skill" and self.execucao.skill is None
+        if sem_skill_ainda and chamada.nome not in ("conversa.perguntar_cliente", *NOMES_DE_SKILL):
+            return ResultadoTool(
+                chamada.id,
+                f"{chamada.nome} ainda não está disponível: carregue a skill antes, "
+                "com agente.carregar_skill.",
+                erro=True,
+            )
         try:
             if chamada.nome in tratadores:
                 texto = await tratadores[chamada.nome](**chamada.argumentos)

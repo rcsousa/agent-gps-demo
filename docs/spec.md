@@ -189,6 +189,8 @@ A versão curta usa as cenas 1, 4, 5, 6 e 8.
 - **Cena 3:** sem skill, o modelo cumpre a maioria das regras, porque elas chegam pelas próprias tools. O contraste está na disciplina (ordem da privacidade, explicações) e na **garantia**: só com a skill o gateway impede o que está fora da rota.
 - **A fala da Ana na cena 3** ("aproveita e estorna aquele pagamento") é uma fala roteirizada do apresentador, enviada como resposta da Ana durante a viagem. O painel do apresentador (Fase 7) oferece essa fala como sugestão.
 
+**Com skill, um modelo menor segue as regras como o maior.** No experimento Opus × Haiku (`docs/experimentos/2026-11-01-modelos-opus-haiku.md`), com 3 repetições de cada caso: o Opus foi de 89% (sem skill) a 100% (com skill), e o Haiku de 59% a 99%, em metade do tempo do Opus. O placar pode mostrar os quatro quadrantes (modelo × skill), com **regras cumpridas, tempo e custo** por execução.
+
 **O placar** compara as cenas por **regras do banco cumpridas**, conferidas pelos eventos do barramento (`./scripts/experimento.sh`), e não por tools irrelevantes: com modelos atuais, essa contagem não diferencia os modos. Tempo e tokens aparecem como custo de cada modo.
 
 ## Incidentes e recálculo de rota
@@ -260,9 +262,12 @@ Decisões de arquitetura:
 - **O gateway é o ponto de observação.** Todo evento do Raio-X sai dele e do agente, então o que aparece na tela é o que de fato trafegou.
 - **Gateway próprio em Python.** O suporte à extensão de skills em gateways prontos ainda varia, e assim agregamos skills e tools do nosso jeito.
 - **Provedor de LLM por variável de ambiente:** `LLM_PROVIDER=anthropic|azure_openai`, com uma interface única no `agent`.
-  - Modelo padrão: Claude Opus 5.5 (`claude-opus-5-5`) **no Microsoft Foundry, na Azure** (`ANTHROPIC_PLATAFORMA=foundry`). A API da Anthropic continua disponível com `ANTHROPIC_PLATAFORMA=api`. O Foundry é uma variante do provedor `anthropic`, não um terceiro provedor.
+  - Modelo padrão: **Claude Haiku 5.5** (`claude-haiku-5-5`) **no Microsoft Foundry, na Azure** (`ANTHROPIC_PLATAFORMA=foundry`). O Opus 5.5 fica disponível no seletor do painel. A troca de padrão veio do experimento Opus × Haiku: com skill, o Haiku cumpre 99% das regras, contra 100% do Opus, a um custo cerca de 44 vezes menor. A API da Anthropic continua disponível com `ANTHROPIC_PLATAFORMA=api`. O Foundry é uma variante do provedor `anthropic`, não um terceiro provedor.
   - Os *fallbacks* do lado do servidor ficam ligados por padrão na API da Anthropic (`ANTHROPIC_FALLBACKS`); o Foundry não os oferece.
   - Cache automático de prompt, incluindo o histórico da conversa, e nova tentativa quando o deployment atinge o limite de tokens por minuto.
+  - **Seleção de modelo na demo.** `ANTHROPIC_MODELOS` lista os modelos que podem ser escolhidos. O apresentador troca o modelo das próximas execuções pelo seletor do painel, e cada execução também pode pedir um modelo.
+  - **Custo por execução** em US$, pelos preços de `LLM_PRECOS` e pelos fatores de cache, publicado no `run.finished`.
+  - **A lista de tools é fixa durante a conversa**, por causa do pensamento preservado. No modo com skill, o host recusa as tools até a skill ser carregada.
   - Um terceiro provedor, `roteiro`, faz um ensaio determinístico sem LLM, pelas mesmas tools e pelo mesmo gateway. Serve para ensaiar sem chave e para os testes ponta a ponta, e aparece como "roteiro" nos eventos.
 - **A Ana é respondida pelo apresentador.** Quando o agente pergunta algo à cliente, a execução pausa até o apresentador responder. A pergunta traz opções sugeridas, para a resposta sair em um clique.
 - **O prompt do agente tem três camadas, cada uma no seu lugar:**

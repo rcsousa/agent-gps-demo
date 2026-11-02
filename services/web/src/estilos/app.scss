@@ -135,6 +135,17 @@ $largura-painel: 40rem;
     @include type-style('code-01');
     color: theme.$text-secondary;
   }
+
+  &__seletor {
+    margin-block-end: $spacing-03;
+  }
+
+  &__preco {
+    display: block;
+    @include type-style('helper-text-01');
+    color: theme.$text-secondary;
+    margin-block-end: $spacing-03;
+  }
 }
 
 .catalogo {

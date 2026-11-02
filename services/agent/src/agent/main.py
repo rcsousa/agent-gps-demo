@@ -16,6 +16,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from agent.catalogo import Catalogo, NaoEncontrado
 from agent.config import Config
+from agent.custos import precos_por_milhao
 from agent.execucao import MODOS, Motor
 from agent.llm.fabrica import PROVEDORES
 from bussola_comum.barramento import checar_barramento
@@ -31,6 +32,11 @@ class PedidoExecucao(BaseModel):
     provedor: str | None = None
     pedido: str | None = None
     canal: str | None = None
+    modelo: str | None = None
+
+
+class EscolhaDeModelo(BaseModel):
+    modelo: str
 
 
 class RespostaCliente(BaseModel):
@@ -95,10 +101,11 @@ def criar_app(
             "llm": {
                 "provedor": config.llm_provider,
                 "plataforma": config.anthropic_plataforma if config.llm_provider == "anthropic" else None,
-                "modelo": config.anthropic_model
+                "modelo": await motor.modelo_atual()
                 if config.llm_provider == "anthropic"
                 else config.azure_openai_deployment,
                 "configurado": config.llm_configurado,
+                "modelos": config.modelos_anthropic if config.llm_provider == "anthropic" else [],
             },
             "servicos": servicos,
             "ferramentas": ferramentas,
@@ -106,6 +113,26 @@ def criar_app(
             "skills": skills,
             "prompts": prompts,
         }
+
+    # --- Modelo das próximas execuções (escolhido no painel) ---------------------------
+
+    @app.get("/api/llm/modelo")
+    async def ver_modelo() -> dict:
+        """O modelo atual e os permitidos, com o preço por milhão de tokens de cada um."""
+        return {
+            "modelo": await motor.modelo_atual(),
+            "padrao": config.anthropic_model,
+            "modelos": [{"id": m, "precos": precos_por_milhao(config, m)} for m in config.modelos_anthropic],
+            "cache": {"leitura": config.cache_leitura_fator, "escrita": config.cache_escrita_fator},
+        }
+
+    @app.put("/api/llm/modelo")
+    async def escolher_modelo(escolha: EscolhaDeModelo) -> dict:
+        try:
+            await motor.definir_modelo(escolha.modelo)
+        except ValueError as erro:
+            raise HTTPException(400, str(erro)) from erro
+        return await ver_modelo()
 
     # --- Catálogo (dashboard de status) ---------------------------------------------
 
@@ -171,7 +198,18 @@ def criar_app(
                 raise HTTPException(
                     400, f"Canal desconhecido: {pedido.canal}. Use um de: {', '.join(canais)}."
                 )
-        execucao = await motor.iniciar(pedido.modo, pedido.provedor, pedido.pedido, pedido.canal)
+        if pedido.modelo:
+            provedor = pedido.provedor or config.llm_provider
+            if provedor != "anthropic":
+                raise HTTPException(400, "A escolha de modelo vale só para o provedor anthropic.")
+            permitidos = config.modelos_anthropic
+            if pedido.modelo not in permitidos:
+                raise HTTPException(
+                    400, f"Modelo não permitido: {pedido.modelo}. Use um de: {', '.join(permitidos)}."
+                )
+        execucao = await motor.iniciar(
+            pedido.modo, pedido.provedor, pedido.pedido, pedido.canal, pedido.modelo
+        )
         return {
             "id": execucao.id,
             "modo": execucao.modo,

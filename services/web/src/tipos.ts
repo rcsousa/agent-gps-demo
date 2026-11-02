@@ -23,12 +23,25 @@ export interface Servico {
 export interface Status {
   gateway: Estado;
   barramento: Estado;
-  llm: { provedor: string; plataforma: string | null; modelo: string; configurado: boolean };
+  // modelos: o padrão primeiro, depois os outros que uma execução pode pedir.
+  llm: { provedor: string; plataforma: string | null; modelo: string; configurado: boolean; modelos: string[] };
   servicos: Servico[];
   ferramentas: number;
   ferramentas_fora: number;
   skills: number;
   prompts: number;
+}
+
+export interface OpcaoDeModelo {
+  id: string;
+  // Preço por milhão de tokens, em US$ (null se o modelo não tem preço configurado).
+  precos: { entrada: number; saida: number } | null;
+}
+
+export interface EstadoDoModelo {
+  modelo: string;
+  padrao: string;
+  modelos: OpcaoDeModelo[];
 }
 
 export interface SkillDaTool {

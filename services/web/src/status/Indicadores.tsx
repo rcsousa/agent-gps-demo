@@ -1,11 +1,11 @@
 // Linha de indicadores do topo: a saúde da plataforma num relance.
 
 import { CheckmarkFilled, ErrorFilled, Information } from '@carbon/icons-react';
-import { Tag, Tile } from '@carbon/react';
+import { Dropdown, Tag, Tile } from '@carbon/react';
 import type { ReactNode } from 'react';
 
 import { mensagens } from '../mensagens/pt-BR';
-import type { Status } from '../tipos';
+import type { EstadoDoModelo, OpcaoDeModelo, Status } from '../tipos';
 
 const t = mensagens.indicadores;
 
@@ -32,7 +32,41 @@ function Situacao(props: { ok: boolean; texto: string }) {
   );
 }
 
-export function Indicadores({ status }: { status: Status }) {
+const nomeDoModelo = (id: string) => t.nomesDeModelo[id] ?? id;
+
+const rotuloDoModelo = (opcao: OpcaoDeModelo) =>
+  `${nomeDoModelo(opcao.id)} · ${opcao.precos ? t.precoPorMilhao(opcao.precos.entrada, opcao.precos.saida) : t.semPreco}`;
+
+// O apresentador escolhe o modelo das próximas execuções; o agente guarda a escolha.
+function SeletorDeModelo(props: { estado: EstadoDoModelo; aoEscolher: (id: string) => void }) {
+  const atual = props.estado.modelos.find((m) => m.id === props.estado.modelo) ?? null;
+  return (
+    <Dropdown
+      id="seletor-de-modelo"
+      className="indicador__seletor"
+      size="sm"
+      titleText={t.modelo}
+      hideLabel
+      label={t.modelo}
+      items={props.estado.modelos}
+      itemToString={(opcao: OpcaoDeModelo | null) => (opcao ? rotuloDoModelo(opcao) : '')}
+      selectedItem={atual}
+      renderSelectedItem={(opcao: OpcaoDeModelo) => nomeDoModelo(opcao.id)}
+      onChange={({ selectedItem }: { selectedItem: OpcaoDeModelo | null }) =>
+        selectedItem && selectedItem.id !== props.estado.modelo && props.aoEscolher(selectedItem.id)
+      }
+    />
+  );
+}
+
+export function Indicadores(props: {
+  status: Status;
+  modelo: EstadoDoModelo | null;
+  aoEscolherModelo: (id: string) => void;
+}) {
+  const { status } = props;
+  const opcaoAtual = props.modelo?.modelos.find((m) => m.id === status.llm.modelo);
+  const precoAtual = opcaoAtual?.precos ? t.precoPorMilhao(opcaoAtual.precos.entrada, opcaoAtual.precos.saida) : null;
   // Plataforma (gateway e barramento) mais os servidores MCP atrás do gateway.
   const total = status.servicos.length + 2;
   const noAr =
@@ -56,18 +90,27 @@ export function Indicadores({ status }: { status: Status }) {
       <Indicador titulo={t.prompts} valor={status.prompts} rodape={<span>{t.promptsDetalhe}</span>} />
       <Indicador
         titulo={t.llm}
-        valor={t.provedores[status.llm.provedor] ?? status.llm.provedor}
-        tecnico={[status.llm.modelo, status.llm.plataforma && t.plataformas[status.llm.plataforma]]
+        valor={nomeDoModelo(status.llm.modelo)}
+        tecnico={[
+          t.provedores[status.llm.provedor] ?? status.llm.provedor,
+          status.llm.plataforma && t.plataformas[status.llm.plataforma],
+        ]
           .filter(Boolean)
           .join(' · ')}
         rodape={
-          status.llm.configurado ? (
-            <Situacao ok texto={t.llmConfigurado} />
-          ) : (
-            <Tag type="warm-gray" size="sm" renderIcon={Information}>
-              {t.llmAusente}
-            </Tag>
-          )
+          <>
+            {props.modelo && props.modelo.modelos.length > 1 && (
+              <SeletorDeModelo estado={props.modelo} aoEscolher={props.aoEscolherModelo} />
+            )}
+            {precoAtual && <span className="indicador__preco">{precoAtual}</span>}
+            {status.llm.configurado ? (
+              <Situacao ok texto={t.llmConfigurado} />
+            ) : (
+              <Tag type="warm-gray" size="sm" renderIcon={Information}>
+                {t.llmAusente}
+              </Tag>
+            )}
+          </>
         }
       />
       <Indicador

@@ -2,6 +2,7 @@
 
 Uso (pelo script):
   ./scripts/agente.sh executar --modo com_skill [--canal app|agencia|central] [--provedor roteiro] [--auto]
+  ./scripts/agente.sh executar --modo com_skill --modelo claude-haiku-5-5   # outro modelo permitido
   ./scripts/agente.sh responder <id> "Sim, é esse apartamento"
   ./scripts/agente.sh responder <id> --sugestao 1
   ./scripts/agente.sh estado <id>
@@ -58,6 +59,7 @@ def _linha(evento: dict) -> str:
             f"{m['bloqueios']} bloqueios, {m['incidentes']} incidentes, "
             f"{m['tokens']['entrada']}+{m['tokens']['saida']} tokens, "
             f"{m['duracao_s']} s"
+            + (f", US$ {m['custo_usd']['total']:.4f}".replace(".", ",") if m.get("custo_usd") else "")
         )
     return f"  · {tipo}"
 
@@ -93,6 +95,8 @@ def main() -> int:
         corpo = {"modo": args[args.index("--modo") + 1] if "--modo" in args else "com_skill"}
         if "--canal" in args:
             corpo["canal"] = args[args.index("--canal") + 1]
+        if "--modelo" in args:
+            corpo["modelo"] = args[args.index("--modelo") + 1]
         if "--provedor" in args:
             corpo["provedor"] = args[args.index("--provedor") + 1]
         resposta = httpx.post(f"{API}/execucoes", json=corpo, timeout=10)

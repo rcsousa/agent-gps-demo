@@ -103,6 +103,14 @@ Os exemplos acima são do roteiro. Com o Claude Opus 5.5 real, testado em 01/11/
   - **a narração verificável da viagem:** cada recálculo cita a regra que seguiu.
   - A skill também tem falhas de autoria que o teste revelou, como cobrar antes da vistoria. Skill é software: precisa de teste.
 - **Com a ordem do workflow garantida pelo gateway** (capítulo 3), a rodada seguinte fechou em **30 de 30 regras com skill, contra 26 de 30 sem skill**. Com skill, o agente não ficou abaixo do sem skill em nenhum caso. Sem skill, ele chegou a contornar a alçada reduzindo a cobertura que a cliente pediu. O preço foi cerca de 35% mais tempo.
+- **E com um modelo menor?** Com o Claude Haiku 5.5, a diferença fica gritante (3 repetições de cada caso):
+
+    | | Sem skill | Com skill |
+    | --- | --- | --- |
+    | Opus 5.5 | 89% das regras | 100% |
+    | Haiku 5.5 | 59% | **99%**, em metade do tempo do Opus |
+
+    Sem skill, o Haiku pediu o dossiê completo da cliente em todas as execuções, cotou sem renovar o consentimento vencido e cobrou antes da vistoria. Com skill, ele seguiu as regras como o Opus, e o gateway barrou seis vezes a leitura do imóvel antes do consentimento. **A skill vale mais que o modelo.** E custa menos: pelos preços do banco, uma contratação com o Haiku com skill sai por cerca de US$ 0,012, contra US$ 0,52 com o Opus com skill, umas 44 vezes menos. Por isso o Haiku é o modelo padrão da demo.
 - **O que o banco ganha não é só acerto, é garantia.** Sem skill, nada impede o agente de chamar `pagamentos.estornar`: ele só não chamou. Com skill, o gateway bloqueia (a contramão do capítulo 3).
 
 ### Para reproduzir
