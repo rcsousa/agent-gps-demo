@@ -1,6 +1,6 @@
-// Modo Mapa: a cidade do banco em 3D (o grafo) e a viagem do agente (os eventos), lado a lado.
+// Modo Mapa: a cidade do banco (o grafo, em ruas e quadras) e a viagem do agente (os eventos).
 
-import { Add, ArrowLeft, Book, Play, PresentationFile, Subtract, ZoomFit } from '@carbon/icons-react';
+import { Add, Book, Play, PresentationFile, Subtract, ZoomFit } from '@carbon/icons-react';
 import { Button, ContentSwitcher, Dropdown, IconButton, InlineNotification, Switch, Tag, Toggle } from '@carbon/react';
 import { AmbientLight, DirectionalLight, LightingEffect, LinearInterpolator, OrbitView } from '@deck.gl/core';
 import DeckGL, { type DeckGLRef } from '@deck.gl/react';
@@ -14,30 +14,22 @@ import { CAPITULO_DAS_CENAS, cena as presetDaCena } from '../apresentador/cenas'
 import { abrirBastidores } from '../bastidores/PainelDeBastidores';
 import { PainelRaioX } from '../raiox/PainelRaioX';
 import { PainelLateral } from '../status/Painel';
-import type { Cidade, EstadoDoModelo, Gravacao, NoDoMapa, RotaDaJornada } from '../tipos';
+import type { Cidade, EstadoDoModelo, Gravacao, NoDoMapa, Ponto, RotaDaJornada } from '../tipos';
 import {
   ALTURA_DO_ROBO,
   camadas,
   comProblemaNoTransito,
   DURACAO_DO_PULSO_MS,
   paradasDaJornada,
-  type Robo,
-  sistemasDoBairro,
+  type Rastro,
 } from './camadas';
-import {
-  ALTURA_DA_PLACA,
-  alturaDoSistema,
-  type Caminho,
-  caminhoDaRota,
-  montarCena,
-  type Ponto3,
-  pontoNoCaminho,
-  suave,
-} from './cidade3d';
-import { DESLOCAMENTO_MS, useDiretor } from './diretor';
+import { ESTILOS } from './construcoes';
+import { montarCena, type Ponto3, pontoDaPorta, suave, Z_CHAO, Z_RUA } from './cidade3d';
+import { useDiretor } from './diretor';
 import { LinhaDoTempo } from './LinhaDoTempo';
-import { CartaoDeRotas, Conversa, DetalheDoNo, Legenda } from './Paineis';
+import { Conversa, DetalheDoNo, Legenda } from './Paineis';
 import { type Rotulo, Rotulos } from './rotulos';
+import { caminhoPelasRuas, duracaoDoTrecho, pontoNoTrajeto, type Trajeto, trajeto } from './ruas';
 import { ehReplay, PREFIXO_GRAVACAO, useViagem } from './viagem';
 
 const t = mensagens.mapa;
@@ -52,12 +44,12 @@ const LUZ = new LightingEffect({
 const INCLINACAO = 52;
 // Sem giro: o norte fica para cima e a profundidade vem só da inclinação da câmera.
 const GIRO = 0;
-// A partir desse zoom (relativo à cidade inteira), o bairro sob o centro da câmera se abre.
-const NIVEL_DO_BAIRRO = 0.85;
+// A partir desse zoom (relativo à cidade inteira), aparecem os nomes das construções.
+const NIVEL_DOS_NOMES = 0.75;
 // Os rótulos não invadem a linha do tempo do rodapé (5,75rem).
 const ALTURA_DA_LINHA_DO_TEMPO_PX = 92;
-const ZOOM_NO_BAIRRO = 1.35; // seguindo o agente
-const ZOOM_DO_BAIRRO = 1.75; // ao clicar no bairro: perto o bastante para as placas dos sistemas
+const ZOOM_SEGUINDO = 1.25; // seguindo o agente pelas ruas
+const ZOOM_DO_BAIRRO = 1.1; // ao clicar no nome de um bairro
 
 interface Opcao {
   id: string;
@@ -75,12 +67,6 @@ const CANAIS: Opcao[] = [
   { id: 'central', texto: t.barra.canais.central },
 ];
 const ROTEIRO = 'roteiro';
-const PONTO_DE_PARTIDA: Record<string, string> = {
-  app: 'canal-app',
-  agencia: 'canal-agencia',
-  central: 'canal-central',
-};
-
 
 interface Visao {
   target: [number, number, number];
@@ -95,9 +81,9 @@ interface Visao {
 
 function enquadramento(largura: number, altura: number, cidade: Cidade): Visao {
   const mundo = cidade.mundo;
-  const escala = Math.min(largura / mundo.largura, (altura * 1.25) / mundo.altura) * 0.88;
+  const escala = Math.min(largura / mundo.largura, (altura * 1.25) / mundo.altura) * 0.92;
   return {
-    target: [mundo.largura / 2 - 40, mundo.altura / 2 - 10, 0],
+    target: [mundo.largura / 2, mundo.altura / 2 - 10, 0],
     zoom: Math.log2(Math.max(escala, 0.05)),
     rotationX: INCLINACAO,
     rotationOrbit: GIRO,
@@ -106,11 +92,11 @@ function enquadramento(largura: number, altura: number, cidade: Cidade): Visao {
   };
 }
 
-// O pino do robô (80 px, preso pela ponta) não pode ficar atrás de um rótulo.
-function espacoDoRobo(robo: Robo | null, projetar: (p: Ponto3) => [number, number]) {
+// O pino do robô (72 px, preso pela ponta) não pode ficar atrás de um rótulo.
+function espacoDoRobo(robo: Ponto3 | null, projetar: (p: Ponto3) => [number, number]) {
   if (!robo) return [];
-  const [x, y] = projetar([robo.posicao[0], robo.posicao[1], ALTURA_DA_PLACA + 0.6 + ALTURA_DO_ROBO]);
-  return [[x - 34, y - 84, x + 34, y + 4] as [number, number, number, number]];
+  const [x, y] = projetar([robo[0], robo[1], Z_RUA + 0.3 + ALTURA_DO_ROBO]);
+  return [[x - 32, y - 78, x + 32, y + 4] as [number, number, number, number]];
 }
 
 // Cena → gravação para o replay. As cenas 4 (o destino) e 8 (o Raio-X) são a mesma viagem da 5.
@@ -124,10 +110,11 @@ function gravacoesPorCena(gravacoes: Gravacao[]): Record<string, string> {
   return porCena;
 }
 
-const chaveDaGeometria = (cidade: Cidade | null, rotas: RotaDaJornada[]) =>
-  cidade
-    ? `${cidade.bairros.map((b) => b.id).join()}|${cidade.nos.length}|${rotas.map((r) => r.paradas.map((p) => p.id).join()).join('/')}`
-    : '';
+// As construções (corpo e detalhe de cada estilo) respondem ao clique.
+const CAMADAS_CLICAVEIS = ESTILOS.flatMap((e) => [`construcao-${e}`, `detalhe-${e}`]);
+
+const chaveDaGeometria = (cidade: Cidade | null) =>
+  cidade ? `${cidade.cidade.xs.join()}|${cidade.cidade.ys.join()}|${cidade.nos.map((n) => n.id).join()}` : '';
 
 export function PaginaMapa() {
   const [execucao, setExecucao] = useState<string | null>(() => parametro('execucao'));
@@ -175,19 +162,13 @@ export function PaginaMapa() {
     };
   }, [gravacao, cabecalho]);
 
-  // A conversa usa o estado real (para responder sem atraso); o mapa, o que o diretor já exibiu.
-  // No replay ninguém responde: a conversa acompanha o mapa.
-  const real = useViagem(gravacao ? (replayPronto ? PREFIXO_GRAVACAO + replayPronto : null) : execucao);
-  const replay = ehReplay(real.id);
-  const direcao = useDiretor(real);
-  const exibido = direcao.exibido;
-
   const [cidade, setCidade] = useState<Cidade | null>(null);
   const [rotas, setRotas] = useState<RotaDaJornada[]>([]);
   const [modelo, setModelo] = useState<EstadoDoModelo | null>(null);
   const [erro, setErro] = useState<string | null>(null);
 
-  // Trânsito: a cidade e as rotas são relidas a cada 5 s (o simulador muda o mundo).
+  // Trânsito: a cidade é relida a cada 5 s (o simulador muda o mundo). As rotas dão só a ordem
+  // das 9 paradas da linha do tempo; no mapa, o que aparece é o caminho real do robô.
   const consultar = useCallback(async () => {
     try {
       const [c, r] = await Promise.all([api.cidade(), api.rotas()]);
@@ -205,14 +186,41 @@ export function PaginaMapa() {
     return () => clearInterval(id);
   }, [consultar]);
 
-  // A geometria (prédios, estradas) só é refeita se o grafo mudar de forma, não a cada leitura.
-  const chave = chaveDaGeometria(cidade, rotas);
-  const cena3d = useMemo(() => (cidade ? montarCena(cidade, rotas) : null), [chave]); // eslint-disable-line react-hooks/exhaustive-deps
-  const caminhos = useMemo(
-    () => new Map<string, Caminho>(cena3d ? rotas.map((r) => [r.id, caminhoDaRota(r, cena3d)]) : []),
-    [cena3d], // eslint-disable-line react-hooks/exhaustive-deps
-  );
+  // A geometria (ruas, lotes, construções) só é refeita se a cidade mudar de forma.
+  const chave = chaveDaGeometria(cidade);
+  const cena3d = useMemo(() => (cidade ? montarCena(cidade) : null), [chave]); // eslint-disable-line react-hooks/exhaustive-deps
   const nos = useMemo(() => new Map((cidade?.nos ?? []).map((n) => [n.id, n])), [cidade]);
+
+  // --- Os caminhos pelas ruas (memorizados por par de lugares) -------------------------------
+  const trajetos = useRef(new Map<string, Trajeto>());
+  const trajetoEntre = useCallback(
+    (de: string, para: string): Trajeto | null => {
+      const chaveDoPar = `${de}>${para}`;
+      const guardado = trajetos.current.get(chaveDoPar);
+      if (guardado) return guardado;
+      const a = nos.get(de);
+      const b = nos.get(para);
+      if (!a || !b || !cidade) return null;
+      const t2 = trajeto(caminhoPelasRuas(pontoDaPorta(a), pontoDaPorta(b), cidade.cidade));
+      trajetos.current.set(chaveDoPar, t2);
+      return t2;
+    },
+    [nos, cidade],
+  );
+  const tempoDoTrecho = useCallback(
+    (de: string, para: string) => {
+      const t2 = trajetoEntre(de, para);
+      return t2 ? duracaoDoTrecho(t2.total) : null;
+    },
+    [trajetoEntre],
+  );
+
+  // A conversa usa o estado real (para responder sem atraso); o mapa, o que o diretor já exibiu.
+  // No replay ninguém responde: a conversa acompanha o mapa.
+  const real = useViagem(gravacao ? (replayPronto ? PREFIXO_GRAVACAO + replayPronto : null) : execucao);
+  const replay = ehReplay(real.id);
+  const direcao = useDiretor(real, tempoDoTrecho);
+  const exibido = direcao.exibido;
 
   // --- Câmera -------------------------------------------------------------------------
   const area = useRef<HTMLDivElement>(null);
@@ -251,7 +259,7 @@ export function PaginaMapa() {
     [base],
   );
   const pontoDoNo = useCallback(
-    (id: string, z = ALTURA_DA_PLACA): Ponto3 | null => {
+    (id: string, z = Z_CHAO): Ponto3 | null => {
       const n = nos.get(id);
       return n && cena3d ? cena3d.ponto(n.x, n.y, z) : null;
     },
@@ -272,25 +280,22 @@ export function PaginaMapa() {
         transitionInterpolator: new LinearInterpolator(['target', 'zoom', 'rotationX', 'rotationOrbit']),
       });
   }, [base]);
-
-  // O bairro aberto deriva da câmera: perto o bastante, abre o bairro sob o centro.
   const nivel = visao && base ? visao.zoom - base.zoom : 0;
-  const bairroAberto =
-    visao && cena3d && nivel >= NIVEL_DO_BAIRRO ? cena3d.bairroDe(visao.target[0], visao.target[1]) : null;
 
-  // ?parada=N (da tela de abertura): o mapa abre naquela parada, com o bairro aberto.
+  // ?parada=N (da tela de abertura): o mapa abre naquela parada.
   useEffect(() => {
     const numero = parametro('parada');
     const alvo = paradasDaJornada(rotas, null).find((p) => String(p.numero) === numero);
     const ponto = alvo && pontoDoNo(alvo.id);
-    if (ponto && base) voar(ponto, ZOOM_NO_BAIRRO);
+    if (ponto && base) voar(ponto, ZOOM_SEGUINDO);
   }, [rotas, base, pontoDoNo, voar]);
 
-  // "Seguir o agente": a câmera vai junto com o robô, no mesmo ritmo, e abre o bairro de chegada.
+  // "Seguir o agente": a câmera vai junto com o robô, no mesmo ritmo do trecho.
+  const trechoAtual = direcao.trechos.at(-1) ?? null;
   useEffect(() => {
-    const destino = direcao.trecho && pontoDoNo(direcao.trecho.para);
-    if (seguir && destino) voar(destino, ZOOM_NO_BAIRRO, DESLOCAMENTO_MS);
-  }, [seguir, direcao.trecho, pontoDoNo, voar]);
+    const destino = trechoAtual && pontoDoNo(trechoAtual.para, Z_RUA);
+    if (seguir && destino) voar(destino, ZOOM_SEGUINDO, Math.max(trechoAtual.duracao, 400));
+  }, [seguir, trechoAtual, pontoDoNo, voar]);
 
   // --- Relógio: só corre enquanto há o que animar ----------------------------------------
   const [agora, setAgora] = useState(() => performance.now());
@@ -308,72 +313,41 @@ export function PaginaMapa() {
     return () => cancelAnimationFrame(quadro);
   }, [animando]);
 
-  // --- O robô: anda pela estrada quando o diretor exibe um step.started ---------------------
-  const robo: Robo | null = useMemo(() => {
-    if (!exibido.modo || !cena3d) return null;
-    const partidaNo = nos.get(PONTO_DE_PARTIDA[exibido.canal ?? 'app'] ?? 'canal-app');
-    const z = ALTURA_DA_PLACA + 0.6;
-    const partida: Ponto3 = partidaNo ? cena3d.ponto(partidaNo.x, partidaNo.y, z) : [0, 0, z];
-    const ativa = exibido.rota ? caminhos.get(exibido.rota) : undefined;
-    const arco = (id: string | null) => (id && ativa ? (ativa.arcoDaParada.get(id) ?? null) : null);
-    const lugar = (id: string | null): Ponto3 => {
-      const s = arco(id);
-      if (ativa && s != null) return pontoNoCaminho(ativa, s);
-      return (id && pontoDoNo(id, z)) || partida;
-    };
-    if (!exibido.parada) return { posicao: partida, arco: ativa ? 0 : null };
-    const tr = direcao.trecho;
-    const progresso = tr ? Math.min((agora - tr.inicio) / DESLOCAMENTO_MS, 1) : 1;
-    if (tr && tr.para === exibido.parada && progresso < 1) {
-      const k = suave(progresso);
-      const a0 = arco(tr.de);
-      const a1 = arco(tr.para);
-      if (ativa && a0 != null && a1 != null && a1 > a0) {
-        const s = a0 + (a1 - a0) * k;
-        return { posicao: pontoNoCaminho(ativa, s), arco: s };
-      }
-      const p0 = lugar(tr.de);
-      const p1 = lugar(tr.para);
-      return {
-        posicao: [p0[0] + (p1[0] - p0[0]) * k, p0[1] + (p1[1] - p0[1]) * k, z],
-        arco: a0,
-      };
+  // --- O robô e o rastro: o caminho real, trecho a trecho --------------------------------------
+  const { robo, rastro } = useMemo(() => {
+    if (!exibido.modo || !cena3d || !direcao.partida) return { robo: null, rastro: null };
+    const naCena = ([x, y]: Ponto): Ponto3 => cena3d.ponto(x, y, Z_RUA + 0.3);
+    const inicio = nos.get(direcao.partida);
+    const pontos: Ponto3[] = inicio ? [naCena(pontoDaPorta(inicio))] : [];
+    const tempos: number[] = [0];
+    let percorrido = 0;
+    let posicao: Ponto3 | null = pontos[0] ?? null;
+    for (const tr of direcao.trechos) {
+      const t2 = trajetoEntre(tr.de, tr.para);
+      if (!t2) continue;
+      const base0 = tempos.at(-1) ?? 0;
+      t2.pontos.slice(1).forEach((p, i) => {
+        pontos.push(naCena(p));
+        tempos.push(base0 + t2.acumulado[i + 1]);
+      });
+      const progresso = tr.duracao ? Math.min((agora - tr.inicio) / tr.duracao, 1) : 1;
+      const s = suave(Math.max(progresso, 0)) * t2.total;
+      percorrido = base0 + s;
+      posicao = naCena(pontoNoTrajeto(t2, s));
     }
-    return { posicao: lugar(exibido.parada), arco: arco(exibido.parada) };
-  }, [
-    exibido.modo,
-    exibido.canal,
-    exibido.rota,
-    exibido.parada,
-    direcao.trecho,
-    agora,
-    cena3d,
-    caminhos,
-    nos,
-    pontoDoNo,
-  ]);
+    const r: Rastro = { pontos, tempos, percorrido };
+    return { robo: posicao, rastro: r };
+  }, [exibido.modo, cena3d, direcao.partida, direcao.trechos, agora, nos, trajetoEntre]);
 
-  const [destacada, setDestacada] = useState<string | null>(null);
   const [selecionado, setSelecionado] = useState<string | null>(null);
+  const chegada = exibido.fim?.apolice && trechoAtual ? pontoDoNo(trechoAtual.para, Z_RUA) : null;
 
   const listaDeCamadas = useMemo(
     () =>
       cena3d && cidade
-        ? camadas({
-            cena: cena3d,
-            cidade,
-            rotas,
-            caminhos,
-            exibido,
-            agora,
-            bairroAberto,
-            raioX,
-            destacada,
-            selecionado,
-            robo,
-          })
+        ? camadas({ cena: cena3d, cidade, exibido, agora, raioX, selecionado, robo, rastro, chegada })
         : [],
-    [cena3d, cidade, rotas, caminhos, exibido, agora, bairroAberto, raioX, destacada, selecionado, robo],
+    [cena3d, cidade, exibido, agora, raioX, selecionado, robo, rastro, chegada],
   );
 
   // --- Rótulos em HTML ----------------------------------------------------------------------
@@ -385,25 +359,25 @@ export function PaginaMapa() {
   }, [visao, tamanho]);
 
   const paradas = useMemo(() => paradasDaJornada(rotas, exibido.rota), [rotas, exibido.rota]);
+  const mostrarNomes = raioX || nivel >= NIVEL_DOS_NOMES;
   const rotulos: Rotulo[] = useMemo(() => {
     if (!cena3d || !cidade) return [];
     const lista: Rotulo[] = [];
     const visitadas = new Set(exibido.visitadas);
     for (const b of cena3d.bairros) {
-      if (b.id === bairroAberto) continue;
       lista.push({
         id: `bairro-${b.id}`,
         tipo: 'bairro',
         texto: b.nome,
-        posicao: [b.centro[0], b.centro[1], 46],
-        prioridade: 1,
-        estado: bairroAberto ? 'esmaecido' : undefined,
+        posicao: [b.centro[0], b.centro[1], 50],
+        prioridade: mostrarNomes ? 3 : 1,
+        estado: mostrarNomes ? 'esmaecido' : undefined,
         aoClicar: () => voarParaBairro(b.id),
       });
     }
     for (const p of paradas) {
       const atual = p.id === exibido.parada;
-      const ponto = pontoDoNo(p.id, ALTURA_DA_PLACA + (atual ? 0 : 20));
+      const ponto = pontoDoNo(p.id, Z_RUA + 22);
       if (!ponto || p.numero == null) continue;
       lista.push({
         id: `parada-${p.id}`,
@@ -413,7 +387,6 @@ export function PaginaMapa() {
         posicao: ponto,
         prioridade: atual ? 0.5 : 2,
         estado: atual ? 'atual' : visitadas.has(p.id) ? 'feita' : 'pendente',
-        abaixo: atual && Boolean(exibido.modo),
         aoClicar: () => setSelecionado(p.id),
       });
     }
@@ -424,26 +397,29 @@ export function PaginaMapa() {
         tipo: 'incidente',
         texto: n.nome,
         status: n.status,
-        posicao: cena3d.ponto(n.x, n.y, ALTURA_DA_PLACA + 72),
+        posicao: cena3d.ponto(n.x, n.y, Z_CHAO + 76),
         prioridade: 0,
         aoClicar: () => setSelecionado(n.id),
       });
     }
     if (exibido.pedagio) {
-      const ponto = pontoDoNo('parada-aprovacao-humana', ALTURA_DA_PLACA + 22);
+      const ponto = pontoDoNo('parada-aprovacao-humana', Z_RUA + 26);
       if (ponto) lista.push({ id: 'pedagio', tipo: 'pedagio', texto: t.pedagio, posicao: ponto, prioridade: 0.4 });
     }
-    for (const n of sistemasDoBairro(cidade, bairroAberto)) {
-      if (incidentes.includes(n)) continue; // já tem o rótulo do farol
-      lista.push({
-        id: `sistema-${n.id}`,
-        tipo: 'sistema',
-        texto: n.nome,
-        status: n.status,
-        posicao: cena3d.ponto(n.x, n.y, ALTURA_DA_PLACA + alturaDoSistema(n) + 1),
-        prioridade: n.id === selecionado ? 1 : 4,
-        aoClicar: () => setSelecionado(n.id),
-      });
+    if (mostrarNomes) {
+      const comFarol = new Set(incidentes.map((n) => n.id));
+      for (const c of cena3d.construcoes) {
+        if (c.estilo === 'placa' || comFarol.has(c.no.id)) continue;
+        lista.push({
+          id: `construcao-${c.no.id}`,
+          tipo: 'sistema',
+          texto: c.no.nome,
+          status: c.no.status,
+          posicao: [c.posicao[0], c.posicao[1], c.posicao[2] + 18],
+          prioridade: c.no.id === selecionado ? 1 : c.no.status ? 4 : 5,
+          aoClicar: () => setSelecionado(c.no.id),
+        });
+      }
     }
     return lista;
   }, [
@@ -453,7 +429,7 @@ export function PaginaMapa() {
     exibido.parada,
     exibido.visitadas,
     exibido.pedagio,
-    bairroAberto,
+    mostrarNomes,
     selecionado,
     pontoDoNo,
     voarParaBairro,
@@ -537,7 +513,6 @@ export function PaginaMapa() {
   const ultimoIncidente = exibido.incidentes.at(-1);
   const ultimoRecalculo = exibido.recalculos.at(-1);
   const noSelecionado = selecionado ? nos.get(selecionado) : undefined;
-  const nomeDoBairroAberto = cena3d?.bairros.find((b) => b.id === bairroAberto)?.nome;
 
   return (
     <section
@@ -547,7 +522,8 @@ export function PaginaMapa() {
       data-execucao={real.id ?? ''}
       data-parada={exibido.parada ?? ''}
       data-visitadas={exibido.visitadas.length}
-      data-bairro-aberto={bairroAberto ?? ''}
+      data-lugares-visitados={direcao.trechos.length}
+      data-nomes={mostrarNomes ? 'sim' : 'nao'}
       data-fila={direcao.fila}
     >
       <div className="mapa__barra">
@@ -667,11 +643,10 @@ export function PaginaMapa() {
                   x: e.clientX - caixa.left,
                   y: e.clientY - caixa.top,
                   radius: 4,
-                  layerIds: ['sistemas', 'paradas', 'bairros'],
+                  layerIds: CAMADAS_CLICAVEIS,
                 });
-                if (!info?.object) return;
-                if (info.layer?.id === 'bairros') voarParaBairro((info.object as { id: string }).id);
-                else setSelecionado((info.object as { id: string }).id);
+                const lugar = (info?.object as { no?: NoDoMapa } | undefined)?.no;
+                if (lugar) setSelecionado(lugar.id);
               }}
             >
               <DeckGL
@@ -685,11 +660,10 @@ export function PaginaMapa() {
                 getCursor={({ isHovering, isDragging }) =>
                   isDragging ? 'grabbing' : isHovering ? 'pointer' : 'grab'
                 }
-                getTooltip={({ object, layer }) =>
-                  object && layer?.id === 'sistemas'
-                    ? { text: `${(object as NoDoMapa).nome}\n${(object as NoDoMapa).tipo_exibicao}` }
-                    : null
-                }
+                getTooltip={({ object }) => {
+                  const lugar = (object as { no?: NoDoMapa } | null)?.no;
+                  return lugar ? { text: `${lugar.nome}\n${lugar.tipo_exibicao}` } : null;
+                }}
               />
               {projetar && (
                 <Rotulos
@@ -703,7 +677,6 @@ export function PaginaMapa() {
             </div>
           )}
 
-          <CartaoDeRotas rotas={rotas} ativa={exibido.rota} aoDestacar={setDestacada} />
           <Apresentador
             aberto={apresentador}
             aoFechar={() => setApresentador(false)}
@@ -737,11 +710,6 @@ export function PaginaMapa() {
                 {t.pularParaOFim}
               </Button>
             )}
-            {bairroAberto && (
-              <Button kind="secondary" size="sm" renderIcon={ArrowLeft} onClick={voltarACidade}>
-                {t.voltarACidade(nomeDoBairroAberto ?? '')}
-              </Button>
-            )}
           </div>
 
           <div className="mapa__avisos" aria-live="assertive">
@@ -759,17 +727,8 @@ export function PaginaMapa() {
                 kind="warning"
                 lowContrast
                 hideCloseButton
-                title={t.recalculo(ultimoRecalculo.de, ultimoRecalculo.para)}
+                title={t.recalculo}
                 subtitle={`${ultimoRecalculo.motivo} ${t.regra}: ${ultimoRecalculo.regra}`}
-              />
-            )}
-            {exibido.motivoDaRota && !ultimoRecalculo && !exibido.fim && (
-              <InlineNotification
-                kind="info"
-                lowContrast
-                hideCloseButton
-                title={t.rotaEscolhida}
-                subtitle={exibido.motivoDaRota}
               />
             )}
             {exibido.fim && (
@@ -827,7 +786,7 @@ export function PaginaMapa() {
             aoEscolherNo={(id) => {
               setSelecionado(id);
               const ponto = pontoDoNo(id);
-              if (ponto) voar(ponto, ZOOM_NO_BAIRRO + 0.2);
+              if (ponto) voar(ponto, ZOOM_SEGUINDO + 0.2);
             }}
           />
         ) : (
@@ -850,7 +809,7 @@ export function PaginaMapa() {
             aoEscolher={(id) => {
               setSelecionado(id);
               const vizinho = pontoDoNo(id);
-              if (vizinho) voar(vizinho, ZOOM_NO_BAIRRO + 0.2);
+              if (vizinho) voar(vizinho, ZOOM_SEGUINDO + 0.2);
             }}
           />
         </PainelLateral>
