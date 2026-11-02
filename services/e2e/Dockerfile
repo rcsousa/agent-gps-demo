@@ -9,6 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -r
 
 WORKDIR /e2e
 COPY tests ./tests
-COPY capturas.py ./
+COPY capturas.py ensaio.py ./
 ENV WEB_URL=http://web
 CMD ["pytest", "-v", "tests"]
