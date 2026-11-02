@@ -203,17 +203,49 @@ def _regras_do_incidente(incidente, eventos, cs, fim, conversa, emitiu) -> dict[
     return {}
 
 
-def carregar(pasta: pathlib.Path) -> list[dict[str, Any]]:
+def precos() -> dict[str, Any] | None:
+    """Preços atuais do agente (US$ por milhão de tokens e fatores de cache). None se não houver."""
+    try:
+        dados = httpx.get(f"{WEB}/api/llm/modelo", timeout=10).json()
+    except (httpx.HTTPError, ValueError):
+        return None
+    return {
+        "modelos": {m["id"]: m["precos"] for m in dados["modelos"] if m["precos"]},
+        "cache": dados["cache"],
+    }
+
+
+def custo_usd(modelo: str, tokens: dict[str, int], tabela: dict[str, Any] | None) -> dict[str, float] | None:
+    """Mesma conta do agente (agent.custos), a partir dos tokens gravados: com e sem cache."""
+    preco = (tabela or {}).get("modelos", {}).get(modelo)
+    if not preco:
+        return None
+    entrada, saida = preco["entrada"] / 1_000_000, preco["saida"] / 1_000_000
+    cache = tabela["cache"]
+    total = (
+        tokens.get("entrada", 0) * entrada
+        + tokens.get("cache_leitura", 0) * entrada * cache["leitura"]
+        + tokens.get("cache_escrita", 0) * entrada * cache["escrita"]
+        + tokens.get("saida", 0) * saida
+    )
+    toda_a_entrada = sum(tokens.get(k, 0) for k in ("entrada", "cache_leitura", "cache_escrita"))
+    return {"total": total, "sem_cache": toda_a_entrada * entrada + tokens.get("saida", 0) * saida}
+
+
+def carregar(pasta: pathlib.Path, tabela: dict[str, Any] | None = None) -> list[dict[str, Any]]:
     """Cada execução gravada, já conferida: caso, modo, modelo, regras e custo."""
-    return [registro(json.loads(a.read_text(encoding="utf-8"))) for a in sorted(pasta.glob("*.json"))]
+    return [registro(json.loads(a.read_text(encoding="utf-8")), tabela) for a in sorted(pasta.glob("*.json"))]
 
 
-def registro(r: dict[str, Any]) -> dict[str, Any]:
+def registro(r: dict[str, Any], tabela: dict[str, Any] | None = None) -> dict[str, Any]:
     eventos = r["eventos"]
     inicio = next((e["dados"] for e in eventos if e["tipo"] == "run.started"), {})
     fim = eventos[-1]["dados"]
     tokens = fim["metricas"]["tokens"]
+    custo = custo_usd(inicio.get("modelo", "?"), tokens, tabela)
     return {
+        "custo": custo["total"] if custo else 0.0,
+        "custo_sem_cache": custo["sem_cache"] if custo else 0.0,
         "caso": r["incidente"],
         "modo": r["modo"],
         "modelo": inicio.get("modelo", "?"),
@@ -233,7 +265,7 @@ def _somar(grupo: dict[str, Any], r: dict[str, Any]) -> None:
     grupo["execucoes"] += 1
     grupo["perfeitas"] += cumpridas == total
     grupo["pior"] = min(grupo["pior"], cumpridas / total if total else 1.0)
-    for chave in ("segundos", "entrada", "saida"):
+    for chave in ("segundos", "entrada", "saida", "custo", "custo_sem_cache"):
         grupo[chave] += r[chave]
     for nome, ok in r["regras"].items():
         if not ok:
@@ -250,6 +282,8 @@ def _vazio() -> dict[str, Any]:
         "segundos": 0,
         "entrada": 0,
         "saida": 0,
+        "custo": 0.0,
+        "custo_sem_cache": 0.0,
         "falhas": {},
     }
 
@@ -277,22 +311,31 @@ def analisar(pasta: pathlib.Path) -> None:
     print("\n".join(linhas))
 
 
+def _usd(valor: float, casas: int) -> str:
+    """Dólares no formato brasileiro: US$ 1.234,5678."""
+    texto = f"{valor:,.{casas}f}".replace(",", "_").replace(".", ",").replace("_", ".")
+    return f"US$ {texto}"
+
+
 def comparar(pastas: list[pathlib.Path]) -> None:
-    """Tabela modelo × skill: % de regras, execuções perfeitas, pior execução e custo médio."""
+    """Tabela modelo × skill: regras, execuções perfeitas, pior execução, tempo e custo (US$)."""
+    tabela = precos()
     linhas = [
         "| Modelo | Modo | Regras cumpridas | Execuções perfeitas | Pior execução | Tempo médio "
-        "| Entrada média | Saída média |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- |",
+        "| Custo por execução | 1.000 contratações | Custo por execução perfeita | Sem cache, por execução |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for pasta in pastas:
-        registros = carregar(pasta)
+        registros = carregar(pasta, tabela)
         modelo = registros[0]["modelo"] if registros else pasta.name
         for (modo,), m in sorted(agregar(registros, ("modo",)).items()):
             n = m["execucoes"]
+            por_perfeita = _usd(m["custo"] / m["perfeitas"], 4) if m["perfeitas"] else "nenhuma perfeita"
             linhas.append(
                 f"| {modelo} | {modo} | {m['cumpridas']}/{m['total']} ({m['cumpridas'] / m['total']:.0%}) "
                 f"| {m['perfeitas']}/{n} | {m['pior']:.0%} | {m['segundos'] / n:.0f} s "
-                f"| {m['entrada'] / n / 1000:.0f} mil | {m['saida'] / n / 1000:.1f} mil |"
+                f"| {_usd(m['custo'] / n, 4)} | {_usd(1000 * m['custo'] / n, 2)} | {por_perfeita} "
+                f"| {_usd(m['custo_sem_cache'] / n, 4)} |"
             )
     print("\n".join(linhas))
 
