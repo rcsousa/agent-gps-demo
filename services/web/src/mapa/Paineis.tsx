@@ -158,18 +158,9 @@ export function CartaoDeRotas(props: {
 
 export function Legenda() {
   return (
-    <Tile className="mapa__cartao mapa__legenda">
-      <h2 className="mapa__cartao-titulo">{t.legenda.titulo}</h2>
+    <details className="mapa__cartao mapa__legenda">
+      <summary className="mapa__cartao-titulo">{t.legenda.titulo}</summary>
       <ul>
-        <li>
-          <span className="mapa__amostra mapa__amostra--ok" /> {t.legenda.ok}
-        </li>
-        <li>
-          <span className="mapa__amostra mapa__amostra--degradado">!</span> {t.legenda.degradado}
-        </li>
-        <li>
-          <span className="mapa__amostra mapa__amostra--fora">✕</span> {t.legenda.fora}
-        </li>
         <li>
           <span className="mapa__traco mapa__traco--ativa" /> {t.legenda.rotaAtiva}
         </li>
@@ -177,10 +168,23 @@ export function Legenda() {
           <span className="mapa__traco mapa__traco--alternativa" /> {t.legenda.alternativa}
         </li>
         <li>
+          <span className="mapa__traco mapa__traco--interditada" /> {t.legenda.interditada}
+        </li>
+        <li>
           <span className="mapa__amostra mapa__amostra--parada">1</span> {t.legenda.parada}
         </li>
+        <li>
+          <span className="mapa__amostra mapa__amostra--fora">✕</span> {t.legenda.farol}
+        </li>
+        <li>
+          <span className="mapa__amostra mapa__amostra--ok" /> {t.legenda.ok}
+        </li>
+        <li>
+          <span className="mapa__amostra mapa__amostra--degradado">!</span> {t.legenda.degradado}
+        </li>
+        <li className="apagado">{t.legenda.bairro}</li>
       </ul>
-    </Tile>
+    </details>
   );
 }
 
