@@ -120,6 +120,7 @@ export function Abertura() {
 
   return (
     <section className="abertura" aria-label={t.rotulo}>
+      <h1 className="cds--visually-hidden">{t.rotulo}</h1>
       <div ref={recipiente} className="abertura__visor" />
       <div className="abertura__areas">
         {AREAS.map((a) => {

@@ -221,7 +221,7 @@ export function Conversa(props: {
 }) {
   const { viagem } = props;
   return (
-    <aside
+    <section
       className={`mapa__conversa${props.embutida ? ' mapa__conversa--embutida' : ''}`}
       aria-label={t.conversa.titulo}
     >
@@ -244,6 +244,6 @@ export function Conversa(props: {
       {viagem.pergunta && !props.embutida && (
         <RespostaDaAna pergunta={viagem.pergunta} aoResponder={props.aoResponder} />
       )}
-    </aside>
+    </section>
   );
 }

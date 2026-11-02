@@ -10,6 +10,7 @@ import { api, simulador } from '../api';
 import type { EstadoDaViagem } from '../mapa/viagem';
 import { mensagens } from '../mensagens/pt-BR';
 import { navegar } from '../navegacao';
+import { definirTelao, useTelao } from '../telao';
 import type { IncidenteDoSimulador, TicketDeAprovacao } from '../tipos';
 import { abrirBastidores } from '../bastidores/PainelDeBastidores';
 import { type Cena, CAPITULO_DAS_CENAS, CENAS } from './cenas';
@@ -29,6 +30,7 @@ export function Apresentador(props: {
   aoSeguir: () => void;
 }) {
   const [curta, setCurta] = useState(false);
+  const telao = useTelao();
   const [incidentes, setIncidentes] = useState<IncidenteDoSimulador[]>([]);
   const [tickets, setTickets] = useState<TicketDeAprovacao[]>([]);
   const [fora, setFora] = useState<string[]>([]);
@@ -99,6 +101,16 @@ export function Apresentador(props: {
         </IconButton>
       </header>
 
+      <Toggle
+        id="modo-telao"
+        size="sm"
+        labelText={t.modoTelao}
+        hideLabel
+        labelA={t.modoTelao}
+        labelB={t.modoTelao}
+        toggled={telao.ligado}
+        onToggle={definirTelao}
+      />
       <Button
         size="md"
         renderIcon={ArrowRight}

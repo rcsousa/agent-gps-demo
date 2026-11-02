@@ -317,7 +317,21 @@ export const mensagens = {
       '08-glossario-e-faq': '8. Glossário e perguntas frequentes',
     } as Record<string, string>,
   },
+  atalhos: {
+    titulo: 'Atalhos de teclado',
+    fechar: 'Fechar',
+    lista: [
+      ['Enter', 'Na abertura: inicia a demo'],
+      ['M / S / B', 'Na abertura: abre o mapa, o status ou os bastidores'],
+      ['P', 'Abre e fecha o painel do apresentador'],
+      ['Espaço / Enter / →', 'Segue com a jornada quando o robô espera num balão'],
+      ['T', 'Liga e desliga o modo telão (tudo maior, para ler de longe)'],
+      ['Esc', 'Fecha painéis e janelas'],
+      ['?', 'Mostra estes atalhos'],
+    ] as [string, string][],
+  },
   apresentador: {
+    modoTelao: 'Modo telão (T)',
     abrir: 'Apresentador',
     titulo: 'Painel do apresentador',
     seguirJornada: 'Seguir com a jornada',

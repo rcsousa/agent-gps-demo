@@ -242,7 +242,7 @@ export function PainelRaioX(props: {
   const lista = useMemo(() => registros(props.viagem.eventos), [props.viagem.eventos]);
   const fimDaViagem = props.conversa.fim ? props.conversa.id : null;
   return (
-    <aside className="raiox" aria-label={t.raioX}>
+    <section className="raiox" aria-label={t.raioX}>
       {props.conversa.pergunta && (
         <RespostaDaAna pergunta={props.conversa.pergunta} aoResponder={props.aoResponder} compacta />
       )}
@@ -280,6 +280,6 @@ export function PainelRaioX(props: {
           </CodeSnippet>
         </PainelLateral>
       )}
-    </aside>
+    </section>
   );
 }
