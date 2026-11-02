@@ -178,6 +178,7 @@ export const mensagens = {
         'Data center e cartório: pagamentos e emissão',
       ],
       zoom: 'Aproxime para ver os nomes',
+      girar: 'Botão direito ou Ctrl + arrastar: girar e inclinar o mapa',
     },
     conversa: {
       titulo: 'Conversa',

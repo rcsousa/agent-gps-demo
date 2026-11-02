@@ -1,6 +1,18 @@
 // Modo Mapa: a cidade do banco (o grafo, em ruas e quadras) e a viagem do agente (os eventos).
 
-import { Add, Book, Play, PresentationFile, Subtract, ZoomFit } from '@carbon/icons-react';
+import {
+  Add,
+  Book,
+  ChevronDown,
+  ChevronUp,
+  Compass,
+  Play,
+  PresentationFile,
+  RotateClockwise,
+  RotateCounterclockwise,
+  Subtract,
+  ZoomFit,
+} from '@carbon/icons-react';
 import { Button, ContentSwitcher, Dropdown, IconButton, InlineNotification, Switch, Tag, Toggle } from '@carbon/react';
 import { AmbientLight, DirectionalLight, LightingEffect, LinearInterpolator, OrbitView } from '@deck.gl/core';
 import DeckGL, { type DeckGLRef } from '@deck.gl/react';
@@ -49,6 +61,16 @@ const INCLINACAO_GPS = 34;
 const ZOOM_GPS = 1.45;
 // A câmera alcança o robô com essa constante de tempo: segue sem trancos, em qualquer taxa de quadros.
 const TEMPO_DA_CAMERA_MS = 220;
+// No GPS, a câmera mira esse tanto à frente do robô, na direção da viagem (visão traseira).
+const AVANCO_DA_CAMERA = 45;
+// O giro é mais lento que o resto da câmera: a cada esquina, o mapa vira sem dar tontura.
+const TEMPO_DO_GIRO_MS = 650;
+// rotationOrbit = SENTIDO_DO_GIRO × rumo deixa a direção da viagem para cima na tela.
+const SENTIDO_DO_GIRO = -1;
+const PASSO_DO_GIRO = 15;
+const PASSO_DA_INCLINACAO = 10;
+// Ângulo em (-180, 180]: o giro sempre pelo menor caminho.
+const normalizar = (graus: number) => ((((graus + 180) % 360) + 360) % 360) - 180;
 // Sem giro: o norte fica para cima e a profundidade vem só da inclinação da câmera.
 const GIRO = 0;
 // A partir desse zoom (relativo à cidade inteira), aparecem os nomes das construções.
@@ -290,16 +312,33 @@ export function PaginaMapa() {
   );
   const voltarACidade = useCallback(
     (duracao = 900) => {
-      if (base)
-        setVisao({
-          ...base,
-          transitionDuration: duracao,
-          transitionInterpolator: new LinearInterpolator(['target', 'zoom', 'rotationX', 'rotationOrbit']),
-        });
+      if (!base) return;
+      // O norte volta para cima pelo menor giro (o mapa pode ter dado voltas com o GPS ou os botões).
+      setVisao((v) => ({
+        ...base,
+        rotationOrbit: v ? v.rotationOrbit - normalizar(v.rotationOrbit) : base.rotationOrbit,
+        transitionDuration: duracao,
+        transitionInterpolator: new LinearInterpolator(['target', 'zoom', 'rotationX', 'rotationOrbit']),
+      }));
     },
     [base],
   );
   const nivel = visao && base ? visao.zoom - base.zoom : 0;
+  const giroAtual = Math.round(normalizar(visao?.rotationOrbit ?? 0));
+  // Girar e inclinar pelos botões (a câmera fica livre: o seguimento pausa).
+  const girar = useCallback((graus: number, inclinacao: number) => {
+    setSeguir(false);
+    setVisao(
+      (v) =>
+        v && {
+          ...v,
+          rotationOrbit: v.rotationOrbit + graus,
+          rotationX: Math.min(Math.max(v.rotationX + inclinacao, v.minRotationX ?? 25), v.maxRotationX ?? 88),
+          transitionDuration: 400,
+          transitionInterpolator: new LinearInterpolator(['rotationOrbit', 'rotationX']),
+        },
+    );
+  }, []);
 
   // ?parada=N (da tela de abertura): o mapa abre naquela parada.
   // Só uma vez: a cidade é relida a cada 5 s (o trânsito), e a câmera não pode voltar sozinha.
@@ -333,14 +372,15 @@ export function PaginaMapa() {
   }, [animando]);
 
   // --- O robô e o rastro: o caminho real, trecho a trecho --------------------------------------
-  const { robo, rastro } = useMemo(() => {
-    if (!exibido.modo || !cena3d || !direcao.partida) return { robo: null, rastro: null };
+  const { robo, rastro, rumo } = useMemo(() => {
+    if (!exibido.modo || !cena3d || !direcao.partida) return { robo: null, rastro: null, rumo: null };
     const naCena = ([x, y]: Ponto): Ponto3 => cena3d.ponto(x, y, Z_RUA + 0.3);
     const inicio = nos.get(direcao.partida);
     const pontos: Ponto3[] = inicio ? [naCena(pontoDaPorta(inicio))] : [];
     const tempos: number[] = [0];
     let percorrido = 0;
     let posicao: Ponto3 | null = pontos[0] ?? null;
+    let rumo: number | null = null; // graus, no sentido horário a partir do norte da cena
     for (const tr of direcao.trechos) {
       const t2 = trajetoEntre(tr.de, tr.para);
       if (!t2) continue;
@@ -353,9 +393,15 @@ export function PaginaMapa() {
       const s = suave(Math.max(progresso, 0)) * t2.total;
       percorrido = base0 + s;
       posicao = naCena(pontoNoTrajeto(t2, s));
+      // O rumo: de um pouco atrás a um pouco à frente do robô. Parado, fica o da chegada.
+      if (t2.total > 0) {
+        const fim = Math.min(Math.max(s + 6, 8), t2.total);
+        const [a, b] = [naCena(pontoNoTrajeto(t2, Math.max(fim - 8, 0))), naCena(pontoNoTrajeto(t2, fim))];
+        if (Math.hypot(b[0] - a[0], b[1] - a[1]) > 0.5) rumo = (Math.atan2(b[0] - a[0], b[1] - a[1]) * 180) / Math.PI;
+      }
     }
     const r: Rastro = { pontos, tempos, percorrido };
-    return { robo: posicao, rastro: r };
+    return { robo: posicao, rastro: r, rumo };
   }, [exibido.modo, cena3d, direcao.partida, direcao.trechos, agora, nos, trajetoEntre]);
 
   // --- Câmera de GPS -------------------------------------------------------------------------
@@ -366,19 +412,26 @@ export function PaginaMapa() {
     const passo = Math.min(agora - (quadroDaCamera.current || agora - 16), 500);
     quadroDaCamera.current = agora;
     const k = 1 - Math.exp(-Math.max(passo, 0) / TEMPO_DA_CAMERA_MS);
+    const kGiro = 1 - Math.exp(-Math.max(passo, 0) / TEMPO_DO_GIRO_MS);
     const perto = (a: number, b: number) => a + (b - a) * k;
     setVisao((v) => {
       const atual = v ?? base;
+      // Visão traseira: o mapa gira para a direção da viagem ficar para cima, pelo menor ângulo,
+      // e o alvo fica um pouco à frente do robô (ele aparece no terço de baixo da tela).
+      const giroAlvo = rumo == null ? atual.rotationOrbit : SENTIDO_DO_GIRO * rumo;
+      const giro = normalizar(atual.rotationOrbit + normalizar(giroAlvo - atual.rotationOrbit) * kGiro);
+      const frente = (SENTIDO_DO_GIRO * giro * Math.PI) / 180;
+      const alvo = [robo[0] + Math.sin(frente) * AVANCO_DA_CAMERA, robo[1] + Math.cos(frente) * AVANCO_DA_CAMERA];
       return {
         ...atual,
-        target: [perto(atual.target[0], robo[0]), perto(atual.target[1], robo[1]), 0],
+        target: [perto(atual.target[0], alvo[0]), perto(atual.target[1], alvo[1]), 0],
         zoom: perto(atual.zoom, base.zoom + ZOOM_GPS),
         rotationX: perto(atual.rotationX, INCLINACAO_GPS),
-        rotationOrbit: perto(atual.rotationOrbit, GIRO),
+        rotationOrbit: giro,
         transitionDuration: 0,
       };
     });
-  }, [cameraSeguindo, robo, base, agora]);
+  }, [cameraSeguindo, robo, rumo, base, agora]);
 
   // Ao fim da viagem (o diretor já mostrou a chegada), a câmera sobe para a cidade inteira, uma vez,
   // e fica livre para o apresentador explorar.
@@ -599,6 +652,7 @@ export function PaginaMapa() {
       data-fila={direcao.fila}
       data-camera={cameraSeguindo ? 'seguindo' : 'livre'}
       data-nivel={nivel.toFixed(1)}
+      data-giro={giroAtual}
       data-balao={direcao.balao?.tipo ?? ''}
       data-aguardando={direcao.aguardando ? 'sim' : 'nao'}
     >
@@ -884,6 +938,26 @@ export function PaginaMapa() {
               }}
             >
               <Subtract />
+            </IconButton>
+            <IconButton kind="secondary" label={t.girarEsquerda} onClick={() => girar(-PASSO_DO_GIRO, 0)}>
+              <RotateCounterclockwise />
+            </IconButton>
+            <IconButton kind="secondary" label={t.girarDireita} onClick={() => girar(PASSO_DO_GIRO, 0)}>
+              <RotateClockwise />
+            </IconButton>
+            <IconButton kind="secondary" label={t.inclinarMais} onClick={() => girar(0, -PASSO_DA_INCLINACAO)}>
+              <ChevronDown />
+            </IconButton>
+            <IconButton kind="secondary" label={t.inclinarMenos} onClick={() => girar(0, PASSO_DA_INCLINACAO)}>
+              <ChevronUp />
+            </IconButton>
+            <IconButton
+              kind="secondary"
+              label={t.norte(giroAtual)}
+              className="mapa__bussola"
+              onClick={() => girar(-giroAtual, 0)}
+            >
+              <Compass style={{ transform: `rotate(${-giroAtual}deg)` }} />
             </IconButton>
             <IconButton kind="secondary" label={t.enquadrar} onClick={() => voltarACidade()}>
               <ZoomFit />
