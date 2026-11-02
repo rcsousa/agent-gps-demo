@@ -258,6 +258,23 @@ export function PaginaMapa() {
   const direcao = useDiretor(real, tempoDoTrecho, passoAPasso, nomeDoLugar);
   const exibido = direcao.exibido;
 
+  // Responder pela Ana, uma vez por pergunta: a pergunta exibida pelo diretor pode continuar na tela
+  // depois de respondida (o mapa está atrás do agente), e há mais de um lugar para responder.
+  const respondendo = useRef<string | null>(null);
+  const responderPelaAna = useCallback(
+    async (texto: string) => {
+      const chave = `${real.id}:${exibido.mensagens.filter((m) => m.tipo === 'pergunta').length}`;
+      if (!real.id || !real.pergunta || respondendo.current === chave) return;
+      respondendo.current = chave;
+      try {
+        await apiViagem.responder(real.id, texto);
+      } catch {
+        respondendo.current = null;
+      }
+    },
+    [real.id, real.pergunta, exibido.mensagens],
+  );
+
   // --- Câmera -------------------------------------------------------------------------
   const area = useRef<HTMLDivElement>(null);
   const deck = useRef<DeckGLRef>(null);
@@ -838,7 +855,7 @@ export function PaginaMapa() {
             aoFechar={() => setApresentador(false)}
             cenaAtual={cena}
             real={{ ...exibido, id: real.id }}
-            aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
+            aoResponder={responderPelaAna}
             gravacoes={gravacoesPorCena(gravacoes)}
             aguardando={direcao.aguardando}
             aoSeguir={direcao.seguir}
@@ -972,7 +989,7 @@ export function PaginaMapa() {
             viagem={exibido}
             conversa={replay ? { ...exibido, pergunta: null } : exibido}
             nos={nos}
-            aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
+            aoResponder={responderPelaAna}
             aoEscolherNo={(id) => {
               setSelecionado(id);
               const ponto = pontoDoNo(id);
@@ -982,7 +999,7 @@ export function PaginaMapa() {
         ) : (
           <Conversa
             viagem={replay ? { ...exibido, pergunta: null } : exibido}
-            aoResponder={(texto) => apiViagem.responder(real.id!, texto).then(() => undefined)}
+            aoResponder={responderPelaAna}
           />
         )}
       </div>

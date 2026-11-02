@@ -27,9 +27,14 @@ def navegador():
         b.close()
 
 
+PASSO_A_PASSO_DESLIGADO = "localStorage.setItem('bussola:passo-a-passo', 'nao')"
+
+
 @pytest.fixture
 def pagina(navegador) -> Page:
     contexto = navegador.new_context(viewport={"width": 1600, "height": 1000})
+    # As viagens dos testes correm sozinhas (passo a passo desligado); o teste dos balões o liga.
+    contexto.add_init_script(PASSO_A_PASSO_DESLIGADO)
     pg = contexto.new_page()
     erros: list[str] = []
     pg.on("pageerror", lambda e: erros.append(str(e)))

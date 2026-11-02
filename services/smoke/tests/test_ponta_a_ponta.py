@@ -237,10 +237,11 @@ def test_todos_os_incidentes_se_aplicam_ao_mapa_real(mundo_limpo):
 
 def test_chamadas_viram_eventos_no_barramento():
     redis = Redis.from_url("redis://bus:6379/0", decode_responses=True)
-    antes = redis.xlen("bussola:eventos")
+    # O stream tem tamanho máximo: o que prova o evento novo é o id do último, não o tamanho.
+    antes = redis.xrevrange("bussola:eventos", count=1)
     gateway("cliente.obter_perfil", {"cliente_id": "cliente-ana"})
-    [(_, evento)] = redis.xrevrange("bussola:eventos", count=1)
-    assert redis.xlen("bussola:eventos") > antes
+    [(ident, evento)] = redis.xrevrange("bussola:eventos", count=1)
+    assert not antes or ident != antes[0][0]
     assert evento["tipo"] == "tool.called" and json.loads(evento["dados"])["tool"] == "cliente.obter_perfil"
 
 

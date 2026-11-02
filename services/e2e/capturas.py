@@ -34,6 +34,9 @@ VIDEOS = {
 CAPTURAS = ("1", "4", "8")
 
 
+# Os vídeos e capturas correm sozinhos: sem esperar o apresentador nos balões.
+PASSO_A_PASSO_DESLIGADO = "localStorage.setItem('bussola:passo-a-passo', 'nao')"
+
 def simulador(caminho: str) -> None:
     urllib.request.urlopen(urllib.request.Request(f"{WEB}/simulador{caminho}", method="POST"), timeout=60).read()
 
@@ -56,6 +59,7 @@ def video(navegador, cena: str) -> None:
     gravacao, visao, alvo = VIDEOS[cena]
     pasta = Path(tempfile.mkdtemp())
     contexto = navegador.new_context(viewport=TAMANHO, record_video_dir=str(pasta), record_video_size=TAMANHO)
+    contexto.add_init_script(PASSO_A_PASSO_DESLIGADO)
     pg = contexto.new_page()
     url = f"{WEB}/mapa?gravacao={gravacao}&cena={cena}" + ("&visao=raio-x" if visao == "raio-x" else "")
     pg.goto(url, wait_until="load")
@@ -106,6 +110,7 @@ def _comprimir(bruto: Path, destino: Path) -> None:
 
 def captura(navegador, cena: str) -> None:
     pg = navegador.new_page(viewport=TAMANHO)
+    pg.add_init_script(PASSO_A_PASSO_DESLIGADO)
     if cena == "1":
         pg.goto(f"{WEB}/mapa?cena=1", wait_until="networkidle")
         pg.wait_for_timeout(3000)

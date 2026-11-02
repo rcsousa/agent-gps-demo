@@ -77,7 +77,7 @@ Diante do pedido de estorno, consultou o extrato e as transações, não achou o
 
 <video class="cena-video" src="../assets/cenas/cena-5.webm" poster="../assets/cenas/cena-5.png" autoplay loop muted playsinline controls aria-label="Replay da cena 5, acelerado"></video>
 
-**A plateia vê** o robô percorrer as 9 paradas pela rota rápida, com a câmera de GPS atrás dele, as perguntas à Ana chegando quando ele chega à parada e, no fim, a câmera subindo para a cidade inteira.
+**A plateia vê** o robô percorrer as 9 paradas pela rota rápida, com a câmera de GPS atrás dele e o mapa girando com ele. A cada sistema, ele conta num balão o que está fazendo, e o apresentador manda seguir. As perguntas à Ana chegam quando ele chega à parada, e, no fim, a câmera sobe para a cidade inteira.
 
 **De verdade:**
 
