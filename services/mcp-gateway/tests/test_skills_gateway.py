@@ -184,3 +184,20 @@ async def test_execucao_vai_do_meta_para_a_proveniencia_e_o_evento(gateway):
         )
     assert resultado.meta[CHAVE_PROVENIENCIA]["execucao_id"] == "exec-123"
     assert publicador.eventos[-1][1]["execucao_id"] == "exec-123"
+
+
+async def test_leituras_da_skill_carregam_a_execucao_para_o_raio_x(gateway):
+    _, publicador, servidor = gateway
+    meta = {CHAVE_EXECUCAO: "exec-9"}
+    async with Client(servidor) as c:
+        await c.list_tools(meta=meta)
+        entradas = {e["uri"]: e for e in await listar_skills(c, meta)}
+        await obter_skill(c, PRINCIPAL, meta)
+        await ler_arquivo(c, PRINCIPAL, entradas[PRINCIPAL], {**meta, CHAVE_SKILL_ATIVA: PRINCIPAL})
+        await c.call_tool("cliente.obter_perfil", {}, meta=meta)
+    por_tipo = {tipo: dados for tipo, dados in publicador.eventos}
+    for tipo in ("tools.listed", "skills.listed", "skill.read", "resource.read", "tool.called"):
+        assert por_tipo[tipo]["execucao_id"] == "exec-9", tipo
+    assert por_tipo["resource.read"]["skill"] == PRINCIPAL
+    assert por_tipo["resource.read"]["duracao_ms"] >= 0
+    assert "Ana Ribeiro" in por_tipo["tool.called"]["resultado"]

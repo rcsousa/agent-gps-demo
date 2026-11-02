@@ -241,6 +241,13 @@ class _Viagem:
     async def publicar(self, tipo: str, dados: dict[str, Any]) -> None:
         await self.motor.publicador.publicar(tipo, {"execucao_id": self.execucao.id, **dados})
 
+    def _meta(self) -> dict[str, str]:
+        """O `_meta` de toda requisição ao gateway: a execução e, se houver, a skill ativa."""
+        meta = {CHAVE_EXECUCAO: self.execucao.id}
+        if self.execucao.skill:
+            meta[CHAVE_SKILL_ATIVA] = self.execucao.skill
+        return meta
+
     async def dirigir(self) -> None:
         execucao, config = self.execucao, self.motor.config
         # run.started é sempre o primeiro evento da execução, antes de qualquer conversa com o gateway.
@@ -260,9 +267,9 @@ class _Viagem:
             self.gateway = gateway
             self.tools_gateway = {
                 t.name: DefinicaoTool(t.name, t.description or "", t.input_schema)
-                for t in (await gateway.list_tools()).tools
+                for t in (await gateway.list_tools(meta=self._meta())).tools
             }
-            self.skills = {e["uri"]: e for e in await listar_skills(gateway)}
+            self.skills = {e["uri"]: e for e in await listar_skills(gateway, self._meta())}
             # Tools de alguma skill; as demais são "irrelevantes" para a jornada (métrica do placar).
             self.relevantes = set().union(*(tools_permitidas(e["frontmatter"]) for e in self.skills.values()))
 
@@ -281,8 +288,21 @@ class _Viagem:
             execucao.modelo = sessao.modelo
             await self.motor.salvar(execucao)
 
-            for _ in range(config.max_passos):
+            for numero in range(1, config.max_passos + 1):
+                inicio = time.perf_counter()
                 passo = await sessao.passo(self._tools_disponiveis())
+                # Cada chamada ao modelo vira um evento: tokens e latência ao vivo no Raio-X.
+                await self.publicar(
+                    "model.step",
+                    {
+                        "passo": numero,
+                        "modelo": sessao.modelo,
+                        "tokens": asdict(passo.uso),
+                        "duracao_ms": round((time.perf_counter() - inicio) * 1000),
+                        "tools_pedidas": [c.nome for c in passo.chamadas],
+                        "motivo_parada": passo.motivo_parada,
+                    },
+                )
                 execucao.metricas.passos += 1
                 tokens = Uso(**execucao.metricas.tokens)
                 tokens.somar(passo.uso)
@@ -316,7 +336,7 @@ class _Viagem:
         else:
             try:
                 resultado = await self.gateway.get_prompt(
-                    nome, {"cliente_id": prompts.CLIENTE_PADRAO}, meta={CHAVE_EXECUCAO: execucao.id}
+                    nome, {"cliente_id": prompts.CLIENTE_PADRAO}, meta=self._meta()
                 )
                 persona = "\n\n".join(getattr(m.content, "text", "") for m in resultado.messages)
                 evento["origem"] = "gateway"
@@ -370,10 +390,7 @@ class _Viagem:
         if chamada.nome not in self.tools_gateway:
             metricas.erros += 1
             return ResultadoTool(chamada.id, f"Tool desconhecida: {chamada.nome}.", erro=True)
-        meta = {CHAVE_EXECUCAO: self.execucao.id}
-        if self.execucao.skill:
-            meta[CHAVE_SKILL_ATIVA] = self.execucao.skill
-        resultado = await self.gateway.call_tool(chamada.nome, chamada.argumentos, meta=meta)
+        resultado = await self.gateway.call_tool(chamada.nome, chamada.argumentos, meta=self._meta())
         texto = _texto_do_resultado(resultado)
         meta_resposta = resultado.meta or {}
 
@@ -432,7 +449,7 @@ class _Viagem:
         entrada = self.skills.get(uri)
         if entrada is None:
             raise ValueError(f"skill desconhecida: {uri}")
-        texto = await ler_arquivo(self.gateway, uri, entrada)
+        texto = await ler_arquivo(self.gateway, uri, entrada, self._meta())
         if self.execucao.skill is None:
             # A primeira skill carregada guia a viagem; as que ela reutiliza entram nas permissões.
             self.execucao.skill = uri
@@ -453,7 +470,7 @@ class _Viagem:
         entrada = self.skills.get(raiz)
         if entrada is None:
             raise ValueError(f"arquivo fora das skills conhecidas: {uri}")
-        return await ler_arquivo(self.gateway, uri, entrada)
+        return await ler_arquivo(self.gateway, uri, entrada, self._meta())
 
     # --- Navegação: o que o mapa desenha ----------------------------------------------------
 
