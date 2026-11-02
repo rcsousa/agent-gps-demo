@@ -195,3 +195,58 @@ export interface EventoDaExecucao {
   instante: string;
   dados: Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 }
+
+// --- Fase 7: placar e painel do apresentador ----------------------------------------------
+
+export interface LinhaDoPlacar {
+  modo: string;
+  modelo: string;
+  execucoes: number;
+  cumpridas: number;
+  total: number;
+  perfeitas: number;
+  segundos_medio: number;
+  custo_medio_usd: number | null;
+}
+
+export interface ExecucaoNoPlacar {
+  id: string;
+  modo: string;
+  modelo: string;
+  provedor: string;
+  caso: string;
+  criada_em: string;
+  status: string;
+  apolice: string | null;
+  cumpridas: number;
+  total: number;
+  regras: Record<string, boolean>;
+  segundos: number;
+  custo_usd: number | null;
+  bloqueios: number;
+  tools_irrelevantes: number;
+}
+
+export interface Placar {
+  sessao: { execucoes: ExecucaoNoPlacar[]; agregado: LinhaDoPlacar[] };
+  referencia: { fonte: string; data: string; descricao: string; linhas: LinhaDoPlacar[] };
+}
+
+export interface IncidenteDoSimulador {
+  id: string;
+  nome: string;
+  metafora: string;
+  reacao_esperada: string;
+  ativo: boolean;
+}
+
+export interface TicketDeAprovacao {
+  ticket_id: string;
+  cliente_id: string;
+  premio_anual: number;
+  importancia_segurada: number;
+  motivo: string;
+  status: string;
+  criado_em: string;
+  decidido_por?: string;
+}

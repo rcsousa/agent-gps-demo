@@ -57,6 +57,7 @@ export interface Contexto {
   exibido: EstadoDaViagem;
   agora: number; // performance.now()
   bairroAberto: string | null;
+  raioX: boolean; // no Raio-X, a cidade é o grafo: todos os nós e todas as arestas
   destacada: string | null;
   selecionado: string | null;
   robo: Robo | null;
@@ -82,7 +83,12 @@ export function camadas(c: Contexto): Layer[] {
   const aberto = (id: string) => !bairroAberto || id === bairroAberto;
   const nosVivos = new Map(cidade.nos.map((n) => [n.id, n]));
   const bairroPorId = new Map(cena.bairros.map((b) => [b.id, b]));
-  const sistemas = sistemasDoBairro(cidade, bairroAberto);
+  const { raioX } = c;
+  const sistemas = raioX
+    ? cidade.nos.filter((n) => !TIPOS_SEM_PREDIO.has(n.tipo))
+    : sistemasDoBairro(cidade, bairroAberto);
+  // No Raio-X, fora do bairro aberto, os nós ficam baixos: dá para ver a cidade inteira como grafo.
+  const alturaDoNo = (n: NoDoMapa) => alturaDoSistema(n) * (raioX && n.bairro !== bairroAberto ? 0.4 : 1);
   const noNaCena = (id: string, z = ALTURA_DA_PLACA): Ponto3 | null => {
     const n = nosVivos.get(id);
     return n ? cena.ponto(n.x, n.y, z) : null;
@@ -159,7 +165,7 @@ export function camadas(c: Contexto): Layer[] {
     // Prédios genéricos: a cidade. No bairro aberto, saem para dar lugar aos sistemas.
     new SolidPolygonLayer<Predio>({
       id: 'predios',
-      data: cena.predios.filter((p) => p.bairro !== bairroAberto),
+      data: raioX ? [] : cena.predios.filter((p) => p.bairro !== bairroAberto),
       getPolygon: (p) => p.base,
       extruded: true,
       getElevation: (p) => p.altura,
@@ -169,7 +175,7 @@ export function camadas(c: Contexto): Layer[] {
     }),
     new ColumnLayer<{ posicao: Ponto3 }>({
       id: 'arvores',
-      data: cena.arvores.filter((a) => a.bairro !== bairroAberto),
+      data: raioX ? [] : cena.arvores.filter((a) => a.bairro !== bairroAberto),
       getPosition: (a) => a.posicao,
       diskResolution: 8,
       radius: 4.5,
@@ -180,7 +186,7 @@ export function camadas(c: Contexto): Layer[] {
     }),
     new ColumnLayer<{ posicao: Ponto3 }>({
       id: 'copas',
-      data: cena.arvores.filter((a) => a.bairro !== bairroAberto),
+      data: raioX ? [] : cena.arvores.filter((a) => a.bairro !== bairroAberto),
       getPosition: (a) => [a.posicao[0], a.posicao[1], a.posicao[2] + 8],
       diskResolution: 8,
       radius: 2.8,
@@ -192,12 +198,13 @@ export function camadas(c: Contexto): Layer[] {
   ];
 
   // --- Bairro aberto: os sistemas, com o status no telhado -------------------------------
-  if (bairroAberto) {
+  if (bairroAberto || raioX) {
     const ids = new Set(sistemas.map((n) => n.id));
     lista.push(
       new LineLayer<Cidade['arestas'][number]>({
         id: 'relacoes-internas',
         data: cidade.arestas.filter((a) => ids.has(a.de) && ids.has(a.para)),
+        pickable: raioX,
         getSourcePosition: (a) => noNaCena(a.de, ALTURA_DA_PLACA + 0.4)!,
         getTargetPosition: (a) => noNaCena(a.para, ALTURA_DA_PLACA + 0.4)!,
         getColor: [110, 110, 110, 110],
@@ -209,7 +216,7 @@ export function camadas(c: Contexto): Layer[] {
         data: sistemas,
         getPolygon: (n) => pegada(n, cena),
         extruded: true,
-        getElevation: (n) => alturaDoSistema(n),
+        getElevation: alturaDoNo,
         getFillColor: (n): Cor =>
           n.id === c.selecionado ? misturar(LARANJA, [255, 255, 255, 255], 0.25) : corDoSistema(bairroPorId.get(n.bairro)),
         material: MATERIAL,
@@ -219,7 +226,7 @@ export function camadas(c: Contexto): Layer[] {
       new SolidPolygonLayer<NoDoMapa>({
         id: 'telhados',
         data: sistemas.filter((n) => n.status),
-        getPolygon: (n) => pegada(n, cena, ALTURA_DA_PLACA + alturaDoSistema(n) + 0.3, 5),
+        getPolygon: (n) => pegada(n, cena, ALTURA_DA_PLACA + alturaDoNo(n) + 0.3, 5),
         getFillColor: (n) => COR_STATUS[n.status ?? 'ok'],
         updateTriggers: { getFillColor: [sistemas.map((n) => n.status).join()] },
       }),

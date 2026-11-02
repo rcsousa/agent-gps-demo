@@ -178,6 +178,14 @@ const TIPOS = [
   'client.answered',
   'agent.message',
   'run.finished',
+  // Para o Raio-X: o que trafegou entre o agente, o gateway e o modelo.
+  'prompt.loaded',
+  'prompt.read',
+  'tools.listed',
+  'skills.listed',
+  'skill.read',
+  'resource.read',
+  'model.step',
 ];
 
 // Acompanha uma execução: os eventos desde o início e, depois, ao vivo, até o run.finished.

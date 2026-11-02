@@ -20,6 +20,11 @@ const RETENCAO_MS: Record<string, number> = {
   'incident.detected': 1600,
   'route.recalculated': 1600,
   'human.required': 1200,
+  // O protocolo também tem seu tempo na tela, para o Raio-X ser lido em voz alta.
+  'skills.listed': 500,
+  'resource.read': 500,
+  'skill.read': 400,
+  'prompt.read': 300,
 };
 
 export interface Trecho {
