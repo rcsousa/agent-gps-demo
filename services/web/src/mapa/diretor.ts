@@ -11,6 +11,7 @@ import { type EstadoDaViagem, reduzir, VIAGEM_VAZIA } from './viagem';
 export const DESLOCAMENTO_MS = 1600;
 const PAUSA_NA_PARADA_MS = 600;
 
+// --8<-- [start:retencao]
 const RETENCAO_MS: Record<string, number> = {
   'run.started': 500,
   'skill.loaded': 700,
@@ -26,6 +27,7 @@ const RETENCAO_MS: Record<string, number> = {
   'skill.read': 400,
   'prompt.read': 300,
 };
+// --8<-- [end:retencao]
 
 export interface Trecho {
   de: string | null; // parada de onde o robô sai (null: o ponto de partida do canal)

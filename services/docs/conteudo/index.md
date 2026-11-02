@@ -17,5 +17,11 @@ Este site explica o que acontece por trás de cada cena da demo do Banco Bússol
 7. [Como reproduzir](07-como-reproduzir.md): subir a demo e rodar cada cena.
 8. [Glossário e perguntas frequentes](08-glossario-e-faq.md).
 
-!!! info "Estado atual: Fase 7 · Raio-X e apresentador"
-    A demo abre no infográfico navegável. A viagem do agente aparece no Modo Mapa (a cidade em 3D) e no Modo Raio-X (o protocolo, a proveniência, as métricas e o placar). O apresentador conduz as cenas por uma gaveta no mapa (tecla P), e cada cena com viagem tem uma gravação real com o Haiku, para o replay sem rede. Os capítulos 1 a 7 descrevem o que já funciona; o 8 ganha o glossário completo na Fase 8.
+!!! tip "Comece por aqui"
+    - **Viu uma cena e quer entender?** O [capítulo 4](04-bastidores-das-cenas.md) tem cada cena: o vídeo, o que aconteceu de verdade e as regras conferidas.
+    - **Executivo, cinco minutos?** Leia só os resumos dos capítulos [1](01-o-problema.md), [2](02-camada-de-contexto.md) e [3](03-skills-como-gps.md).
+    - **Técnico, desconfiado?** Vá ao [capítulo 8](08-glossario-e-faq.md): as objeções mais comuns, com resposta curta e o caminho até o código.
+    - **Quer rodar?** O [capítulo 7](07-como-reproduzir.md) sobe a demo com um comando.
+
+!!! info "Estado atual: Fase 8 · Bastidores"
+    A demo abre no infográfico navegável. A viagem do agente aparece no Modo Mapa (a cidade em 3D) e no Modo Raio-X (o protocolo, a proveniência, as métricas e o placar). O apresentador conduz as cenas por uma gaveta no mapa (tecla P), e cada cena com viagem tem uma gravação real com o Haiku, para o replay sem rede. O botão "Bastidores" de cada cena abre o capítulo ao lado, sem sair da demo. Os diagramas e os trechos de código destes capítulos são gerados do próprio repositório.

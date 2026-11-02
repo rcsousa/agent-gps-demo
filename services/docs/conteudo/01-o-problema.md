@@ -19,7 +19,7 @@
 | Consentimento verificado | Não | Não | Sim, as duas finalidades |
 | Resultado | Uma apólice que não existe | Uma proposta, sem aceite nem emissão | Apólice emitida, com aceite da Ana |
 
-Os números acima são do provedor `roteiro`, o ensaio determinístico da demo (veja o capítulo 6). Ele reproduz os erros típicos de cada modo para ensaiar sem chave. Com um LLM de verdade, o comportamento varia de uma execução para outra, e o placar comparativo (Fase 7) mede essa diferença com as métricas do `run.finished`.
+Os números acima são do provedor `roteiro`, o ensaio determinístico da demo (veja o capítulo 6). Ele reproduz os erros típicos de cada modo para ensaiar sem chave. Com um LLM de verdade, o comportamento varia de uma execução para outra, e o placar do Modo Raio-X mede essa diferença pelas regras conferidas no fim de cada viagem.
 
 ### Sem contexto: a resposta confiante e inventada
 

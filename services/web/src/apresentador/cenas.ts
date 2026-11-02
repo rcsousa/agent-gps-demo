@@ -23,3 +23,6 @@ export const CENAS: Cena[] = [
 ];
 
 export const cena = (numero: string | null) => CENAS.find((c) => c.numero === numero);
+
+// Os bastidores de cada cena: o capítulo 4, na seção da cena.
+export const CAPITULO_DAS_CENAS = '04-bastidores-das-cenas';

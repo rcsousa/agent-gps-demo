@@ -3,8 +3,11 @@
 FROM mcr.microsoft.com/playwright/python:v1.55.0-noble
 
 RUN pip install --no-cache-dir --break-system-packages "playwright==1.55.0" "pytest>=8,<9"
+# ffmpeg: os vídeos das cenas para os bastidores (./scripts/capturar-cenas.sh).
+RUN apt-get update && apt-get install -y --no-install-recommends ffmpeg && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /e2e
 COPY tests ./tests
+COPY capturas.py ./
 ENV WEB_URL=http://web
 CMD ["pytest", "-v", "tests"]

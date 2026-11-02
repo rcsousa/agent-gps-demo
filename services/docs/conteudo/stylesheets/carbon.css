@@ -65,3 +65,13 @@
 .md-typeset .abstract > summary::before {
   background-color: var(--bussola-laranja);
 }
+
+/* Vídeos das cenas (capítulo 4): largura do texto, cantos discretos. */
+.md-typeset .cena-video {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+  margin-block: 0.8rem 1.2rem;
+  border-radius: 4px;
+  box-shadow: 0 1px 6px rgb(0 0 0 / 30%);
+}

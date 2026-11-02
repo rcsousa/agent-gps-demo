@@ -1463,3 +1463,47 @@ $altura-linha-do-tempo: 5.75rem;
     font-size: 0.8125rem;
   }
 }
+
+// --- Bastidores num painel lateral (o próprio site de documentação) ------------------------
+.bastidores {
+  position: fixed;
+  z-index: 8000;
+  inset-block: 3rem 0;
+  inset-inline-end: 0;
+  inline-size: min(44rem, 92vw);
+  display: flex;
+  flex-direction: column;
+  background: theme.$layer-01;
+  box-shadow: -6px 0 18px rgb(0 0 0 / 45%);
+
+  &__cabecalho {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: $spacing-04;
+    padding: $spacing-04 $spacing-05;
+    border-block-end: 1px solid theme.$border-subtle-01;
+  }
+
+  &__tipo {
+    @include type-style('label-01');
+    color: $laranja-bussola;
+    text-transform: uppercase;
+  }
+
+  &__titulo {
+    @include type-style('heading-03');
+  }
+
+  &__acoes {
+    display: flex;
+    gap: $spacing-02;
+  }
+
+  &__site {
+    flex: 1;
+    inline-size: 100%;
+    border: 0;
+    background: #fff;
+  }
+}

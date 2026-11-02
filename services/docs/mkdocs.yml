@@ -52,7 +52,7 @@ markdown_extensions:
   - pymdownx.superfences
   # Trechos reais da ontologia, copiada para a imagem no build: a doc não desatualiza.
   - pymdownx.snippets:
-      base_path: [ontologia, skills]
+      base_path: [ontologia, skills, codigo]
       check_paths: true
   - pymdownx.highlight
 

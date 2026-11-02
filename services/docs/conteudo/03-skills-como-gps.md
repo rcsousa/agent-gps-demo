@@ -79,6 +79,12 @@ O agente declara a skill ativa em cada chamada, no `_meta` (`"bussola/skill": "s
 
 Nenhuma das 15 tools de distração está em skill alguma, nem os três atalhos legados (veja abaixo). **Sem skill declarada, o gateway não restringe nada**: é assim que as cenas 2 e 3 mostram o agente sem GPS.
 
+O código do gateway que decide, a cada chamada, se a tool passa. É o trecho real, citado do repositório:
+
+```python
+--8<-- "gateway/servidor_mcp.py:governanca"
+```
+
 ### A ordem também é lei
 
 Uma skill é um workflow, e workflow tem ordem. Até aqui o gateway sabia *quais* tools a skill permite, mas não *quando*. Agora a skill declara, num `workflow.yaml`, o que precisa ter acontecido antes de cada tool:
@@ -86,6 +92,10 @@ Uma skill é um workflow, e workflow tem ordem. Até aqui o gateway sabia *quais
 ```yaml
 --8<-- "contratacao-seguro-residencial/workflow.yaml"
 ```
+
+O mesmo arquivo, desenhado. Cada seta é "precisa ter acontecido antes"; as vermelhas, "impede". O diagrama é gerado no build a partir do `workflow.yaml`.
+
+![A ordem da skill de contratação](assets/diagramas/skill-contratacao-seguro-residencial.svg)
 
 Com essa skill ativa, o gateway:
 

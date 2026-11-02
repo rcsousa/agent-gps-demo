@@ -34,6 +34,12 @@ As posições seguem o infográfico da demo. A plateia passa a reconhecer os lug
 
 Dentro de cada bairro, os nós são distribuídos por layout de forças, com semente fixa, e encaixados numa grade de quadras. O resultado fica salvo em `ontologia/layout.json`, e um teste garante que ele corresponde à ontologia. Relações entre bairros viram **avenidas**.
 
+### O mapa em uma imagem
+
+Cada bairro, com seus tipos de entidade, e as ruas que ligam um bairro a outro. O diagrama é gerado no build a partir do `esquema.yaml`: se a ontologia muda, ele muda junto.
+
+![Os bairros, seus tipos e as relações entre eles](assets/diagramas/ontologia.svg)
+
 ### Tipos de entidade
 
 ```yaml

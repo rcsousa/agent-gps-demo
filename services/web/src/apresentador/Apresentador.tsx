@@ -2,7 +2,7 @@
 // Prepara as cenas, muda o mundo pelo simulador, decide o pedágio e fala pela Ana.
 // Tudo o que ele faz vai ao simulador (o mundo) ou à resposta da Ana: nunca roteiriza o agente.
 
-import { Close, Play, Renew, Reset } from '@carbon/icons-react';
+import { Book, Close, Play, Renew, Reset } from '@carbon/icons-react';
 import { Button, IconButton, InlineNotification, Tag, Toggle } from '@carbon/react';
 import { useCallback, useEffect, useState } from 'react';
 
@@ -11,7 +11,8 @@ import type { EstadoDaViagem } from '../mapa/viagem';
 import { mensagens } from '../mensagens/pt-BR';
 import { navegar } from '../navegacao';
 import type { IncidenteDoSimulador, TicketDeAprovacao } from '../tipos';
-import { type Cena, CENAS } from './cenas';
+import { abrirBastidores } from '../bastidores/PainelDeBastidores';
+import { type Cena, CAPITULO_DAS_CENAS, CENAS } from './cenas';
 
 const t = mensagens.apresentador;
 const PRAZO_DO_PEDAGIO_S = 30; // depois disso, a especialista Marina aprova sozinha (simulador)
@@ -121,6 +122,20 @@ export function Apresentador(props: {
               </span>
               <IconButton size="sm" kind="primary" label={`${t.aoVivo}: ${t.nomes[c.numero]}`} onClick={() => escolher(c)}>
                 <Play />
+              </IconButton>
+              <IconButton
+                size="sm"
+                kind="ghost"
+                label={`${mensagens.bastidores.daCena} ${c.numero}`}
+                onClick={() =>
+                  abrirBastidores({
+                    capitulo: CAPITULO_DAS_CENAS,
+                    ancora: `cena-${c.numero}`,
+                    titulo: mensagens.bastidores.cena(c.numero, t.nomes[c.numero]),
+                  })
+                }
+              >
+                <Book />
               </IconButton>
               <IconButton
                 size="sm"

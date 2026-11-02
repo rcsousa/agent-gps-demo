@@ -6,14 +6,15 @@ import OpenSeadragon from 'openseadragon';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { mensagens } from '../mensagens/pt-BR';
+import { abrirBastidores } from '../bastidores/PainelDeBastidores';
 import { navegar } from '../navegacao';
 import dados from './hotspots.json';
 
 const t = mensagens.abertura;
 
 type Destino =
-  | { tipo: 'mapa'; cena?: number; parada?: number }
-  | { tipo: 'bastidores'; capitulo: string }
+  | { tipo: 'mapa'; cena?: number; parada?: number; visao?: 'raio-x' }
+  | { tipo: 'bastidores'; capitulo: string; ancora?: string }
   | { tipo: 'em-breve'; fase: number };
 
 interface Area {
@@ -31,11 +32,11 @@ const AREAS = dados.areas as Area[];
 const PROPORCAO = dados.altura / dados.largura;
 
 function caminhoDe(destino: Destino): string | null {
-  if (destino.tipo === 'bastidores') return `/bastidores/${destino.capitulo}/`;
-  if (destino.tipo === 'em-breve') return null;
+  if (destino.tipo === 'bastidores' || destino.tipo === 'em-breve') return null;
   const busca = new URLSearchParams();
   if (destino.cena) busca.set('cena', String(destino.cena));
   if (destino.parada) busca.set('parada', String(destino.parada));
+  if (destino.visao) busca.set('visao', destino.visao);
   return `/mapa${busca.size ? `?${busca}` : ''}`;
 }
 
@@ -90,6 +91,11 @@ export function Abertura() {
   }, [reposicionar]);
 
   const abrir = useCallback((area: Area) => {
+    if (area.destino.tipo === 'bastidores') {
+      // O capítulo abre ao lado, sem sair do infográfico.
+      abrirBastidores({ capitulo: area.destino.capitulo, ancora: area.destino.ancora, titulo: area.rotulo });
+      return;
+    }
     const destino = caminhoDe(area.destino);
     if (destino) navegar(destino);
     else setEmBreve(true);

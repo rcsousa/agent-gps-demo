@@ -40,6 +40,7 @@ def _antes(chamadas: list[dict], a: str, b: str) -> bool:
     return ia is not None and (ib is None or ia < ib)
 
 
+# --8<-- [start:regras]
 def regras(incidente: str, eventos: list[dict]) -> dict[str, bool]:
     """A reação esperada de cada incidente, conferida no que de fato trafegou."""
     cs = _chamadas(eventos)
@@ -62,6 +63,7 @@ def regras(incidente: str, eventos: list[dict]) -> dict[str, bool]:
     }
     return gerais | _regras_do_incidente(incidente, eventos, cs, fim, conversa, emitiu)
 
+# --8<-- [end:regras]
 
 def _regras_do_incidente(incidente, eventos, cs, fim, conversa, emitiu) -> dict[str, bool]:
     if incidente == "caminho-feliz":
@@ -88,6 +90,7 @@ def _regras_do_incidente(incidente, eventos, cs, fim, conversa, emitiu) -> dict[
                 cs, "consentimento.verificar", "cliente.obter_imovel"
             ),
         }
+    # --8<-- [start:ancora]
     if incidente == "cotacao-ancora-fora":
         return {
             "percebeu a interdição": any(
@@ -100,6 +103,7 @@ def _regras_do_incidente(incidente, eventos, cs, fim, conversa, emitiu) -> dict[
                 p in conversa.lower() for p in ("ncora", "fora do ar", "indisponív", "indisponiv")
             ),
         }
+    # --8<-- [end:ancora]
     if incidente == "vistoria-zona-sul":
         return {
             "agendou a vistoria": _indice(cs, "risco.agendar_vistoria") is not None,
