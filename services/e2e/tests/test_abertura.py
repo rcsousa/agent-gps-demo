@@ -8,7 +8,7 @@ from conftest import WEB
 
 def test_infografico_carrega_os_tiles_e_as_areas(pagina):
     tiles: list[str] = []
-    pagina.on("response", lambda r: "/abertura/mapa-da-demo_files/" in r.url and r.ok and tiles.append(r.url))
+    pagina.on("response", lambda r: "/abertura/infografico_files/" in r.url and r.ok and tiles.append(r.url))
     pagina.goto(f"{WEB}/", wait_until="networkidle")
     pagina.wait_for_timeout(1500)
     assert tiles, "Nenhum tile do deep zoom foi carregado."
@@ -37,5 +37,5 @@ def test_enter_inicia_a_demo(pagina):
 
 
 def test_descritor_do_deep_zoom_gerado_no_build():
-    with urllib.request.urlopen(f"{WEB}/abertura/mapa-da-demo.dzi", timeout=10) as r:
-        assert b'Width="4096"' in r.read()
+    with urllib.request.urlopen(f"{WEB}/abertura/infografico.dzi", timeout=10) as r:
+        assert b'Width="2198"' in r.read()

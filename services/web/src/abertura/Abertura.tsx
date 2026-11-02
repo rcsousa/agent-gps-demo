@@ -71,7 +71,7 @@ export function Abertura() {
     if (!recipiente.current) return;
     const v = OpenSeadragon({
       element: recipiente.current,
-      tileSources: '/abertura/mapa-da-demo.dzi',
+      tileSources: '/abertura/infografico.dzi',
       showNavigationControl: false,
       gestureSettingsMouse: { clickToZoom: false, dblClickToZoom: true },
       visibilityRatio: 0.6,

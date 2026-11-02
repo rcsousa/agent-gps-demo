@@ -1,11 +1,11 @@
 # Contexto de build: a raiz do repositório (o infográfico fica em docs/assets).
 
-# Tiles do deep zoom da tela de abertura, gerados do original 4096×6144: zoom nítido no telão.
+# Tiles do deep zoom da tela de abertura, gerados do infográfico horizontal (2198×1446).
 # O libvips do Debian traz o dzsave (o do Alpine não tem suporte a DZI).
 FROM debian:bookworm-slim AS tiles
 RUN apt-get update && apt-get install -y --no-install-recommends libvips-tools && rm -rf /var/lib/apt/lists/*
-COPY docs/assets/mapa-da-demo.png /entrada/mapa-da-demo.png
-RUN vips dzsave /entrada/mapa-da-demo.png /saida/mapa-da-demo --tile-size 512 --suffix ".jpg[Q=86]"
+COPY docs/assets/infografico_horizontal.jpeg /entrada/infografico.jpeg
+RUN vips dzsave /entrada/infografico.jpeg /saida/infografico --tile-size 512 --suffix ".jpg[Q=86]"
 
 FROM node:22-alpine AS build
 WORKDIR /app
