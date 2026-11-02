@@ -155,13 +155,39 @@ export interface NoDoMapa {
   y: number;
   // Estado vivo (o trânsito): ok, degradado ou fora; null para o que não tem estado.
   status: 'ok' | 'degradado' | 'fora' | null;
+  porta: Ponto | null; // onde o agente para, na rua, para "entrar" no lugar
+  estilo: Estilo | null; // a construção; null para o que não é lugar (rotas, jornada)
 }
+
+// A grade da cidade: as linhas das ruas (xs, ys), as quadras e o tamanho dos lotes.
+export interface Quadra {
+  coluna: number;
+  linha: number;
+  bairro: string;
+  agua: boolean;
+  retangulo: [number, number, number, number];
+}
+
+export interface Grade {
+  colunas: number;
+  linhas: number;
+  xs: number[];
+  ys: number[];
+  rua: number;
+  avenida: number;
+  avenidas_verticais: number[];
+  avenidas_horizontais: number[];
+  lote: [number, number];
+  quadras: Quadra[];
+}
+
+export type Estilo = 'casa' | 'loja' | 'shopping' | 'fabrica' | 'publico' | 'torre' | 'tecnico' | 'escritorio' | 'placa';
 
 export interface Cidade {
   mundo: { largura: number; altura: number };
+  cidade: Grade;
   bairros: Bairro[];
   rio: Ponto[];
-  avenidas: { de: string; para: string; relacoes: number }[];
   nos: NoDoMapa[];
   arestas: { de: string; tipo: string; para: string }[];
 }

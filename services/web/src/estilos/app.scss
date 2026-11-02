@@ -860,6 +860,7 @@ $altura-linha-do-tempo: 5.75rem;
 // --- Rótulos do mapa 3D: chips em HTML, legíveis no telão -----------------------------------
 .rotulos {
   position: absolute;
+  z-index: 1; // abaixo dos controles e avisos do mapa (z-index 2)
   inset: 0;
   pointer-events: none;
   overflow: hidden;

@@ -34,13 +34,15 @@ export function Rotulos(props: {
     const [px, py] = props.projetar(r.posicao);
     const largura = r.texto.length * LETRA[r.tipo] + 28 + (r.numero != null ? 22 : 0) + (r.status ? 20 : 0);
     const altura = ALTURA[r.tipo];
-    const x = px - largura / 2;
+    // O ponto precisa estar na tela; o chip é empurrado para dentro dela, se passar da borda.
+    if (px < 0 || px > props.largura) continue;
+    const x = Math.min(Math.max(px - largura / 2, 4), props.largura - largura - 4);
     const y = r.abaixo ? py + 8 : py - altura - 6;
-    if (x < 0 || y < 0 || x + largura > props.largura || y + altura > props.altura) continue;
+    if (y < 0 || y + altura > props.altura) continue;
     const caixa: [number, number, number, number] = [x - 3, y - 3, x + largura + 3, y + altura + 3];
     if (colocados.some((o) => caixa[0] < o[2] && caixa[2] > o[0] && caixa[1] < o[3] && caixa[3] > o[1])) continue;
     colocados.push(caixa);
-    visiveis.push({ r, x: px, y: py });
+    visiveis.push({ r, x, y });
   }
 
   return (
@@ -57,8 +59,7 @@ export function Rotulos(props: {
             <span className="rotulo__texto">{r.texto}</span>
           </>
         );
-        const deslocamento = r.abaixo ? '8px' : 'calc(-100% - 6px)';
-        const estilo = { transform: `translate(${x}px, ${y}px) translate(-50%, ${deslocamento})` };
+        const estilo = { transform: `translate(${x}px, ${y}px)` };
         return r.aoClicar ? (
           <button key={r.id} type="button" className={classe} style={estilo} onClick={r.aoClicar} data-rotulo={r.id}>
             {conteudo}
