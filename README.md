@@ -21,6 +21,7 @@ docker compose ps             # todos os serviços "healthy"
 | <http://localhost:8080> | Tela de abertura: o infográfico navegável |
 | <http://localhost:8080/mapa> | Modo Mapa: a cidade do banco e a viagem do agente (tecla P: painel do apresentador) |
 | <http://localhost:8080/mapa?visao=raio-x> | Modo Raio-X: a mesma viagem por dentro, com o placar |
+| <http://localhost:8080/mapa?eventos=consulta> | Modo Mapa sem SSE: para redes corporativas cujo proxy segura o stream (o mapa também troca sozinho, se nada chegar em 4 s) |
 | <http://localhost:8080/status> | Dashboard de status: serviços, tools, skills e prompts por dentro |
 | <http://localhost:8080/bastidores/> | Bastidores (documentação) |
 | <http://localhost:7474> | Neo4j Browser |
