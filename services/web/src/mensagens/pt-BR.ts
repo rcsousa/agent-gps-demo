@@ -77,6 +77,10 @@ export const mensagens = {
     pularParaOFim: 'Pular para o fim',
     replay: (data: string, modelo: string) => `Replay · gravado em ${data} com ${modelo}`,
     replayAjuda: 'Viagem gravada, tocada sem rede e sem LLM. Não é ao vivo.',
+    porConsulta: 'Eventos por consulta',
+    porConsultaAjuda:
+      'A rede segurou o fluxo ao vivo (SSE), algo comum com proxy ou antivírus corporativo. ' +
+      'Os mesmos eventos chegam por consulta, com até 2 s de atraso.',
     gravar: 'Gravar esta viagem',
     gravada: (nome: string) => `Gravada como ${nome}`,
     erroGravar: 'Não foi possível gravar a viagem.',

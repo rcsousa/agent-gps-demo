@@ -17,8 +17,13 @@ export interface Pulso {
   ok: boolean;
 }
 
+// Por onde os eventos chegam: o stream ao vivo (SSE) ou a consulta por lotes, a alternativa
+// para redes que seguram o stream (proxies e antivírus com inspeção de HTTPS).
+export type Transporte = 'sse' | 'consulta';
+
 export interface EstadoDaViagem {
   id: string | null;
+  transporte: Transporte | null;
   modo: string | null;
   canal: string | null;
   modelo: string | null;
@@ -48,6 +53,7 @@ export interface EstadoDaViagem {
 
 export const VIAGEM_VAZIA: EstadoDaViagem = {
   id: null,
+  transporte: null,
   modo: null,
   canal: null,
   modelo: null,
@@ -86,10 +92,14 @@ export function noDaTool(tool: string, argumentos: Record<string, unknown> = {})
   return null;
 }
 
-export type Acao = { tipo: 'evento'; evento: EventoDaExecucao } | { tipo: 'reiniciar'; id: string | null };
+export type Acao =
+  | { tipo: 'evento'; evento: EventoDaExecucao }
+  | { tipo: 'reiniciar'; id: string | null }
+  | { tipo: 'transporte'; transporte: Transporte };
 
 export function reduzir(anterior: EstadoDaViagem, acao: Acao): EstadoDaViagem {
   if (acao.tipo === 'reiniciar') return { ...VIAGEM_VAZIA, id: acao.id };
+  if (acao.tipo === 'transporte') return { ...anterior, transporte: acao.transporte };
   const { tipo, dados } = acao.evento;
   const estado = { ...anterior, eventos: [...anterior.eventos, acao.evento] };
   switch (tipo) {
@@ -192,32 +202,188 @@ const TIPOS = [
 export const PREFIXO_GRAVACAO = 'gravacao:';
 export const ehReplay = (id: string | null) => Boolean(id?.startsWith(PREFIXO_GRAVACAO));
 
+// Quanto esperar pelo primeiro evento do SSE antes de concluir que o stream está preso no caminho.
+// O servidor começa do início da execução, então numa rede normal o primeiro evento chega na hora.
+export const ESPERA_DO_SSE_MS = 4000;
+// Pausa entre tentativas da consulta quando ela falha (cresce até o teto).
+const PAUSA_APOS_FALHA_MS = 1000;
+const PAUSA_MAXIMA_MS = 5000;
+
+// `?eventos=consulta` na URL pula o SSE: útil quando já se sabe que a rede segura streams
+// (e `?eventos=sse` volta ao normal). A escolha fica na sessão da aba, porque o mapa reescreve
+// a URL ao iniciar uma viagem.
+const CHAVE_CONSULTA = 'bussola:eventos';
+
+export function lembrarEscolhaDeEventos(): void {
+  const escolha = new URLSearchParams(window.location.search).get('eventos');
+  if (escolha !== 'consulta' && escolha !== 'sse') return;
+  try {
+    window.sessionStorage.setItem(CHAVE_CONSULTA, escolha);
+  } catch {
+    // Sem armazenamento (aba privada, bloqueio): vale só enquanto o parâmetro estiver na URL.
+  }
+}
+
+function consultaForcada(): boolean {
+  lembrarEscolhaDeEventos();
+  if (new URLSearchParams(window.location.search).get('eventos') === 'consulta') return true;
+  try {
+    return window.sessionStorage.getItem(CHAVE_CONSULTA) === 'consulta';
+  } catch {
+    return false;
+  }
+}
+
+// Logo que o módulo carrega, antes de qualquer reescrita da URL.
+lembrarEscolhaDeEventos();
+
+interface LoteDeEventos {
+  eventos: { id: string; espera?: number; evento: EventoDaExecucao }[];
+  cursor?: string;
+  fim: boolean;
+}
+
 // Acompanha uma execução: os eventos desde o início e, depois, ao vivo, até o run.finished.
 // Com o id "gravacao:<nome>", toca a gravação no mesmo formato (replay offline).
+//
+// O caminho principal é o SSE. Proxies e antivírus corporativos com inspeção de HTTPS costumam
+// segurar a resposta inteira antes de entregá-la, e um stream que só termina no fim da viagem
+// nunca chega. Se nenhum evento chegar em ESPERA_DO_SSE_MS, ou se o navegador desistir do SSE,
+// o hook passa para a consulta por lotes (long-polling), que termina a cada resposta e passa por
+// qualquer proxy. Os ids são os mesmos nos dois caminhos: nada se perde nem se repete na troca.
 export function useViagem(id: string | null): EstadoDaViagem {
   const [estado, despachar] = useReducer(reduzir, VIAGEM_VAZIA);
 
   useEffect(() => {
     despachar({ tipo: 'reiniciar', id });
     if (!id) return;
-    const url = ehReplay(id)
+    const replay = ehReplay(id);
+    const base = replay
       ? `/api/gravacoes/${encodeURIComponent(id.slice(PREFIXO_GRAVACAO.length))}/eventos`
       : `/api/execucoes/${id}/eventos`;
-    const fonte = new EventSource(url);
-    // Numa reconexão, o servidor reenvia desde o início: cada evento (id do stream) vale uma vez só.
+
+    let encerrado = false; // o efeito foi desmontado (outra viagem, outra tela)
+    let terminou = false; // chegou o run.finished
+    let recebeuPeloSse = false;
+    let ultimoId: string | null = null;
+    let fonte: EventSource | null = null;
+    const timers = new Set<number>();
+    const cancelar = new AbortController();
+    // Numa reconexão ou na troca de caminho, o servidor reenvia desde o início:
+    // cada evento (id do stream) vale uma vez só.
     const vistos = new Set<string>();
-    for (const tipo of TIPOS) {
-      fonte.addEventListener(tipo, (mensagem) => {
-        const { data, lastEventId } = mensagem as MessageEvent;
-        if (lastEventId && vistos.has(lastEventId)) return;
-        if (lastEventId) vistos.add(lastEventId);
-        const evento = JSON.parse(data) as EventoDaExecucao;
-        despachar({ tipo: 'evento', evento });
-        // O servidor encerra o fluxo no fim; sem fechar, o navegador reconectaria e repetiria tudo.
-        if (tipo === 'run.finished') fonte.close();
+
+    const esperar = (ms: number) =>
+      new Promise<void>((resolver) => {
+        const timer = window.setTimeout(() => {
+          timers.delete(timer);
+          resolver();
+        }, ms);
+        timers.add(timer);
       });
+
+    const receber = (evento: EventoDaExecucao, idDoEvento: string) => {
+      if (encerrado || terminou) return;
+      if (idDoEvento) {
+        if (vistos.has(idDoEvento)) return;
+        vistos.add(idDoEvento);
+        ultimoId = idDoEvento;
+      }
+      despachar({ tipo: 'evento', evento });
+      if (evento.tipo === 'run.finished') {
+        terminou = true;
+        // O servidor encerra o fluxo no fim; sem fechar, o navegador reconectaria e repetiria tudo.
+        fonte?.close();
+      }
+    };
+
+    const buscarLote = async (url: string): Promise<LoteDeEventos> => {
+      const resposta = await fetch(url, { cache: 'no-store', signal: cancelar.signal });
+      if (!resposta.ok) throw new Error(`HTTP ${resposta.status}`);
+      return (await resposta.json()) as LoteDeEventos;
+    };
+
+    // Ao vivo: um lote por consulta, a partir do último id visto (o servidor espera um pouco
+    // por eventos novos antes de responder vazio).
+    const consultarAoVivo = async () => {
+      let cursor = ultimoId;
+      let falhas = 0;
+      while (!encerrado && !terminou) {
+        try {
+          const lote = await buscarLote(cursor ? `${base}/lote?apos=${encodeURIComponent(cursor)}` : `${base}/lote`);
+          for (const { id: idDoEvento, evento } of lote.eventos) receber(evento, idDoEvento);
+          cursor = lote.cursor ?? cursor;
+          falhas = 0;
+          if (lote.fim) return;
+        } catch {
+          if (encerrado) return;
+          falhas += 1;
+          await esperar(Math.min(PAUSA_APOS_FALHA_MS * falhas, PAUSA_MAXIMA_MS));
+        }
+      }
+    };
+
+    // Replay: a gravação inteira de uma vez, tocada aqui no ritmo original.
+    const tocarAGravacao = async () => {
+      let falhas = 0;
+      while (!encerrado) {
+        try {
+          const lote = await buscarLote(`${base}/lote`);
+          for (const { id: idDoEvento, espera, evento } of lote.eventos) {
+            if (vistos.has(idDoEvento)) continue;
+            if (espera) await esperar(espera * 1000);
+            receber(evento, idDoEvento);
+          }
+          return;
+        } catch {
+          if (encerrado) return;
+          falhas += 1;
+          await esperar(Math.min(PAUSA_APOS_FALHA_MS * falhas, PAUSA_MAXIMA_MS));
+        }
+      }
+    };
+
+    const passarParaConsulta = () => {
+      if (encerrado || terminou) return;
+      fonte?.close();
+      fonte = null;
+      despachar({ tipo: 'transporte', transporte: 'consulta' });
+      void (replay ? tocarAGravacao() : consultarAoVivo());
+    };
+
+    if (consultaForcada()) {
+      passarParaConsulta();
+    } else {
+      const sse = new EventSource(base);
+      fonte = sse;
+      despachar({ tipo: 'transporte', transporte: 'sse' });
+      for (const tipo of TIPOS) {
+        sse.addEventListener(tipo, (mensagem) => {
+          if (fonte !== sse) return;
+          recebeuPeloSse = true;
+          const { data, lastEventId } = mensagem as MessageEvent;
+          receber(JSON.parse(data) as EventoDaExecucao, lastEventId);
+        });
+      }
+      // Erros de rede passageiros o EventSource resolve sozinho, reconectando. Se ele desiste
+      // (a resposta nem é um stream: o proxy devolveu um erro ou uma página), segue pela consulta.
+      sse.onerror = () => {
+        if (fonte === sse && sse.readyState === EventSource.CLOSED) passarParaConsulta();
+      };
+      // Nenhum evento no prazo: o stream está preso no caminho.
+      const timer = window.setTimeout(() => {
+        timers.delete(timer);
+        if (!recebeuPeloSse) passarParaConsulta();
+      }, ESPERA_DO_SSE_MS);
+      timers.add(timer);
     }
-    return () => fonte.close();
+
+    return () => {
+      encerrado = true;
+      fonte?.close();
+      cancelar.abort();
+      for (const timer of timers) window.clearTimeout(timer);
+    };
   }, [id]);
 
   return estado;
