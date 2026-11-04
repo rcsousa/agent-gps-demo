@@ -82,3 +82,31 @@ def test_pular_para_o_fim_fecha_o_balao(pagina, mundo_limpo):
             break
     assert mapa.get_attribute("data-parada") == "parada-emissao"
     assert mapa.get_attribute("data-balao") == ""
+
+
+def test_no_bairro_de_produtos_o_robo_para_no_predio_do_produto(pagina, mundo_limpo):
+    # Adequação, proposta e aceite levam o robô ao prédio do produto, e o balão cita o produto.
+    _iniciar_pelo_roteiro_no_passo_a_passo(pagina)
+    mapa = pagina.locator(".mapa")
+    no_produto: list[tuple[str, str]] = []
+    for _ in range(600):
+        pagina.wait_for_timeout(300)
+        opcoes = pagina.locator(".mapa__opcoes button:not([disabled])")
+        if opcoes.count():
+            opcoes.first.click()
+        if mapa.get_attribute("data-aguardando") == "sim":
+            lugar = mapa.get_attribute("data-lugar")
+            if lugar.startswith("produto-residencial-"):
+                no_produto.append((lugar, pagina.locator(".balao").inner_text()))
+            atual = mapa.get_attribute("data-balao-n")
+            pagina.evaluate("document.activeElement && document.activeElement.blur()")
+            pagina.keyboard.press("Space")
+            _seguiu(pagina, atual)
+        if mapa.get_attribute("data-fila") == "0" and pagina.locator("#iniciar-viagem").is_enabled():
+            break
+
+    textos = " | ".join(texto for _, texto in no_produto)
+    assert len(no_produto) >= 3, textos  # adequação, proposta e aceite
+    assert "Avaliando se o Residencial" in textos
+    assert "Montando a proposta do Residencial" in textos
+    assert "Registrando o aceite do Residencial" in textos

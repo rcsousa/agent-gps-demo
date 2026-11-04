@@ -116,6 +116,12 @@ export const mensagens = {
     baloes: {
       seguir: 'Seguir',
       atalho: 'Espaço',
+      // No prédio do produto (bairro de produtos), a frase cita o produto em questão.
+      toolsDoProduto: {
+        'risco.avaliar_adequacao': (produto: string) => `Avaliando se o ${produto} faz sentido para a cliente`,
+        'seguradoras.gerar_proposta': (produto: string) => `Montando a proposta do ${produto}`,
+        'seguradoras.registrar_aceite': (produto: string) => `Registrando o aceite do ${produto}`,
+      } as Record<string, (produto: string) => string>,
       tools: {
         'cliente.obter_perfil': 'Consultando o perfil da cliente no CRM',
         'cliente.listar_produtos': 'Vendo no CRM os produtos que a cliente já tem',

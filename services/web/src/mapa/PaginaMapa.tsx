@@ -842,6 +842,7 @@ export function PaginaMapa() {
       data-parada={exibido.parada ?? ''}
       data-visitadas={exibido.visitadas.length}
       data-lugares-visitados={direcao.trechos.length}
+      data-lugar={direcao.trechos.at(-1)?.para ?? ''}
       data-nomes={mostrarNomes ? 'sim' : 'nao'}
       data-fila={direcao.fila}
       data-camera={cameraSeguindo ? 'seguindo' : 'livre'}
