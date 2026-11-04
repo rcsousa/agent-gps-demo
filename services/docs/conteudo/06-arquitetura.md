@@ -426,6 +426,7 @@ Um caso, por exemplo, a Âncora fora do ar:
 POST /api/gravacoes {execucao, cena, incidentes}  ──► gravacoes/cena-<n>.jsonl (cabeçalho + eventos)
 GET  /api/gravacoes                               ──► a lista (cabeçalhos)
 GET  /api/gravacoes/<nome>/eventos                ──► SSE no mesmo formato do ao vivo, no ritmo original
+GET  /api/gravacoes/<nome>/eventos/lote           ──► a alternativa: a gravação inteira, com as pausas
 ```
 
 - **Uma gravação é a execução real**, como saiu do barramento. O cabeçalho guarda cena, modo, canal, modelo, apólice, data e os incidentes ativos.
@@ -446,7 +447,20 @@ POST /api/execucoes {modo}  ──► run.started
        └─ do gateway (com _meta de skill e de execução)   ──► tool.called
             └─ incidente no resultado?                    ──► incident.detected
   └─ fim natural, limite de 40 passos ou erro             ──► run.finished
-GET /api/execucoes/{id}/eventos  ◄── SSE: o stream desde o início, depois ao vivo
+GET /api/execucoes/{id}/eventos       ◄── SSE: o stream desde o início, depois ao vivo
+GET /api/execucoes/{id}/eventos/lote  ◄── a alternativa: um lote por consulta (?apos=<id>)
 ```
 
 O estado de cada execução fica em `bussola:execucoes:<id>`: status, pergunta pendente e métricas.
+
+### Eventos até o navegador: SSE, com alternativa por consulta
+
+**Resumo:** os eventos chegam ao mapa por SSE. Numa rede corporativa, porém, proxies e antivírus com inspeção de HTTPS costumam guardar a resposta inteira antes de entregá-la, e um stream que só termina no fim da viagem nunca chega: a tela abre, mas a viagem não anda. Para isso o mapa tem uma alternativa automática, a consulta por lotes.
+
+- **O SSE continua sendo o caminho principal.** Ele sai com `Cache-Control: no-cache, no-transform` e `X-Accel-Buffering: no`, e começa com um comentário de 2 KB, que alguns filtros exigem antes de repassar qualquer coisa. Clientes SSE ignoram comentários, então o CLI, o smoke e o ensaio não mudam.
+- **A troca é automática** (`mapa/viagem.ts`). Se nenhum evento chegar em 4 s, ou se o navegador desistir do SSE (a resposta nem era um stream), o mapa fecha o SSE e segue pela consulta. Numa rede normal o primeiro evento chega na hora, porque o servidor começa do início da execução.
+- **A consulta é long-polling.** `GET /api/execucoes/{id}/eventos/lote?apos=<id>` espera até 1,5 s por eventos novos e responde. Cada resposta termina, então passa por qualquer proxy. No replay, `GET /api/gravacoes/<nome>/eventos/lote` devolve a gravação inteira com as pausas, e o navegador toca no ritmo original.
+- **Nada se perde nem se repete na troca.** Os ids são os mesmos nos dois caminhos (o id do Redis Stream ao vivo, o índice no replay), e o mapa descarta o que já viu. Toda animação continua correspondendo a um evento real.
+- **Fica visível.** Nesse modo, o selo "Eventos por consulta" aparece no mapa, e `.mapa[data-transporte]` diz `sse` ou `consulta`.
+- **Dá para forçar.** `?eventos=consulta` na URL pula o SSE (e `?eventos=sse` volta ao normal). A escolha vale para a aba inteira, útil quando já se sabe que a rede do evento segura streams.
+- **Testado no navegador** (`e2e/tests/test_rede_corporativa.py`). O Playwright faz o papel do proxy, pendurando a requisição do SSE sem resposta, e a viagem precisa chegar à apólice pela consulta, ao vivo e no replay.

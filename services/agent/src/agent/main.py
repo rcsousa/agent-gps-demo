@@ -20,6 +20,13 @@ from agent import placar
 from agent.catalogo import Catalogo, NaoEncontrado
 from agent.config import Config
 from agent.custos import precos_por_milhao
+from agent.entrega import (
+    CABECALHOS_SSE,
+    PREENCHIMENTO,
+    cursor_valido,
+    lote_da_execucao,
+    lote_da_gravacao,
+)
 from agent.execucao import MODOS, Motor
 from agent.gravacoes import GravacaoInvalida, Gravacoes, esperas
 from agent.llm.fabrica import PROVEDORES
@@ -323,6 +330,7 @@ def criar_app(
             raise HTTPException(404, "Gravação não encontrada.") from erro
 
         async def fluxo() -> Any:
+            yield PREENCHIMENTO
             for indice, (evento, espera) in enumerate(zip(eventos, esperas(eventos), strict=True)):
                 if espera:
                     await asyncio.sleep(espera)
@@ -332,7 +340,30 @@ def criar_app(
                     "data": json.dumps(evento, ensure_ascii=False),
                 }
 
-        return EventSourceResponse(fluxo())
+        return EventSourceResponse(fluxo(), headers=CABECALHOS_SSE)
+
+    @app.get("/api/gravacoes/{nome}/eventos/lote")
+    async def tocar_por_consulta(nome: str) -> dict:
+        """A alternativa ao SSE do replay: a gravação inteira, com as pausas, para o navegador tocar."""
+        try:
+            _, eventos = gravacoes.carregar(nome)
+        except (GravacaoInvalida, FileNotFoundError) as erro:
+            raise HTTPException(404, "Gravação não encontrada.") from erro
+        return lote_da_gravacao(eventos, esperas(eventos))
+
+    @app.get("/api/execucoes/{ident}/eventos/lote")
+    async def eventos_por_consulta(ident: str, apos: str | None = Query(default=None)) -> dict:
+        """A alternativa ao SSE, para redes que seguram o stream: um lote de eventos por consulta.
+
+        Sem `apos`, começa do início da execução, como o SSE. Os ids são os mesmos do SSE.
+        """
+        execucao = await motor.obter(ident)
+        if execucao is None:
+            raise HTTPException(404, "Execução não encontrada.")
+        cursor = apos or execucao["cursor_eventos"]
+        if not cursor_valido(cursor):
+            raise HTTPException(400, "Cursor inválido.")
+        return await lote_da_execucao(redis, ident, cursor)
 
     @app.get("/api/execucoes/{ident}/eventos")
     async def eventos(ident: str) -> EventSourceResponse:
@@ -342,6 +373,7 @@ def criar_app(
             raise HTTPException(404, "Execução não encontrada.")
 
         async def fluxo() -> Any:
+            yield PREENCHIMENTO
             cursor = execucao["cursor_eventos"]
             while True:
                 # Bloqueio curto (menor que o timeout de leitura do Redis); volta vazia vira keep-alive.
@@ -361,6 +393,6 @@ def criar_app(
                     if evento["tipo"] == "run.finished":
                         return
 
-        return EventSourceResponse(fluxo())
+        return EventSourceResponse(fluxo(), headers=CABECALHOS_SSE)
 
     return app

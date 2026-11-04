@@ -516,6 +516,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 | --- | --- |
 | Resposta do LLM variar entre ensaios e a cena não sair como esperado | Seeds de cenário fixos, provedor `roteiro` para ensaio e replay offline como plano B (os modelos atuais não aceitam ajuste de temperatura) |
 | Rede ou chave de API falhar no dia | Replay offline e gravação em vídeo de cada cena |
+| Proxy ou antivírus corporativo segurar o SSE e a viagem não aparecer no mapa | Sem evento em 4 s, o mapa passa sozinho para a consulta por lotes (long-polling), com os mesmos eventos; `?eventos=consulta` força esse caminho |
 | A metáfora do mapa parecer só enfeite para o público técnico | Raio-X provando que cada animação é um evento real |
 | Grafo grande demais ficar ilegível | Zoom semântico e limite de 150 a 300 nós |
 | Suporte à extensão de skills mudar nos SDKs | Isolar a agregação de skills no gateway e o consumo num módulo próprio do `agent` |
@@ -542,6 +543,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Painel do apresentador como gaveta no próprio mapa (tecla P), numa tela só
 - [x] Placar: as viagens da sessão, com as regras conferidas pelo agente, e a referência do experimento com os modelos reais
 - [x] Replay offline por gravações versionadas no repositório, tocadas com selo "Replay" visível
+- [x] Eventos ao navegador por SSE, com alternativa automática por consulta (long-polling) quando a rede segura o stream; selo "Eventos por consulta" visível nesse caso
 - [x] Bastidores num painel lateral com o próprio site (iframe), aberto na seção da cena
 - [x] Animações das cenas em WebM curto com capa, gravadas do replay real; diagramas em SVG gerados no build com Graphviz (funcionam offline)
 - [x] Pedágio: o apresentador aprova pelo simulador, e a especialista aprova sozinha depois de 30 s

@@ -838,6 +838,7 @@ export function PaginaMapa() {
       aria-labelledby="titulo-mapa"
       // Estado observável para os testes e2e (o mapa em si é um canvas).
       data-execucao={real.id ?? ''}
+      data-transporte={real.transporte ?? ''}
       data-parada={exibido.parada ?? ''}
       data-visitadas={exibido.visitadas.length}
       data-lugares-visitados={direcao.trechos.length}
@@ -948,6 +949,11 @@ export function PaginaMapa() {
                   new Date(cabecalho.gravado_em).toLocaleDateString('pt-BR'),
                   t.barra.modelo(cabecalho.modelo),
                 )}
+              </Tag>
+            )}
+            {real.transporte === 'consulta' && (
+              <Tag type="cool-gray" size="md" title={t.porConsultaAjuda} className="mapa__selo-consulta">
+                {t.porConsulta}
               </Tag>
             )}
             {real.fim && !replay && real.id && (

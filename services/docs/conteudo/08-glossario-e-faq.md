@@ -56,6 +56,10 @@ O mapa pode mostrar um evento alguns segundos **depois** de ele acontecer. O dir
 
 **As cenas tocam em replay.** Cada uma foi gravada de uma execução real com o Haiku (`gravacoes/`, no repositório). O replay não usa rede, chave nem LLM: o agente serve os eventos gravados, no ritmo original, e o mapa e o Raio-X os desenham como numa viagem ao vivo. A diferença fica sempre visível no selo "Replay · gravado em … com …".
 
+### E numa rede corporativa, com proxy ou antivírus?
+
+**A viagem segue por outro caminho.** Os eventos chegam ao mapa por SSE, um stream que só termina no fim da viagem. Proxies e antivírus com inspeção de HTTPS costumam segurar a resposta inteira, e aí nada chega. Se nenhum evento aparecer em 4 s, o mapa passa sozinho para a consulta por lotes, com os mesmos eventos e até 2 s de atraso, e mostra o selo "Eventos por consulta". Se a rede do evento for conhecida por isso, abra o mapa com `?eventos=consulta` para pular a espera. Veja o [capítulo 6](06-arquitetura.md#eventos-ate-o-navegador-sse-com-alternativa-por-consulta).
+
 ### Como o placar sabe que uma regra foi cumprida?
 
 **Pelos eventos, não pelo que o agente diz.** No fim de cada viagem, o agente lê do barramento tudo o que ela fez, inclusive o que o gateway registrou, e confere as regras do caso. Por exemplo: o consentimento foi verificado antes de ler o imóvel? Houve aprovação humana antes de emitir? Uma tentativa barrada pelo gateway não conta como feita. É o mesmo verificador do experimento com o modelo real.
