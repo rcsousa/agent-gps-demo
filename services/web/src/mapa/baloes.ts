@@ -3,6 +3,7 @@
 
 import { mensagens } from '../mensagens/pt-BR';
 import type { EventoDaExecucao } from '../tipos';
+import { produtoDaTool } from './viagem';
 
 const t = mensagens.mapa.baloes;
 
@@ -19,7 +20,9 @@ export interface Balao {
 // Os eventos que abrem balão (e, no passo a passo, esperam o apresentador).
 export const EVENTOS_COM_BALAO = new Set(['tool.called', 'incident.detected', 'route.recalculated', 'human.required']);
 
-function fraseDaTool(tool: string, argumentos: Record<string, unknown>): string {
+function fraseDaTool(tool: string, argumentos: Record<string, unknown>, produto: string | null): string {
+  // No prédio do produto, a frase diz qual produto o agente está tratando.
+  if (produto && t.toolsDoProduto[tool]) return t.toolsDoProduto[tool](produto);
   if (tool === 'seguradoras.cotar_seguro') {
     const id = typeof argumentos.seguradora === 'string' ? argumentos.seguradora : null;
     return t.cotar(id ? (t.seguradoras[id] ?? id) : null);
@@ -33,7 +36,10 @@ export function balaoDoEvento(evento: EventoDaExecucao, nomeDoLugar: string | nu
   switch (evento.tipo) {
     case 'tool.called': {
       const detalhe = [d.tool, d.duracao_ms != null ? `${d.duracao_ms} ms` : null].filter(Boolean).join(' · ');
-      if (d.status === 'ok') return { tipo: 'tool', texto: fraseDaTool(d.tool, d.argumentos ?? {}), detalhe, ok: true };
+      if (d.status === 'ok') {
+        const produto = produtoDaTool(d.tool, d.argumentos ?? {}, d.resultado) ? nomeDoLugar : null;
+        return { tipo: 'tool', texto: fraseDaTool(d.tool, d.argumentos ?? {}, produto), detalhe, ok: true };
+      }
       // O gateway barrou (fora da skill ou fora de ordem): o evento traz o motivo.
       if (d.motivo) return { tipo: 'tool', texto: t.barrada, detalhe, ok: false };
       const erro = String(d.erro ?? '').replace(/^Error executing tool [\w.]+: /, '');

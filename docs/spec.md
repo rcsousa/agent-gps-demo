@@ -368,7 +368,7 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
 - **As 3 rotas não aparecem no mapa.** O que aparece é o caminho real do robô. A escolha e o recálculo continuam como eventos (o recálculo também como aviso).
 - **A viagem é dirigida só pelo SSE da execução**, por um **diretor de animações**:
   - os eventos reais são reproduzidos na ordem, com tempo mínimo;
-  - a cada `step.started` e a cada `tool.called`, o robô anda pelas ruas até a placa da parada ou até o prédio do sistema chamado, com o tempo proporcional à distância (0,6 a 1,8 s);
+  - a cada `step.started` e a cada `tool.called`, o robô anda pelas ruas até a placa da parada ou até o prédio do sistema chamado, com o tempo proporcional à distância (0,6 a 1,8 s). A adequação, a proposta e o aceite são sobre o produto: levam o robô ao prédio do produto em questão, no bairro de produtos, e o balão cita o produto. O produto vem do `produto_id` dos argumentos ou da seguradora do resultado real da chamada (issue #22);
   - o selo mostra "Reproduzindo · +N eventos" ou "Ao vivo", e há "Pular para o fim";
   - a conversa também segue o diretor (decidido antes da Fase 9): a pergunta à Ana aparece quando o robô chega à parada dela, e a apólice quando ele chega à emissão. Isso vale para o painel Conversa, o Raio-X e o apresentador;
   - uma linha do tempo das 9 paradas e uma linha de narração ficam no rodapé.

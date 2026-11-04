@@ -70,7 +70,7 @@ export interface Direcao {
 // O lugar aonde um evento leva o robô (ou null, se ele não sai do lugar).
 function destino(evento: EventoDaExecucao): string | null {
   if (evento.tipo === 'step.started') return evento.dados.id ?? null;
-  if (evento.tipo === 'tool.called') return noDaTool(evento.dados.tool, evento.dados.argumentos);
+  if (evento.tipo === 'tool.called') return noDaTool(evento.dados.tool, evento.dados.argumentos, evento.dados.resultado);
   return null;
 }
 

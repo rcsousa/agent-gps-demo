@@ -262,7 +262,7 @@ O agente pode andar mais rápido do que a plateia consegue acompanhar: o roteiro
 **O robô anda pelas ruas** (`mapa/ruas.ts`): a cada evento que o leva a um lugar, ele vai da porta onde está até a porta do destino, pelo meio das ruas, em ângulos retos.
 
 - Um `step.started` o leva à placa da parada.
-- Um `tool.called` o leva ao prédio do sistema chamado.
+- Um `tool.called` o leva ao prédio do sistema chamado. Há uma exceção: a adequação, a proposta e o aceite tratam do produto, e levam o robô ao prédio do produto, no bairro de produtos. Sem isso, as paradas 5 e 7 ficavam sem balão, porque as ferramentas delas apontavam para prédios da governança.
 - O tempo do trecho é proporcional à distância, entre 0,6 e 1,8 s.
 
 | Evento | Tempo mínimo no mapa |

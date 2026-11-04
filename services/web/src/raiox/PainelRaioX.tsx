@@ -66,7 +66,7 @@ function Proveniencia(props: { viagem: EstadoDaViagem; nos: Map<string, NoDoMapa
   );
   const tocados = new Map<string, number>();
   for (const e of props.viagem.eventos.filter((x) => x.tipo === 'tool.called')) {
-    const no = noDaTool(e.dados.tool, e.dados.argumentos);
+    const no = noDaTool(e.dados.tool, e.dados.argumentos, e.dados.resultado);
     if (no) tocados.set(no, (tocados.get(no) ?? 0) + 1);
   }
   return (

@@ -76,9 +76,29 @@ export const VIAGEM_VAZIA: EstadoDaViagem = {
 };
 
 // Cada tool, no mapa, é uma rua até um sistema da cidade (os nós do grafo).
-export function noDaTool(tool: string, argumentos: Record<string, unknown> = {}): string | null {
+// O produto residencial que uma chamada trata, quando ela é sobre a oferta: a adequação traz o
+// produto_id nos argumentos; a proposta e o aceite trazem a seguradora no resultado real.
+// Só os produtos residenciais têm prédio no bairro de produtos; fora disso, null.
+export function produtoDaTool(tool: string, argumentos: Record<string, unknown> = {}, resultado?: unknown): string | null {
+  if (tool === 'risco.avaliar_adequacao') {
+    const id = argumentos.produto_id;
+    return typeof id === 'string' && PRODUTO_RESIDENCIAL.test(id) ? id : null;
+  }
+  if (tool === 'seguradoras.gerar_proposta' || tool === 'seguradoras.registrar_aceite') {
+    const seguradora = typeof resultado === 'string' ? /"seguradora"\s*:\s*"seguradora-([a-z]+)"/.exec(resultado)?.[1] : null;
+    return seguradora ? `produto-residencial-${seguradora}` : null;
+  }
+  return null;
+}
+
+const PRODUTO_RESIDENCIAL = /^produto-residencial-[a-z]+$/;
+
+export function noDaTool(tool: string, argumentos: Record<string, unknown> = {}, resultado?: unknown): string | null {
   const [dominio, nome] = tool.split('.');
   const seguradora = typeof argumentos.seguradora === 'string' ? argumentos.seguradora : null;
+  // Adequação, proposta e aceite são sobre o produto: o robô vai ao prédio dele, no bairro de produtos.
+  const produto = produtoDaTool(tool, argumentos, resultado);
+  if (produto) return produto;
   if (dominio === 'cliente') return 'sistema-crm';
   if (dominio === 'consentimento') return 'sistema-cofre-consentimentos';
   if (dominio === 'risco') return nome === 'agendar_vistoria' ? 'sistema-vistoria' : 'sistema-motor-risco';
@@ -127,7 +147,7 @@ export function reduzir(anterior: EstadoDaViagem, acao: Acao): EstadoDaViagem {
       };
     case 'tool.called': {
       const ultimaTool = { tool: dados.tool, ok: dados.status === 'ok' };
-      const no = noDaTool(dados.tool, dados.argumentos);
+      const no = noDaTool(dados.tool, dados.argumentos, dados.resultado);
       if (!no) return { ...estado, ultimaTool };
       const pulso = { no, quando: performance.now(), ok: dados.status === 'ok' };
       return { ...estado, ultimaTool, pulsos: [...estado.pulsos.slice(-20), pulso] };
