@@ -212,12 +212,15 @@ services:
       NEO4J_server_memory_pagecache_size: 256m
     volumes:
       - graph-dados:/data
+    # Healthcheck leve: a interface HTTP só responde quando o servidor terminou de subir.
+    # O cypher-shell (uma JVM a cada checagem) passava dos 5 s em VMs de 2 vCPUs e deixava o
+    # grafo "unhealthy" com o banco no ar. A senha é conferida pelo seed, logo em seguida.
     healthcheck:
-      test: ["CMD-SHELL", "cypher-shell -u '${NEO4J_USER:-neo4j}' -p '${NEO4J_PASSWORD}' 'RETURN 1' > /dev/null"]
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1:7474/"]
       interval: 5s
       timeout: 5s
-      retries: 30
-      start_period: 15s
+      retries: 60
+      start_period: 30s
 
   # Barramento de eventos (Redis Streams): route.planned, tool.called, ...
   bus:
