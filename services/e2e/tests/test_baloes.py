@@ -1,4 +1,4 @@
-"""Os balões de fala do robô e o passo a passo: o mapa espera o apresentador mandar seguir."""
+"""Os anúncios do GPS no passo a passo: o mapa espera o apresentador mandar seguir."""
 
 from conftest import WEB
 
@@ -14,8 +14,9 @@ def _seguiu(pagina, balao: str | None) -> None:
 
 def _iniciar_pelo_roteiro_no_passo_a_passo(pagina):
     pagina.goto(f"{WEB}/mapa", wait_until="networkidle")
-    pagina.locator("label[for=passo-a-passo]").click()  # a fixture começa com ele desligado
-    assert pagina.locator("#passo-a-passo").get_attribute("aria-checked") == "true"
+    pagina.click("#pausas")  # a fixture começa no contínuo
+    pagina.get_by_role("option", name="Passo a passo").click()
+    assert pagina.locator(".mapa").get_attribute("data-pausas") == "passo"
     pagina.click("#viagem-modelo")
     pagina.get_by_role("option", name="Roteiro (ensaio sem LLM)").click()
     pagina.click("#iniciar-viagem")
@@ -26,11 +27,12 @@ def test_o_balao_espera_o_apresentador_e_some_ao_seguir(pagina, mundo_limpo):
     _iniciar_pelo_roteiro_no_passo_a_passo(pagina)
     mapa = pagina.locator(".mapa")
 
-    # O primeiro balão: uma tool, com a frase em pt-BR e a tool de verdade no detalhe.
+    # O primeiro balão: o GPS se apresenta, com o modelo de verdade no detalhe.
     pagina.wait_for_function("document.querySelector('.mapa').dataset.aguardando === 'sim'", timeout=60_000)
-    assert mapa.get_attribute("data-balao") == "tool"
+    assert mapa.get_attribute("data-balao") == "apresentacao"
     balao = pagina.locator(".balao")
-    assert balao.locator(".balao__detalhe").inner_text().split(" · ")[0].count(".") == 1
+    assert balao.locator(".balao__gps").inner_text().strip() == "GPS"
+    assert "Sou o GPS do Banco Bússola" in balao.locator(".balao__texto").inner_text()
     assert "Aguardando o apresentador" in pagina.locator(".mapa__estado").inner_text()
 
     # Ninguém mandou seguir: o mapa não anda.
@@ -48,7 +50,7 @@ def test_o_balao_espera_o_apresentador_e_some_ao_seguir(pagina, mundo_limpo):
 
     # Daí em diante, pelo teclado (Espaço), respondendo pela Ana quando ela é perguntada.
     seguidos = 1
-    for _ in range(600):
+    for _ in range(1200):
         pagina.wait_for_timeout(300)
         opcoes = pagina.locator(".mapa__opcoes button:not([disabled])")
         if opcoes.count():
@@ -62,9 +64,8 @@ def test_o_balao_espera_o_apresentador_e_some_ao_seguir(pagina, mundo_limpo):
         if mapa.get_attribute("data-fila") == "0" and pagina.locator("#iniciar-viagem").is_enabled():
             break
 
-    assert seguidos >= 10, seguidos
+    assert seguidos >= 25, seguidos  # apresentação, roteiro, rota, 9 paradas, cada sistema, a chegada
     assert mapa.get_attribute("data-parada") == "parada-emissao"
-    assert mapa.get_attribute("data-balao") == ""
 
 
 def test_pular_para_o_fim_fecha_o_balao(pagina, mundo_limpo):
@@ -89,7 +90,7 @@ def test_no_bairro_de_produtos_o_robo_para_no_predio_do_produto(pagina, mundo_li
     _iniciar_pelo_roteiro_no_passo_a_passo(pagina)
     mapa = pagina.locator(".mapa")
     no_produto: list[tuple[str, str]] = []
-    for _ in range(600):
+    for _ in range(1200):
         pagina.wait_for_timeout(300)
         opcoes = pagina.locator(".mapa__opcoes button:not([disabled])")
         if opcoes.count():

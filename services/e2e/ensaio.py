@@ -53,8 +53,8 @@ def viagem_ao_vivo(pg: Page, cena: str, pasta: Path) -> dict:
     _post("/simulador/reset")
     pg.goto(f"{WEB}/mapa?cena={cena}", wait_until="networkidle")
     pg.wait_for_timeout(1200)
-    if not pg.locator("#passo-a-passo").is_checked():
-        pg.locator("label[for=passo-a-passo]").click()
+    pg.click("#pausas")  # no palco: o GPS para em cada anúncio até o apresentador seguir
+    pg.get_by_role("option", name="Passo a passo").click()
     pg.click("#viagem-modelo")
     pg.get_by_role("option", name="Roteiro (ensaio sem LLM)").click()
     incidente = pg.locator(".mapa__cena button.cds--btn--danger--tertiary")
@@ -140,7 +140,7 @@ def viagem_ao_vivo(pg: Page, cena: str, pasta: Path) -> dict:
 
 def replay(pg: Page, cena: str, gravacao: str, pasta: Path, raio_x: bool = False) -> dict:
     """A gravação da cena, tocada sem rede e sem LLM (o plano B do dia)."""
-    pg.evaluate("localStorage.setItem('bussola:passo-a-passo', 'nao')")
+    pg.evaluate("localStorage.setItem('bussola:pausas', 'continuo')")
     visao = "&visao=raio-x" if raio_x else ""
     inicio = time.time()
     pg.goto(f"{WEB}/mapa?gravacao={gravacao}&cena={cena}{visao}", wait_until="load")
@@ -153,7 +153,7 @@ def replay(pg: Page, cena: str, gravacao: str, pasta: Path, raio_x: bool = False
     pg.screenshot(path=str(pasta / f"cena-{cena}-replay.png"))
     selo = pg.locator(".mapa__selo-replay").count() > 0
     titulos = pg.locator(".raiox__titulo").all_inner_texts() if raio_x else []
-    pg.evaluate("localStorage.setItem('bussola:passo-a-passo', 'sim')")
+    pg.evaluate("localStorage.setItem('bussola:pausas', 'passo')")
     return {
         "cena": cena,
         "tipo": "replay",
@@ -284,7 +284,7 @@ def main() -> None:
     with sync_playwright() as p:
         navegador = p.chromium.launch(args=["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"])
         contexto = navegador.new_context(viewport=TAMANHO)
-        contexto.add_init_script("if (!localStorage.getItem('bussola:passo-a-passo')) localStorage.setItem('bussola:passo-a-passo', 'sim')")
+        contexto.add_init_script("if (!localStorage.getItem('bussola:pausas')) localStorage.setItem('bussola:pausas', 'passo')")
         pg = contexto.new_page()
         print("cena 1", flush=True)
         c1 = cena_1(pg, pasta)
