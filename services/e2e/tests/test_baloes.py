@@ -16,7 +16,7 @@ def _iniciar_pelo_roteiro_no_passo_a_passo(pagina):
     pagina.goto(f"{WEB}/mapa", wait_until="networkidle")
     pagina.click("#pausas")  # a fixture começa no contínuo
     pagina.get_by_role("option", name="Passo a passo").click()
-    assert pagina.locator(".mapa").get_attribute("data-pausas") == "passo"
+    pagina.wait_for_function("document.querySelector('.mapa').dataset.pausas === 'passo'")
     pagina.click("#viagem-modelo")
     pagina.get_by_role("option", name="Roteiro (ensaio sem LLM)").click()
     pagina.click("#iniciar-viagem")

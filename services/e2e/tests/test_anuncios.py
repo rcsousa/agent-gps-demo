@@ -11,7 +11,7 @@ from conftest import WEB, simulador
 def _escolher_pausas(pagina, nome: str, valor: str) -> None:
     pagina.click("#pausas")
     pagina.get_by_role("option", name=nome).click()
-    assert pagina.locator(".mapa").get_attribute("data-pausas") == valor
+    pagina.wait_for_function("([v]) => document.querySelector('.mapa').dataset.pausas === v", arg=[valor])
 
 
 def _iniciar_pelo_roteiro(pagina) -> None:
@@ -81,18 +81,30 @@ def test_o_gps_se_apresenta_traca_a_rota_e_anuncia_cada_parada(pagina, mundo_lim
     assert all(v["aguardando"] == "nao" for v in vistos)
 
 
-def test_o_recalculo_explica_a_troca_e_a_nova_estimativa(pagina, mundo_limpo):
+def test_com_o_desvio_antes_de_sair_o_gps_avisa_e_traca_a_rota_desviando(pagina, mundo_limpo):
+    # A Âncora já está fora antes da viagem: o agente vê o alerta e planeja a rota sem ela.
     simulador("/incidentes/cotacao-ancora-fora/aplicar")
     pagina.goto(f"{WEB}/mapa", wait_until="networkidle")
     _iniciar_pelo_roteiro(pagina)
     vistos = _acompanhar(pagina)
-
+    tipos = [v["tipo"] for v in vistos]
     incidente = next(v for v in vistos if v["tipo"] == "incidente")
     assert incidente["texto"] == "Atenção: rua interditada à frente."
     assert "Âncora" in incidente["subtexto"]
+    rota = next(v for v in vistos if v["tipo"] == "rota")
+    assert tipos.index("incidente") < tipos.index("rota") and rota["subtexto"]  # o motivo do desvio
+
+
+def test_o_recalculo_explica_a_troca_e_a_nova_estimativa(pagina, mundo_limpo):
+    # A cena 7 gravada: o valor passa da alçada no meio da viagem e a rota muda de verdade.
+    pagina.goto(f"{WEB}/mapa?gravacao=cena-7&cena=7", wait_until="load")
+    pagina.wait_for_function("document.querySelector('.mapa').dataset.execucao === 'gravacao:cena-7'", timeout=30_000)
+    vistos = _acompanhar(pagina, responder=False, limite=2400)
     recalculo = next(v for v in vistos if v["tipo"] == "recalculo")
-    assert recalculo["texto"].startswith("Recalculando…")
-    assert "Nova estimativa:" in recalculo["subtexto"]
+    assert recalculo["texto"] == "Recalculando… Saio da Rota rápida e sigo pela Rota assistida."
+    assert recalculo["subtexto"].endswith("Nova estimativa: ~12 min (antes ~5 min).")
+    incidente = next(v for v in vistos if v["tipo"] == "incidente")
+    assert incidente["texto"] == "Atenção: pedágio à frente."
 
 
 def test_so_quando_precisa_para_na_pergunta_ate_a_resposta(pagina, mundo_limpo):
