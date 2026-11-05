@@ -1,12 +1,14 @@
-// O balão de fala do robô, preso acima do pino. No passo a passo, traz o botão "Seguir".
+// O balão de fala do robô, preso acima do pino: o anúncio do GPS. Quando o mapa espera, traz o "Seguir".
 
-import { ArrowRight, ErrorFilled } from '@carbon/icons-react';
+import { ArrowRight, Compass, ErrorFilled } from '@carbon/icons-react';
 import { Button } from '@carbon/react';
 
 import { mensagens } from '../mensagens/pt-BR';
 import type { Balao as DadosDoBalao } from './baloes';
 
 const t = mensagens.mapa.baloes;
+// Os anúncios que são a voz do GPS (os de sistema chamado e de incidente são do caminho).
+const DO_GPS = new Set(['apresentacao', 'roteiro', 'rota', 'parada', 'recalculo', 'pedagio', 'pergunta', 'chegada']);
 const MEIA_LARGURA = 170; // o balão tem no máximo 20rem de largura
 const ALTURA_DO_PINO = 80; // o balão abre acima do pino do robô
 const ALTURA_MINIMA = 150; // espaço para o balão abaixo da borda de cima
@@ -32,10 +34,16 @@ export function Balao(props: {
       role="status"
       aria-live="polite"
     >
+      {DO_GPS.has(balao.tipo) && (
+        <span className="balao__gps">
+          <Compass size={12} aria-hidden /> {t.gps}
+        </span>
+      )}
       <p className="balao__texto">
         {!balao.ok && <ErrorFilled className="balao__icone" aria-hidden />}
         {balao.texto}
       </p>
+      {balao.subtexto && <p className="balao__subtexto">{balao.subtexto}</p>}
       {balao.detalhe && <code className="balao__detalhe">{balao.detalhe}</code>}
       {props.aguardando && (
         <Button size="sm" kind="primary" renderIcon={ArrowRight} onClick={props.aoSeguir} className="balao__seguir">

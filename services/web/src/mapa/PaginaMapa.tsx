@@ -39,7 +39,9 @@ import { ESTILOS } from './construcoes';
 import { montarCena, type Ponto3, pontoDaPorta, suave, Z_CHAO, Z_RUA } from './cidade3d';
 import { Balao } from './Balao';
 import { Medidor } from './Medidor';
-import { useDiretor } from './diretor';
+import { type Pausas, PAUSAS, useDiretor } from './diretor';
+import { falaDoBalao } from './baloes';
+import { falar, useVoz } from './voz';
 import { movimentoReduzido, useTelao } from '../telao';
 import { LinhaDoTempo } from './LinhaDoTempo';
 import { Conversa, DetalheDoNo, Legenda } from './Paineis';
@@ -101,13 +103,33 @@ const CANAIS: Opcao[] = [
 ];
 const ROTEIRO = 'roteiro';
 
+interface OpcaoDePausa {
+  id: Pausas;
+  texto: string;
+  ajuda: string;
+}
+const OPCOES_DE_PAUSA: OpcaoDePausa[] = [
+  { id: 'continuo', texto: t.pausas.continuo, ajuda: t.pausas.continuoAjuda },
+  { id: 'input', texto: t.pausas.input, ajuda: t.pausas.inputAjuda },
+  { id: 'passo', texto: t.pausas.passo, ajuda: t.pausas.passoAjuda },
+];
+
 // Uma função estável que sempre chama a versão mais nova: para os pedaços memorizados da página.
 function useEstavel<A extends unknown[], R>(fn: (...a: A) => R): (...a: A) => R {
   const ref = useRef(fn);
   ref.current = fn;
   return useCallback((...a: A) => ref.current(...a), []);
 }
-const CHAVE_PASSO_A_PASSO = 'bussola:passo-a-passo';
+const CHAVE_PAUSAS = 'bussola:pausas';
+
+function pausasGuardadas(): Pausas {
+  try {
+    const guardada = localStorage.getItem(CHAVE_PAUSAS) as Pausas | null;
+    return guardada && PAUSAS.includes(guardada) ? guardada : 'input';
+  } catch {
+    return 'input';
+  }
+}
 
 interface Visao {
   target: [number, number, number];
@@ -262,11 +284,21 @@ export function PaginaMapa() {
   // No replay ninguém responde.
   const real = useViagem(gravacao ? (replayPronto ? PREFIXO_GRAVACAO + replayPronto : null) : execucao);
   const replay = ehReplay(real.id);
-  // Passo a passo: o mapa para em cada balão até o apresentador mandar seguir. A escolha fica guardada.
-  const [passoAPasso, setPassoAPasso] = useState(() => localStorage.getItem(CHAVE_PASSO_A_PASSO) !== 'nao');
-  useEffect(() => localStorage.setItem(CHAVE_PASSO_A_PASSO, passoAPasso ? 'sim' : 'nao'), [passoAPasso]);
+  // Pausas: quando o mapa para e espera (contínuo, só quando precisa de você, passo a passo). Fica guardado.
+  const [pausas, setPausas] = useState<Pausas>(pausasGuardadas);
+  useEffect(() => {
+    try {
+      localStorage.setItem(CHAVE_PAUSAS, pausas);
+    } catch {
+      // sem armazenamento: vale só nesta aba
+    }
+  }, [pausas]);
+  // A voz do GPS: fala cada anúncio (opcional; desligada por padrão).
+  const voz = useVoz();
+  const anunciar = useMemo(() => (voz.ligada ? (b: Parameters<typeof falaDoBalao>[0]) => falar(falaDoBalao(b)) : undefined), [voz.ligada]);
   const nomeDoLugar = useCallback((id: string) => nos.get(id)?.nome ?? null, [nos]);
-  const direcao = useDiretor(real, tempoDoTrecho, passoAPasso, nomeDoLugar);
+  const nomeDaRota = useCallback((id: string) => rotas.find((r) => r.id === id)?.nome ?? id, [rotas]);
+  const direcao = useDiretor(real, tempoDoTrecho, pausas, nomeDoLugar, nomeDaRota, anunciar);
   const telao = useTelao();
   const exibido = direcao.exibido;
 
@@ -752,17 +784,29 @@ export function PaginaMapa() {
             <Button id="iniciar-viagem" size="md" renderIcon={Play} onClick={iniciarEstavel} disabled={emAndamento}>
               {emAndamento ? t.barra.emViagem : t.barra.iniciar}
             </Button>
+            <Dropdown
+              id="pausas"
+              size="md"
+              className="mapa__pausas"
+              titleText={t.pausas.rotulo}
+              label={t.pausas.rotulo}
+              items={OPCOES_DE_PAUSA}
+              itemToString={(o: OpcaoDePausa | null) => o?.texto ?? ''}
+              selectedItem={OPCOES_DE_PAUSA.find((o) => o.id === pausas)}
+              onChange={({ selectedItem }: { selectedItem: OpcaoDePausa | null }) => selectedItem && setPausas(selectedItem.id)}
+              title={OPCOES_DE_PAUSA.find((o) => o.id === pausas)?.ajuda}
+            />
             <Toggle
-              id="passo-a-passo"
+              id="voz"
               size="sm"
-              className="mapa__passo-a-passo"
-              labelText={t.passoAPasso}
-              labelA={t.passoAPasso}
-              labelB={t.passoAPasso}
-              hideLabel
-              title={t.passoAPassoAjuda}
-              toggled={passoAPasso}
-              onToggle={setPassoAPasso}
+              className="mapa__voz"
+              labelText={t.voz.rotulo}
+              labelA={t.voz.rotulo}
+              labelB={t.voz.rotulo}
+              title={voz.disponivel ? t.voz.ajuda : t.voz.indisponivel}
+              toggled={voz.ligada}
+              disabled={!voz.disponivel}
+              onToggle={voz.setLigada}
             />
             <Button
               id="abrir-apresentador"
@@ -804,7 +848,7 @@ export function PaginaMapa() {
           </div>
     ),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [raioX, modo, canal, opcoesDeModelo, modeloEscolhido, emAndamento, passoAPasso, apresentador, cena, preset.incidente, incidenteAplicado],
+    [raioX, modo, canal, opcoesDeModelo, modeloEscolhido, emAndamento, pausas, voz.ligada, voz.disponivel, apresentador, cena, preset.incidente, incidenteAplicado],
   );
 
   // Os painéis só mudam com os eventos da viagem (não com o relógio da animação): memorizados.
@@ -851,6 +895,9 @@ export function PaginaMapa() {
       data-balao={direcao.balao?.tipo ?? ''}
       data-balao-n={direcao.balao?.indice ?? ''}
       data-aguardando={direcao.aguardando ? 'sim' : 'nao'}
+      data-aguardando-resposta={direcao.aguardandoResposta ? 'sim' : 'nao'}
+      data-pausas={pausas}
+      data-voz={voz.ligada ? 'sim' : 'nao'}
     >
       {barra}
 
@@ -963,9 +1010,14 @@ export function PaginaMapa() {
               </Button>
             )}
             {real.id && !replay && (
-              <Tag type={direcao.aguardando ? 'blue' : direcao.fila > 0 ? 'warm-gray' : 'green'} size="md">
+              <Tag
+                type={direcao.aguardando || direcao.aguardandoResposta ? 'blue' : direcao.fila > 0 ? 'warm-gray' : 'green'}
+                size="md"
+              >
                 {direcao.aguardando
                   ? t.aguardando
+                  : direcao.aguardandoResposta
+                    ? t.aguardandoAna
                   : direcao.fila > 0
                     ? t.reproduzindo(direcao.fila)
                     : real.fim
