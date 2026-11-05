@@ -32,8 +32,8 @@ body {
   padding: $spacing-05;
   box-sizing: border-box;
   // Um traço do mapa: a grade da cidade, bem discreta, atrás do cartão.
-  background-image: linear-gradient(theme.$border-subtle-01 1px, transparent 1px),
-    linear-gradient(90deg, theme.$border-subtle-01 1px, transparent 1px);
+  background-image: linear-gradient(rgb(255 255 255 / 4%) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(255 255 255 / 4%) 1px, transparent 1px);
   background-size: 48px 48px;
 
   &__cartao {

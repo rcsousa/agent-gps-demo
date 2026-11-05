@@ -73,8 +73,10 @@ def test_login_errado_mostra_o_erro_e_nao_entra(pagina_sem_sessao):
     pagina_sem_sessao.get_by_label("Usuário").fill("ninguem")
     pagina_sem_sessao.get_by_label("Senha", exact=True).fill("senha-errada-123")
     pagina_sem_sessao.get_by_role("button", name="Entrar").click()
-    alerta = pagina_sem_sessao.get_by_role("alert")
+    # O aviso do formulário (o Carbon também põe um role=alert vazio em cada campo de texto).
+    alerta = pagina_sem_sessao.locator("#entrar-erro")
     alerta.wait_for()
+    assert alerta.get_attribute("role") == "alert"
     assert "Não foi possível entrar" in alerta.inner_text()
     assert "/entrar/" in pagina_sem_sessao.url
 
