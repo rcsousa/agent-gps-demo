@@ -21,8 +21,10 @@ from bussola_comum.skills import (
     listar_skills,
     tools_permitidas,
 )
+from smoke import sessao
 
 SERVICOS_PYTHON = [
+    "auth",
     "agent",
     "mcp-gateway",
     "skills-mcp",
@@ -91,7 +93,7 @@ def test_gateway_recusa_chamada_sem_token():
 
 
 def test_status_pelo_caminho_web_agent_gateway():
-    corpo = httpx.get("http://web/api/status", timeout=10).json()
+    corpo = httpx.get("http://web/api/status", headers=sessao.cabecalho(), timeout=10).json()
     assert corpo["gateway"] == "ok"
     assert corpo["barramento"] == "ok"
     assert sorted(s["nome"] for s in corpo["servicos"]) == sorted(SERVIDORES_MCP)
@@ -101,13 +103,33 @@ def test_status_pelo_caminho_web_agent_gateway():
 
 
 def test_web_serve_a_aplicacao():
-    resposta = httpx.get("http://web/", timeout=5)
+    resposta = httpx.get("http://web/", headers=sessao.cabecalho(), timeout=5)
     assert resposta.status_code == 200
     assert '<div id="raiz">' in resposta.text
 
 
+def test_web_sem_sessao_nao_abre_nada():
+    # Sem o cookie: páginas recebem 401 com o caminho para o login; dados, 401 em JSON.
+    pagina = httpx.get("http://web/mapa", timeout=5)
+    assert pagina.status_code == 401 and "/entrar/" in pagina.text and '<div id="raiz">' not in pagina.text
+    dados = httpx.get("http://web/api/status", timeout=5)
+    assert dados.status_code == 401 and dados.json() == {"erro": "sem_sessao"}
+    assert httpx.post("http://web/simulador/reset", timeout=5).status_code == 401
+    assert httpx.get("http://web/entrar/", timeout=5).status_code == 200  # a única página pública
+
+
+def test_login_pelo_web_recusa_credencial_errada():
+    resposta = httpx.post(
+        "http://web/auth/entrar", json={"usuario": "ninguem", "senha": "x" * 12}, timeout=10
+    )
+    assert resposta.status_code in (401, 503)  # 503 quando nenhum usuário foi configurado
+    assert "set-cookie" not in resposta.headers
+
+
 def test_bastidores_servidos_pelo_web():
-    resposta = httpx.get("http://web/bastidores/", timeout=5, follow_redirects=True)
+    resposta = httpx.get(
+        "http://web/bastidores/", headers=sessao.cabecalho(), timeout=5, follow_redirects=True
+    )
     assert resposta.status_code == 200
     assert "Bastidores" in resposta.text
 
@@ -248,19 +270,23 @@ def test_chamadas_viram_eventos_no_barramento():
 def test_desligar_tool_pelo_painel_do_web(mundo_limpo):
     """O painel desliga pelo caminho do web (/simulador), e o agente sente a falha no gateway."""
     nome = "seguradoras.cotar_seguro"
-    httpx.post(f"http://web/simulador/tools/{nome}/desligar", timeout=10).raise_for_status()
+    httpx.post(
+        f"http://web/simulador/tools/{nome}/desligar", headers=sessao.cabecalho(), timeout=10
+    ).raise_for_status()
 
     resultado = gateway(nome, {"cliente_id": "cliente-ana", "seguradora": "farol"})
     assert resultado.is_error and "fora do ar" in resultado.content[0].text
     assert resultado.meta["bussola/proveniencia"]["motivo"] == "desligada"
 
-    status = httpx.get("http://web/api/status", timeout=10).json()
+    status = httpx.get("http://web/api/status", headers=sessao.cabecalho(), timeout=10).json()
     assert status["ferramentas_fora"] == 1
     [seguradoras] = [s for s in status["servicos"] if s["nome"] == "seguradoras-mcp"]
     assert {f["nome"] for f in seguradoras["ferramentas"] if f["fora"]} == {"cotar_seguro"}
     assert {f["nome"] for f in seguradoras["ferramentas"] if not f["visivel"]} == {"ping"}
 
-    httpx.post("http://web/simulador/tools/religar-todas", timeout=10).raise_for_status()
+    httpx.post(
+        "http://web/simulador/tools/religar-todas", headers=sessao.cabecalho(), timeout=10
+    ).raise_for_status()
     assert not gateway(nome, {"cliente_id": "cliente-ana", "seguradora": "farol"}).is_error
 
 
@@ -319,7 +345,7 @@ def test_contramao_com_skill_ativa():
 
 
 def test_status_conta_as_skills():
-    assert httpx.get("http://web/api/status", timeout=10).json()["skills"] == 4
+    assert httpx.get("http://web/api/status", headers=sessao.cabecalho(), timeout=10).json()["skills"] == 4
 
 
 # --- Fase 5: agente e eventos (provedor roteiro: ensaio sem LLM) ----------------
@@ -330,9 +356,13 @@ API_AGENTE = "http://web/api"
 def _executar(modo: str, ao_perguntar=None, canal: str | None = None) -> tuple[str, list[dict]]:
     """Inicia uma execução e lê o SSE até o run.finished, respondendo pela Ana."""
     corpo = {"modo": modo, "provedor": "roteiro", **({"canal": canal} if canal else {})}
-    ident = httpx.post(f"{API_AGENTE}/execucoes", json=corpo, timeout=10).json()["id"]
+    ident = httpx.post(f"{API_AGENTE}/execucoes", json=corpo, headers=sessao.cabecalho(), timeout=10).json()[
+        "id"
+    ]
     eventos: list[dict] = []
-    with httpx.stream("GET", f"{API_AGENTE}/execucoes/{ident}/eventos", timeout=120) as resposta:
+    with httpx.stream(
+        "GET", f"{API_AGENTE}/execucoes/{ident}/eventos", headers=sessao.cabecalho(), timeout=120
+    ) as resposta:
         for linha in resposta.iter_lines():
             if not linha.startswith("data:"):
                 continue
@@ -342,7 +372,12 @@ def _executar(modo: str, ao_perguntar=None, canal: str | None = None) -> tuple[s
                 if ao_perguntar:
                     ao_perguntar(len([e for e in eventos if e["tipo"] == "client.asked"]))
                 texto = evento["dados"]["opcoes"][0]
-                httpx.post(f"{API_AGENTE}/execucoes/{ident}/resposta", json={"texto": texto}, timeout=10)
+                httpx.post(
+                    f"{API_AGENTE}/execucoes/{ident}/resposta",
+                    json={"texto": texto},
+                    headers=sessao.cabecalho(),
+                    timeout=10,
+                )
             if evento["tipo"] == "run.finished":
                 break
     return ident, eventos
@@ -398,13 +433,16 @@ def test_sem_contexto_nao_chama_tools(mundo_limpo):
 
 def test_provedor_real_sem_chave_falha_com_mensagem_clara():
     # O smoke nunca gasta tokens: com um LLM configurado, este cenário não se aplica.
-    if httpx.get(f"{API_AGENTE}/status", timeout=10).json()["llm"]["configurado"]:
+    if httpx.get(f"{API_AGENTE}/status", headers=sessao.cabecalho(), timeout=10).json()["llm"]["configurado"]:
         pytest.skip("LLM configurado no .env: o smoke não chama o modelo de verdade.")
     ident = httpx.post(
-        f"{API_AGENTE}/execucoes", json={"modo": "com_skill", "provedor": "anthropic"}, timeout=10
+        f"{API_AGENTE}/execucoes",
+        json={"modo": "com_skill", "provedor": "anthropic"},
+        headers=sessao.cabecalho(),
+        timeout=10,
     ).json()["id"]
     for _ in range(50):
-        estado = httpx.get(f"{API_AGENTE}/execucoes/{ident}", timeout=10).json()
+        estado = httpx.get(f"{API_AGENTE}/execucoes/{ident}", headers=sessao.cabecalho(), timeout=10).json()
         if estado["status"] == "erro":
             break
         time.sleep(0.2)
@@ -444,7 +482,12 @@ def test_sem_contexto_nao_le_a_persona_do_banco(mundo_limpo):
 
 
 def test_canal_desconhecido_e_recusado():
-    resposta = httpx.post(f"{API_AGENTE}/execucoes", json={"modo": "com_skill", "canal": "loja"}, timeout=10)
+    resposta = httpx.post(
+        f"{API_AGENTE}/execucoes",
+        json={"modo": "com_skill", "canal": "loja"},
+        headers=sessao.cabecalho(),
+        timeout=10,
+    )
     assert resposta.status_code == 400 and "agencia, app, central" in resposta.json()["detail"]
 
 
@@ -452,7 +495,7 @@ def test_canal_desconhecido_e_recusado():
 
 
 def test_catalogo_traz_tools_skills_e_prompts_cruzados():
-    catalogo = httpx.get(f"{API_AGENTE}/catalogo", timeout=15).json()
+    catalogo = httpx.get(f"{API_AGENTE}/catalogo", headers=sessao.cabecalho(), timeout=15).json()
     assert (len(catalogo["tools"]), len(catalogo["skills"]), len(catalogo["prompts"])) == (41, 4, 3)
     tools = {t["nome"]: t for t in catalogo["tools"]}
     assert {s["nome"] for s in tools["seguradoras.cotar_seguro"]["skills"]} == {
@@ -465,14 +508,22 @@ def test_catalogo_traz_tools_skills_e_prompts_cruzados():
 
 def test_codigo_e_previa_pelo_proprio_servidor():
     fonte = httpx.get(
-        f"{API_AGENTE}/catalogo/fonte", params={"uri": "fonte://cliente-mcp/tool/obter_perfil"}, timeout=10
+        f"{API_AGENTE}/catalogo/fonte",
+        params={"uri": "fonte://cliente-mcp/tool/obter_perfil"},
+        headers=sessao.cabecalho(),
+        timeout=10,
     ).json()
     assert "async def obter_perfil" in fonte["texto"] and fonte["arquivo"].startswith("services/cliente-mcp/")
-    previa = httpx.get(f"{API_AGENTE}/catalogo/prompt/canais.atendimento_agencia/previa", timeout=10).json()
+    previa = httpx.get(
+        f"{API_AGENTE}/catalogo/prompt/canais.atendimento_agencia/previa",
+        headers=sessao.cabecalho(),
+        timeout=10,
+    ).json()
     assert "Ana Ribeiro" in previa["texto"]
     arquivo = httpx.get(
         f"{API_AGENTE}/catalogo/skill",
         params={"uri": "skill://contratacao-seguro-residencial/references/cotacao.md"},
+        headers=sessao.cabecalho(),
         timeout=10,
     ).json()
     assert arquivo["verificado"] and arquivo["texto"].startswith("# Parada 6")
@@ -488,7 +539,10 @@ async def _resources():
 def test_chamadas_recentes_aparecem_depois_de_uma_execucao(mundo_limpo):
     ident, _ = _executar("com_skill")
     chamadas = httpx.get(
-        f"{API_AGENTE}/catalogo/chamadas", params={"tool": "cliente.obter_perfil"}, timeout=10
+        f"{API_AGENTE}/catalogo/chamadas",
+        params={"tool": "cliente.obter_perfil"},
+        headers=sessao.cabecalho(),
+        timeout=10,
     ).json()
     assert chamadas[0]["execucao_id"] == ident and chamadas[0]["status"] == "ok"
 
