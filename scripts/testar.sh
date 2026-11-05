@@ -9,7 +9,7 @@ cd "$(dirname "$0")/.."
 echo "== uv.lock em dia"
 ./scripts/travar-dependencias.sh --check
 
-SERVICOS="agent mcp-gateway skills-mcp contexto-mcp cliente-mcp consentimento-mcp risco-mcp seguradoras-mcp pagamentos-mcp atendimento-mcp canais-mcp simulator"
+SERVICOS="auth agent mcp-gateway skills-mcp contexto-mcp cliente-mcp consentimento-mcp risco-mcp seguradoras-mcp pagamentos-mcp atendimento-mcp canais-mcp simulator"
 
 docker compose build $SERVICOS
 
