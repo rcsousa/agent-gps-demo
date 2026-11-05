@@ -18,3 +18,6 @@ FROM nginx:1.27-alpine
 COPY services/web/nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY --from=tiles /saida/ /usr/share/nginx/html/abertura/
+# Público, sem sessão: só a tela de login (build à parte) e a página que leva até ela.
+COPY --from=build /app/dist-entrar /usr/share/nginx/publico/entrar
+COPY services/web/publico/_entrar.html /usr/share/nginx/publico/_entrar.html

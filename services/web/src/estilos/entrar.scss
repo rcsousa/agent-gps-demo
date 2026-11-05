@@ -1,0 +1,91 @@
+// Tela de login: o mesmo Carbon g100 da demo, num build público à parte.
+@use '@carbon/react/scss/config' with (
+  $css--font-face: false
+);
+@use '@carbon/react/scss/themes';
+@use '@carbon/react/scss/theme' with (
+  $theme: themes.$g100
+);
+@use '@carbon/react';
+@use '@carbon/react/scss/spacing' as *;
+@use '@carbon/react/scss/type' as *;
+
+$laranja-bussola: #f26522;
+
+:root {
+  @include theme.theme();
+}
+
+body {
+  margin: 0;
+  background: theme.$background;
+  color: theme.$text-primary;
+}
+
+.entrar {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: $spacing-06;
+  padding: $spacing-05;
+  box-sizing: border-box;
+  // Um traço do mapa: a grade da cidade, bem discreta, atrás do cartão.
+  background-image: linear-gradient(theme.$border-subtle-01 1px, transparent 1px),
+    linear-gradient(90deg, theme.$border-subtle-01 1px, transparent 1px);
+  background-size: 48px 48px;
+
+  &__cartao {
+    width: 100%;
+    max-width: 26rem;
+    padding: $spacing-08 $spacing-07;
+    background: theme.$layer-01;
+    border-top: 3px solid $laranja-bussola;
+    box-sizing: border-box;
+  }
+
+  &__marca {
+    display: flex;
+    align-items: center;
+    gap: $spacing-03;
+    @include type-style('heading-compact-01');
+  }
+
+  &__simbolo {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+
+  &__nome {
+    color: $laranja-bussola;
+  }
+
+  &__titulo {
+    margin: $spacing-07 0 $spacing-03;
+    @include type-style('heading-04');
+  }
+
+  &__subtitulo {
+    margin: 0 0 $spacing-07;
+    color: theme.$text-secondary;
+    @include type-style('body-01');
+  }
+
+  &__botao {
+    width: 100%;
+    max-width: none;
+  }
+
+  &__assinatura {
+    margin: $spacing-07 0 0;
+    color: theme.$text-helper;
+    @include type-style('helper-text-01');
+  }
+
+  &__rodape {
+    margin: 0;
+    color: theme.$text-helper;
+    @include type-style('helper-text-01');
+  }
+}
