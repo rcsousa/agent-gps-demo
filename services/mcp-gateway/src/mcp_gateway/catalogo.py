@@ -81,6 +81,7 @@ class Catalogo:
     def prompts_de(self, upstream: Upstream) -> list[str]:
         return sorted(n for n, p in self.prompts.items() if p.upstream.nome == upstream.nome)
 
+    # --8<-- [start:agregacao]
     async def atualizar(self) -> None:
         """Relê tools e resources. Upstream fora mantém o que já se sabia dele:
         a rua continua no mapa, interditada, em vez de sumir."""
@@ -135,6 +136,7 @@ class Catalogo:
                     self.workflows[entrada["uri"]] = workflows[entrada["uri"]]
                 else:
                     self.workflows.pop(entrada["uri"], None)
+    # --8<-- [end:agregacao]
 
 
 async def _workflow(cliente: Client, entrada: dict) -> wf.Workflow | None:

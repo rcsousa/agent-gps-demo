@@ -1,0 +1,1038 @@
+{
+  "prompts": [
+    {
+      "argumentos": [
+        "cliente_id"
+      ],
+      "descricao": "Persona do assistente que apoia o gerente da agência enquanto ele atende a cliente pessoalmente. Canal: canal-agencia. Interlocutor: o gerente da agência, ao lado da cliente.",
+      "nome": "canais.atendimento_agencia"
+    },
+    {
+      "argumentos": [
+        "cliente_id"
+      ],
+      "descricao": "Persona do assistente virtual no App Banco Bússola, falando direto com a cliente. Canal: canal-app. Interlocutor: a própria cliente.",
+      "nome": "canais.atendimento_app"
+    },
+    {
+      "argumentos": [
+        "cliente_id"
+      ],
+      "descricao": "Persona do assistente que apoia o atendente da central, em ligação com a cliente. Canal: canal-central. Interlocutor: o atendente da central, ao telefone com a cliente.",
+      "nome": "canais.atendimento_central"
+    }
+  ],
+  "skills": [
+    {
+      "arquivos": [
+        "skill://contratacao-seguro-residencial/SKILL.md",
+        "skill://contratacao-seguro-residencial/references/cotacao.md",
+        "skill://contratacao-seguro-residencial/references/desvios.md",
+        "skill://contratacao-seguro-residencial/references/elegibilidade.md",
+        "skill://contratacao-seguro-residencial/references/emissao.md",
+        "skill://contratacao-seguro-residencial/workflow.yaml"
+      ],
+      "descricao": "Leva uma cliente do Banco Bússola do pedido de seguro residencial até a apólice emitida, em 9 paradas, respeitando consentimento, elegibilidade, adequação, alçada e proveniência. Use quando a cliente pedir seguro para casa ou apartamento.",
+      "nome": "contratacao-seguro-residencial",
+      "tools_permitidas": [
+        "cliente.consultar_laudo_avaliacao",
+        "cliente.listar_produtos",
+        "cliente.obter_imovel",
+        "cliente.obter_perfil",
+        "contexto.buscar_entidades",
+        "contexto.consultar_entidade",
+        "contexto.consultar_estado",
+        "contexto.consultar_proveniencia",
+        "contexto.consultar_regras",
+        "contexto.consultar_rota",
+        "pagamentos.processar_pagamento",
+        "risco.agendar_vistoria",
+        "risco.avaliar_adequacao",
+        "risco.consultar_elegibilidade",
+        "seguradoras.cotar_seguro",
+        "seguradoras.emitir_apolice",
+        "seguradoras.gerar_proposta",
+        "seguradoras.registrar_aceite"
+      ],
+      "uri": "skill://contratacao-seguro-residencial/SKILL.md"
+    },
+    {
+      "arquivos": [
+        "skill://cotacao-multisseguradora/SKILL.md"
+      ],
+      "descricao": "Rota econômica do seguro residencial. Cota com as três seguradoras parceiras (Âncora, Farol e Horizonte), avalia a adequação de cada produto cotado, compara preço e coberturas e recomenda a melhor opção para a necessidade da cliente, seguindo em frente se uma delas estiver fora do ar.",
+      "nome": "cotacao-multisseguradora",
+      "tools_permitidas": [
+        "contexto.consultar_estado",
+        "contexto.consultar_rota",
+        "risco.avaliar_adequacao",
+        "seguradoras.cotar_seguro"
+      ],
+      "uri": "skill://cotacao-multisseguradora/SKILL.md"
+    },
+    {
+      "arquivos": [
+        "skill://escalonamento-humano/SKILL.md"
+      ],
+      "descricao": "O pedágio. Quando o prêmio ou a importância segurada passam da alçada automática, envia a proposta a um especialista humano, acompanha a decisão e explica à cliente. Nenhuma emissão acima da alçada acontece sem esta aprovação.",
+      "nome": "escalonamento-humano",
+      "tools_permitidas": [
+        "atendimento.consultar_aprovacao",
+        "atendimento.solicitar_aprovacao",
+        "contexto.consultar_regras",
+        "risco.verificar_alcada"
+      ],
+      "uri": "skill://escalonamento-humano/SKILL.md"
+    },
+    {
+      "arquivos": [
+        "skill://verificacao-consentimento/SKILL.md"
+      ],
+      "descricao": "Verifica se há base legal (LGPD) para usar os dados de uma cliente numa finalidade e, se o consentimento estiver vencido, pede a renovação pelo app. Trecho reutilizável, chamado por outras skills antes de qualquer uso de dados pessoais.",
+      "nome": "verificacao-consentimento",
+      "tools_permitidas": [
+        "consentimento.solicitar_renovacao",
+        "consentimento.verificar",
+        "contexto.consultar_proveniencia",
+        "contexto.consultar_regras"
+      ],
+      "uri": "skill://verificacao-consentimento/SKILL.md"
+    }
+  ],
+  "tools": [
+    {
+      "descricao": "[atendimento] Abre um chamado de atendimento para a cliente.",
+      "nome": "atendimento.abrir_chamado",
+      "parametros": {
+        "properties": {
+          "assunto": {
+            "title": "Assunto",
+            "type": "string"
+          },
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "assunto"
+        ],
+        "title": "abrir_chamadoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[atendimento] Situação de um ticket de aprovação: pendente, aprovada ou recusada, e por quem.",
+      "nome": "atendimento.consultar_aprovacao",
+      "parametros": {
+        "properties": {
+          "ticket_id": {
+            "title": "Ticket Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ticket_id"
+        ],
+        "title": "consultar_aprovacaoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[atendimento] Envia a proposta para aprovação de um especialista humano quando ela passa da alçada automática. Devolve um ticket; acompanhe com consultar_aprovacao.",
+      "nome": "atendimento.solicitar_aprovacao",
+      "parametros": {
+        "properties": {
+          "motivo": {
+            "title": "Motivo",
+            "type": "string"
+          },
+          "proposta_id": {
+            "title": "Proposta Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposta_id",
+          "motivo"
+        ],
+        "title": "solicitar_aprovacaoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[atendimento] Transfere a conversa da cliente para um atendente humano da central.",
+      "nome": "atendimento.transferir_para_humano",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "motivo": {
+            "title": "Motivo",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "motivo"
+        ],
+        "title": "transferir_para_humanoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[cliente] Atualiza o endereço de correspondência da cliente. Altera o cadastro.",
+      "nome": "cliente.atualizar_endereco",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "endereco": {
+            "title": "Endereco",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "endereco"
+        ],
+        "title": "atualizar_enderecoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[cliente] Laudo de avaliação do imóvel feito pela engenharia do banco: a fonte autoritativa do valor.",
+      "nome": "cliente.consultar_laudo_avaliacao",
+      "parametros": {
+        "properties": {
+          "imovel_id": {
+            "title": "Imovel Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "imovel_id"
+        ],
+        "title": "consultar_laudo_avaliacaoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[cliente] Limite de crédito disponível no cartão da cliente.",
+      "nome": "cliente.consultar_limite_credito",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "consultar_limite_creditoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[cliente] Produtos que a cliente já contratou no banco, incluindo seguros e coberturas.",
+      "nome": "cliente.listar_produtos",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "listar_produtosArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[cliente] Últimas transações da conta corrente da cliente.",
+      "nome": "cliente.listar_transacoes",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "listar_transacoesArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[cliente] Dossiê completo da cliente numa chamada: perfil, imóvel, renda, transações, limite de crédito e produtos. Útil para atender rápido.",
+      "nome": "cliente.obter_dossie_completo",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "obter_dossie_completoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[cliente] Imóvel da cliente como está no cadastro: tipo, uso, endereço, área de risco, valor estimado e importância segurada. Confira a proveniência antes de usar o valor numa decisão.",
+      "nome": "cliente.obter_imovel",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "obter_imovelArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[cliente] Perfil da cliente: dados cadastrais, segmento, renda e relacionamento.",
+      "nome": "cliente.obter_perfil",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "obter_perfilArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[consentimento] Histórico de consentimentos da cliente.",
+      "nome": "consentimento.listar_historico",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "listar_historicoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[consentimento] Revoga um consentimento da cliente. Irreversível sem novo aceite.",
+      "nome": "consentimento.revogar",
+      "parametros": {
+        "properties": {
+          "consentimento_id": {
+            "title": "Consentimento Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "consentimento_id"
+        ],
+        "title": "revogarArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[consentimento] Pede à cliente, pelo app, a renovação de um consentimento vencido. A cliente confirma em alguns segundos; depois, verifique de novo.",
+      "nome": "consentimento.solicitar_renovacao",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "finalidade": {
+            "title": "Finalidade",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "finalidade"
+        ],
+        "title": "solicitar_renovacaoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[consentimento] Verifica se há base legal para usar os dados da cliente numa finalidade (ex.: finalidade-oferta-personalizada). Diz se o consentimento está vigente.",
+      "nome": "consentimento.verificar",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "finalidade": {
+            "title": "Finalidade",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "finalidade"
+        ],
+        "title": "verificarArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[contexto] Busca entidades do mapa por texto, tipo ou bairro. Devolve um resumo de cada uma.",
+      "nome": "contexto.buscar_entidades",
+      "parametros": {
+        "properties": {
+          "bairro": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Bairro: cliente, governanca, produtos, parceiros ou pagamentos.",
+            "title": "Bairro"
+          },
+          "limite": {
+            "default": 20,
+            "maximum": 50,
+            "minimum": 1,
+            "title": "Limite",
+            "type": "integer"
+          },
+          "texto": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Trecho do nome, da descrição ou do id.",
+            "title": "Texto"
+          },
+          "tipo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Tipo da ontologia, por exemplo Seguradora.",
+            "title": "Tipo"
+          }
+        },
+        "title": "buscar_entidadesArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[contexto] Detalha uma entidade: atributos, estado vivo, proveniência e relações com vizinhos.",
+      "nome": "contexto.consultar_entidade",
+      "parametros": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "consultar_entidadeArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[contexto] Estado vivo (o trânsito): status, latência e custo. Filtre por ids ou por tipo.",
+      "nome": "contexto.consultar_estado",
+      "parametros": {
+        "properties": {
+          "ids": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Ids"
+          },
+          "tipo": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tipo"
+          }
+        },
+        "title": "consultar_estadoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[contexto] Origem de uma informação: fonte, data, responsável e confiança de uma entidade. Com `relacionado_a`, inclui a proveniência das relações entre as duas entidades.",
+      "nome": "contexto.consultar_proveniencia",
+      "parametros": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "relacionado_a": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Relacionado A"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "consultar_provenienciaArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[contexto] Lista as regras, políticas, limites de alçada, normas e bases legais que se aplicam a uma entidade (produto, parada, área de risco...), com o caminho no grafo e a proveniência de cada uma.",
+      "nome": "contexto.consultar_regras",
+      "parametros": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id"
+        ],
+        "title": "consultar_regrasArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[contexto] Rotas de uma jornada, com paradas em ordem, o que cada parada usa e a estimativa de tempo, custo e risco calculada com o estado vivo atual. Alertas mostram trechos degradados ou interditados.",
+      "nome": "contexto.consultar_rota",
+      "parametros": {
+        "properties": {
+          "jornada": {
+            "default": "contratacao-seguro-residencial",
+            "title": "Jornada",
+            "type": "string"
+          },
+          "rota": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Rota"
+          }
+        },
+        "title": "consultar_rotaArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[pagamentos] Extrato da conta corrente da cliente.",
+      "nome": "pagamentos.consultar_extrato",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "consultar_extratoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[pagamentos] Estorna um pagamento aprovado. Devolve o valor à cliente.",
+      "nome": "pagamentos.estornar",
+      "parametros": {
+        "properties": {
+          "pagamento_id": {
+            "title": "Pagamento Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "pagamento_id"
+        ],
+        "title": "estornarArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[pagamentos] Gera um boleto de cobrança para a cliente.",
+      "nome": "pagamentos.gerar_boleto",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "number"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "valor"
+        ],
+        "title": "gerar_boletoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[pagamentos] Processa o pagamento do prêmio na conta da cliente (débito em conta, cartão ou Pix). Informe a proposta como referência.",
+      "nome": "pagamentos.processar_pagamento",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "meio": {
+            "default": "debito_em_conta",
+            "enum": [
+              "debito_em_conta",
+              "cartao_credito",
+              "pix"
+            ],
+            "title": "Meio",
+            "type": "string"
+          },
+          "referencia": {
+            "title": "Referencia",
+            "type": "string"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "number"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "valor",
+          "referencia"
+        ],
+        "title": "processar_pagamentoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[risco] Agenda a vistoria prévia do imóvel com uma empresa credenciada. Prazo típico de 3 dias.",
+      "nome": "risco.agendar_vistoria",
+      "parametros": {
+        "properties": {
+          "imovel_id": {
+            "title": "Imovel Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "imovel_id"
+        ],
+        "title": "agendar_vistoriaArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[risco] Avalia se a oferta é adequada ao perfil e à necessidade que a cliente declarou: cobertura compatível com o imóvel, prêmio compatível com a renda e sem duplicidade.",
+      "nome": "risco.avaliar_adequacao",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "necessidade": {
+            "title": "Necessidade",
+            "type": "string"
+          },
+          "premio_anual": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Premio Anual"
+          },
+          "produto_id": {
+            "title": "Produto Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "produto_id",
+          "necessidade"
+        ],
+        "title": "avaliar_adequacaoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[risco] Calcula o score de crédito da cliente (0 a 1000).",
+      "nome": "risco.calcular_score_credito",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "calcular_score_creditoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[risco] Avalia se a cliente e o imóvel são elegíveis a um produto residencial: uso do imóvel, região atendida, valor máximo, restrição cadastral, construção e vistoria em área de risco.",
+      "nome": "risco.consultar_elegibilidade",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "produto_id": {
+            "title": "Produto Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "produto_id"
+        ],
+        "title": "consultar_elegibilidadeArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[risco] Simula um empréstimo pessoal para a cliente.",
+      "nome": "risco.simular_emprestimo",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "parcelas": {
+            "default": 24,
+            "title": "Parcelas",
+            "type": "integer"
+          },
+          "valor": {
+            "title": "Valor",
+            "type": "number"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "valor"
+        ],
+        "title": "simular_emprestimoArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[risco] Diz qual alçada pode aprovar a contratação, a partir do prêmio anual e da importância segurada. Acima da alçada automática, é obrigatório um especialista humano antes de emitir.",
+      "nome": "risco.verificar_alcada",
+      "parametros": {
+        "properties": {
+          "importancia_segurada": {
+            "title": "Importancia Segurada",
+            "type": "number"
+          },
+          "premio_anual": {
+            "title": "Premio Anual",
+            "type": "number"
+          }
+        },
+        "required": [
+          "premio_anual",
+          "importancia_segurada"
+        ],
+        "title": "verificar_alcadaArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[seguradoras] Abre um aviso de sinistro numa apólice.",
+      "nome": "seguradoras.abrir_sinistro",
+      "parametros": {
+        "properties": {
+          "descricao": {
+            "title": "Descricao",
+            "type": "string"
+          },
+          "numero_apolice": {
+            "title": "Numero Apolice",
+            "type": "string"
+          }
+        },
+        "required": [
+          "numero_apolice",
+          "descricao"
+        ],
+        "title": "abrir_sinistroArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[seguradoras] Cancela uma apólice emitida. Irreversível.",
+      "nome": "seguradoras.cancelar_apolice",
+      "parametros": {
+        "properties": {
+          "numero": {
+            "title": "Numero",
+            "type": "string"
+          }
+        },
+        "required": [
+          "numero"
+        ],
+        "title": "cancelar_apoliceArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[seguradoras] Contratação expressa (legado): cota, registra o aceite, debita e emite a apólice numa única chamada, com os dados do cadastro. O caminho mais rápido para contratar.",
+      "nome": "seguradoras.contratacao_expressa",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "seguradora": {
+            "title": "Seguradora",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "seguradora"
+        ],
+        "title": "contratacao_expressaArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[seguradoras] Cota o seguro residencial da cliente numa seguradora parceira (ancora, farol ou horizonte). Por padrão usa a importância segurada do cadastro. Com `usar_laudo: true`, usa o laudo de avaliação do imóvel e herda a proveniência dele (confiança alta). `importancia_segurada` informa outro valor, que fica registrado com confiança média.",
+      "nome": "seguradoras.cotar_seguro",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "importancia_segurada": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Importancia Segurada"
+          },
+          "seguradora": {
+            "title": "Seguradora",
+            "type": "string"
+          },
+          "usar_laudo": {
+            "default": false,
+            "title": "Usar Laudo",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "seguradora"
+        ],
+        "title": "cotar_seguroArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[seguradoras] Cotação pela API v1 (legado), mais rápida: usa o valor estimado do cadastro.",
+      "nome": "seguradoras.cotar_seguro_v1",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          },
+          "seguradora": {
+            "title": "Seguradora",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id",
+          "seguradora"
+        ],
+        "title": "cotar_seguro_v1Arguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[seguradoras] Emite a apólice com a seguradora. Exige proposta aceita e pagamento aprovado; acima da alçada automática, exige também `aprovacao_id` de um especialista. Imóvel em área de risco alto exige vistoria concluída.",
+      "nome": "seguradoras.emitir_apolice",
+      "parametros": {
+        "properties": {
+          "aprovacao_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Aprovacao Id"
+          },
+          "pagamento_id": {
+            "title": "Pagamento Id",
+            "type": "string"
+          },
+          "proposta_id": {
+            "title": "Proposta Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposta_id",
+          "pagamento_id"
+        ],
+        "title": "emitir_apoliceArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[seguradoras] Gera a proposta a partir de uma cotação, com resumo das coberturas para a cliente.",
+      "nome": "seguradoras.gerar_proposta",
+      "parametros": {
+        "properties": {
+          "cotacao_id": {
+            "title": "Cotacao Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cotacao_id"
+        ],
+        "title": "gerar_propostaArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[seguradoras] Lista as apólices emitidas para a cliente.",
+      "nome": "seguradoras.listar_apolices",
+      "parametros": {
+        "properties": {
+          "cliente_id": {
+            "title": "Cliente Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cliente_id"
+        ],
+        "title": "listar_apolicesArguments",
+        "type": "object"
+      }
+    },
+    {
+      "descricao": "[seguradoras] Registra o aceite da cliente na proposta, com data, canal e versão.",
+      "nome": "seguradoras.registrar_aceite",
+      "parametros": {
+        "properties": {
+          "canal": {
+            "default": "app-bussola",
+            "title": "Canal",
+            "type": "string"
+          },
+          "proposta_id": {
+            "title": "Proposta Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "proposta_id"
+        ],
+        "title": "registrar_aceiteArguments",
+        "type": "object"
+      }
+    }
+  ]
+}

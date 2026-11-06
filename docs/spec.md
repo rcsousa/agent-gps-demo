@@ -455,6 +455,20 @@ Além do software, a demo entrega uma documentação rica que explica o conceito
 7. **Como reproduzir:** subir a demo, rodar cada cena, criar um novo incidente, escrever uma nova skill.
 8. **Glossário e perguntas frequentes:** termos para o público executivo e respostas às objeções técnicas mais comuns.
 
+**Referência técnica** (seção à parte, para arquitetos e engenheiros, sem metáfora):
+
+- **As páginas:**
+  - **Arquitetura técnica:** os níveis C4 (contexto, containers e componentes), o que é público e a sequência de uma viagem real.
+  - **O grafo de contexto:** o T-Box em diagrama de classes por bairro, com as propriedades observadas e a multiplicidade observada nas relações; o A-Box da Ana; as camadas de profundidade; o modelo físico no Neo4j; e o Cypher de cada tool.
+  - **O padrão do gateway MCP:** como tools, skills e prompts chegam ao agente só pelo gateway, a governança em cada chamada e por que o padrão importa.
+  - **Skills, prompts e tools:** o ciclo da SEP-2640, as três camadas do prompt e o catálogo completo.
+- **Tudo gerado no build:**
+  - a ontologia é lida pelo mesmo carregador que o `seed` usa;
+  - as sequências vêm das gravações reais;
+  - os números e as tabelas vêm de fragmentos gerados;
+  - o catálogo do gateway é versionado (`services/smoke/referencia/catalogo.json`, regenerado por `./scripts/gerar-referencia.sh`) e conferido pelo smoke contra o gateway vivo.
+- **Todo diagrama tem zoom:** botões, arrasto, a roda do mouse com o diagrama ativo, o teclado, a tela cheia e o link para o SVG. O `svg-pan-zoom` é servido pelo próprio site, com o checksum conferido no build.
+
 **Requisitos:**
 
 - Dois níveis de leitura em cada capítulo: um resumo executivo no topo e um aprofundamento técnico abaixo.
@@ -497,7 +511,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
    - **5.2 Dashboard de status:** indicadores, abas de serviços, tools, skills e prompts, e painel de detalhe com contrato, código e uso.
 6. **Mapa:** Modo Mapa com cidade, rota, trânsito, rotas alternativas e zoom semântico; tela de abertura com o infográfico navegável e as áreas clicáveis.
 7. **Raio-X e apresentador:** Modo Raio-X, painel de incidentes, placar comparativo, replay offline.
-8. **Bastidores:** site de documentação com os 8 capítulos e o botão por cena.
+8. **Bastidores:** site de documentação com os capítulos, o botão por cena e a referência técnica, com diagramas gerados do repositório e com zoom.
 9. **Polimento:** ensaio completo, acessibilidade, performance em telão.
    - **Ensaio de palco** (`./scripts/ensaiar.sh`, sem tokens): sobe do zero, toca as 8 cenas no passo a passo e os replays, e confere os critérios num relatório (`ensaios/<data>.md`).
    - **Ensaio com o modelo real:** os 6 incidentes com o Haiku (`./scripts/experimento.sh`); o caso "emissão lenta" ganhou regras.

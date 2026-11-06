@@ -231,21 +231,34 @@ def rotas(raiz: Path) -> str:
 
 # --- Saída ---------------------------------------------------------------------------------
 
-def gerar(raiz: Path, saida: Path) -> list[Path]:
+def gerar(raiz: Path, saida: Path, fragmentos: Path | None = None) -> list[Path]:
+    # A referência técnica importa os helpers daqui: o import fica dentro da função.
+    import diagramas_referencia
+    import referencia
+
     saida.mkdir(parents=True, exist_ok=True)
     fontes = {"arquitetura": arquitetura(raiz), "ontologia": ontologia(raiz), "rotas": rotas(raiz)}
     for pasta in sorted((raiz / "services/skills-mcp/skills").iterdir()):
         if pasta.is_dir() and (dot := skill(pasta)):
             fontes[f"skill-{pasta.name}"] = dot
+    fontes.update(diagramas_referencia.dots(raiz))
     gerados = []
     for nome, dot in fontes.items():
         (saida / f"{nome}.dot").write_text(dot, encoding="utf-8")
         svg = saida / f"{nome}.svg"
         subprocess.run(["dot", "-Tsvg", "-o", str(svg)], input=dot.encode("utf-8"), check=True)
         gerados.append(svg)
+    for nome, svg in diagramas_referencia.svgs(raiz).items():
+        caminho = saida / f"{nome}.svg"
+        caminho.write_text(svg, encoding="utf-8")
+        gerados.append(caminho)
+    # Os números e as tabelas da referência, inseridos nas páginas com --8<--.
+    if fragmentos is not None:
+        gerados += referencia.gerar(raiz, fragmentos)
     return gerados
 
 
 if __name__ == "__main__":
-    for caminho in gerar(Path(sys.argv[1]), Path(sys.argv[2])):
+    extra = Path(sys.argv[3]) if len(sys.argv) > 3 else None
+    for caminho in gerar(Path(sys.argv[1]), Path(sys.argv[2]), extra):
         print(caminho)

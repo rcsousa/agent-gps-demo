@@ -45,6 +45,9 @@ extra_css:
 # Os links de volta à demo abrem na aba inteira, mesmo com o capítulo aberto no painel lateral.
 extra_javascript:
   - javascripts/voltar-a-demo.js
+  # Zoom, arrasto e tela cheia nos diagramas (svg-pan-zoom baixado no build, com checksum).
+  - javascripts/vendor/svg-pan-zoom.min.js
+  - javascripts/diagramas.js
 
 markdown_extensions:
   - admonition
@@ -54,9 +57,13 @@ markdown_extensions:
       permalink: true
   - pymdownx.details
   - pymdownx.superfences
+  # Abas (as consultas de cada tool na referência técnica).
+  - pymdownx.tabbed:
+      alternate_style: true
   # Trechos reais da ontologia, copiada para a imagem no build: a doc não desatualiza.
   - pymdownx.snippets:
-      base_path: [ontologia, skills, codigo]
+      # gerado/: tabelas e números da referência técnica, calculados no build.
+      base_path: [ontologia, skills, codigo, gerado]
       check_paths: true
   - pymdownx.highlight
 
@@ -75,3 +82,9 @@ nav:
   - 7. Como reproduzir: 07-como-reproduzir.md
   - 8. Glossário e perguntas frequentes: 08-glossario-e-faq.md
   - 9. O dia da apresentação: 09-o-dia-da-apresentacao.md
+  - Referência técnica:
+      - Visão geral: referencia/index.md
+      - Arquitetura técnica: referencia/arquitetura.md
+      - O grafo de contexto: referencia/grafo.md
+      - O padrão do gateway MCP: referencia/gateway-mcp.md
+      - Skills, prompts e tools: referencia/skills-prompts-tools.md

@@ -20,10 +20,12 @@ Este site explica o que acontece por trás de cada cena da demo do Banco Bússol
 8. [Glossário e perguntas frequentes](08-glossario-e-faq.md).
 9. [O dia da apresentação](09-o-dia-da-apresentacao.md): o roteiro de fala cena a cena e o checklist do dia.
 
+**[Referência técnica](referencia/index.md):** para arquitetos e engenheiros, com a arquitetura em C4, o modelo do grafo (T-Box e A-Box), o padrão do gateway MCP e o catálogo completo. Tudo é gerado do repositório, e os diagramas têm zoom.
+
 !!! tip "Comece por aqui"
     - **Viu uma cena e quer entender?** O [capítulo 4](04-bastidores-das-cenas.md) tem cada cena: o vídeo, o que aconteceu de verdade e as regras conferidas.
     - **Executivo, cinco minutos?** Leia só os resumos dos capítulos [1](01-o-problema.md), [2](02-camada-de-contexto.md) e [3](03-skills-como-gps.md).
-    - **Técnico, desconfiado?** Vá ao [capítulo 8](08-glossario-e-faq.md): as objeções mais comuns, com resposta curta e o caminho até o código.
+    - **Técnico, desconfiado?** Vá ao [capítulo 8](08-glossario-e-faq.md): as objeções mais comuns, com resposta curta e o caminho até o código. Depois, à [referência técnica](referencia/index.md).
     - **Quer rodar?** O [capítulo 7](07-como-reproduzir.md) sobe a demo com um comando.
     - **Vai apresentar?** O [capítulo 9](09-o-dia-da-apresentacao.md) tem o roteiro de fala e o checklist do dia.
 

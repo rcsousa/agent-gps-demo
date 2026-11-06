@@ -9,6 +9,9 @@
 
 ## Aprofundamento técnico
 
+!!! tip "Aprofunde na referência técnica"
+    [O ciclo da SEP-2640 com o digest, as três camadas do prompt e o catálogo completo das tools](referencia/skills-prompts-tools.md).
+
 ### O que é uma Agent Skill
 
 Uma skill é uma pasta com um `SKILL.md`: frontmatter YAML (nome, descrição e metadados) e instruções em markdown. Ao lado dele ficam arquivos de apoio, que o agente lê só quando precisa. A skill principal da demo:

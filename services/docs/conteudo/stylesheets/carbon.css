@@ -83,3 +83,57 @@
   .cena-impressa { break-before: page; }
   body { font-size: 12pt; }
 }
+
+/* Diagramas com zoom (javascripts/diagramas.js). Fundo de papel nos dois temas: os SVGs são
+   gerados com texto escuro sobre fundo transparente. */
+.md-typeset .diagrama {
+  display: block;
+  inline-size: 100%;
+  max-inline-size: none;
+  margin: 1rem 0 1.4rem;
+  border: 1px solid var(--md-default-fg-color--lightest);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.md-typeset .diagrama__barra {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.3rem 0.5rem;
+  background: var(--md-default-fg-color--lightest);
+}
+.md-typeset .diagrama__botao {
+  min-inline-size: 2rem;
+  block-size: 2rem;
+  padding: 0 0.5rem;
+  border: 0;
+  border-radius: 2px;
+  background: var(--md-default-bg-color);
+  color: var(--md-default-fg-color);
+  font-size: 1rem;
+  cursor: pointer;
+}
+.md-typeset .diagrama__botao:hover { background: var(--bussola-laranja); color: #161616; }
+.md-typeset .diagrama__botao:focus-visible,
+.md-typeset .diagrama__palco:focus-visible { outline: 2px solid var(--bussola-laranja); outline-offset: -2px; }
+.md-typeset .diagrama__abrir { margin-inline-start: auto; font-size: 0.7rem; }
+.md-typeset .diagrama__palco {
+  block-size: min(70vh, 40rem); /* até o SVG chegar; depois, a altura segue a proporção dele */
+  background: #fff;
+  cursor: grab;
+}
+.md-typeset .diagrama__palco:active { cursor: grabbing; }
+.md-typeset .diagrama__palco > img { display: block; max-inline-size: 100%; margin: auto; }
+.md-typeset .diagrama__svg { display: block; inline-size: 100%; block-size: 100%; }
+.md-typeset .diagrama--ativo { border-color: var(--bussola-laranja); }
+.md-typeset .diagrama__legenda {
+  padding: 0.3rem 0.6rem;
+  font-size: 0.65rem;
+  color: var(--md-default-fg-color--light);
+}
+.md-typeset .diagrama--tela-cheia { display: flex; flex-direction: column; background: var(--md-default-bg-color); }
+.md-typeset .diagrama--tela-cheia .diagrama__palco { flex: 1; block-size: auto; }
+@media print {
+  .md-typeset .diagrama__barra { display: none; }
+  .md-typeset .diagrama__palco { block-size: auto; min-block-size: 18cm; }
+}

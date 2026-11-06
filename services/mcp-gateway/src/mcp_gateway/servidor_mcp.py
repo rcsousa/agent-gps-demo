@@ -86,6 +86,7 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
 
     # --8<-- [end:governanca]
 
+    # --8<-- [start:chamada]
     async def chamar_tool(ctx, params: types.CallToolRequestParams) -> types.CallToolResult:
         inicio = time.perf_counter()
         roteada = catalogo.tools.get(params.name)
@@ -141,6 +142,8 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
             },
         )
         return resultado
+
+    # --8<-- [end:chamada]
 
     async def listar_prompts(ctx, params) -> types.ListPromptsResult:
         return types.ListPromptsResult(prompts=[p.prompt for _, p in sorted(catalogo.prompts.items())])
@@ -207,6 +210,7 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
             )
         return resultado
 
+    # --8<-- [start:skills]
     # --- Extensão io.modelcontextprotocol/skills (SEP-2640) --------------------------
     # As entradas saem como vieram dos servidores: os digests valem ponta a ponta.
 
@@ -241,4 +245,5 @@ def criar_servidor_mcp(catalogo: Catalogo, publicador: Publicador, estado: Estad
     servidor.add_request_handler("skills/list", ParamsListar, listar_skills)
     servidor.add_request_handler("skills/get", ParamsObter, obter_skill)
     servidor.extensions[IDENTIFICADOR] = {}
+    # --8<-- [end:skills]
     return servidor
