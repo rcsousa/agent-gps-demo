@@ -371,6 +371,7 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
   - **passo a passo:** para em cada anúncio até o apresentador seguir (botão no balão, Espaço ou o painel do apresentador);
   - **contínuo:** nunca espera o apresentador, e cada anúncio fica o tempo de leitura.
   - Só o mapa para: o agente segue trabalhando, e os tempos e custos não mudam.
+- **Abrir uma viagem pela URL não a toca de novo.** Só a viagem iniciada na própria página, e os replays, animam desde o começo. Aberta pelo endereço (histórico, aba restaurada, volta do login ou a última viagem pelo apresentador), ela aparece no ponto em que está. Se ainda estiver em andamento, o que chegar dali em diante anima.
 - **As 3 rotas não aparecem no mapa.** O que aparece é o caminho real do robô. A escolha e o recálculo continuam como eventos (o recálculo também como aviso).
 - **A viagem é dirigida só pelo SSE da execução**, por um **diretor de animações**:
   - os eventos reais são reproduzidos na ordem, com tempo mínimo;

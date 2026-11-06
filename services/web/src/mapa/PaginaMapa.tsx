@@ -283,6 +283,14 @@ export function PaginaMapa() {
   // só aparece quando o robô chega à parada dela. O estado real serve só para responder (o id).
   // No replay ninguém responde.
   const real = useViagem(gravacao ? (replayPronto ? PREFIXO_GRAVACAO + replayPronto : null) : execucao);
+  // Só anima do começo a viagem iniciada nesta página (e os replays). Uma viagem aberta pela URL
+  // (histórico, aba restaurada, volta do login, a última viagem do apresentador) aparece no ponto em
+  // que está, sem tocar de novo; se ainda estiver em andamento, o que chegar dali em diante anima.
+  const iniciadaAqui = useRef<string | null>(null);
+  const animarDesde = useMemo(
+    () => (gravacao || !execucao || execucao === iniciadaAqui.current ? null : Date.now()),
+    [gravacao, execucao],
+  );
   const replay = ehReplay(real.id);
   // Pausas: quando o mapa para e espera (contínuo, só quando precisa de você, passo a passo). Fica guardado.
   const [pausas, setPausas] = useState<Pausas>(pausasGuardadas);
@@ -298,7 +306,7 @@ export function PaginaMapa() {
   const anunciar = useMemo(() => (voz.ligada ? (b: Parameters<typeof falaDoBalao>[0]) => falar(falaDoBalao(b)) : undefined), [voz.ligada]);
   const nomeDoLugar = useCallback((id: string) => nos.get(id)?.nome ?? null, [nos]);
   const nomeDaRota = useCallback((id: string) => rotas.find((r) => r.id === id)?.nome ?? id, [rotas]);
-  const direcao = useDiretor(real, tempoDoTrecho, pausas, nomeDoLugar, nomeDaRota, anunciar);
+  const direcao = useDiretor(real, tempoDoTrecho, pausas, nomeDoLugar, nomeDaRota, anunciar, animarDesde);
   const telao = useTelao();
   const exibido = direcao.exibido;
 
@@ -655,6 +663,7 @@ export function PaginaMapa() {
           ? { modo, canal, provedor: ROTEIRO, incidentes }
           : { modo, canal, modelo: modeloEscolhido, incidentes };
       const { id } = await apiViagem.iniciar(pedido);
+      iniciadaAqui.current = id;
       setSeguir(true);
       voltarACidade();
       const busca = new URLSearchParams({ execucao: id });

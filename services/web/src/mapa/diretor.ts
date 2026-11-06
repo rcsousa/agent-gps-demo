@@ -106,6 +106,9 @@ export function useDiretor(
   nomeDoLugar: (id: string) => string | null,
   nomeDaRota: (id: string) => string,
   anunciar?: (balao: Balao) => Promise<void>, // a voz do GPS; resolve quando terminar de falar
+  // Eventos anteriores a este instante (epoch ms) já aconteceram quando a viagem foi aberta: passam
+  // sem animação, sem balão e sem pausa. null anima tudo (a viagem iniciada aqui e os replays).
+  animarDesde: number | null = null,
 ): Direcao {
   const [exibido, despachar] = useReducer(reduzir, VIAGEM_VAZIA);
   const [cursor, setCursor] = useState(0);
@@ -125,6 +128,8 @@ export function useDiretor(
   pausa.current = pausas;
   const voz = useRef(anunciar);
   voz.current = anunciar;
+  const desde = useRef(animarDesde);
+  desde.current = animarDesde;
   const timerDoBalao = useRef<number | undefined>(undefined);
   const rotaAtual = useRef<RotaAtual | null>(null);
   // Cada balão tem a sua vez: esperas de um balão antigo (leitura, voz) não avançam o mapa.
@@ -168,6 +173,10 @@ export function useDiretor(
     if (cursor >= eventos.length || aplicado.current === cursor) return;
     aplicado.current = cursor;
     const evento = eventos[cursor];
+    // Abrir uma viagem pela URL (histórico, aba restaurada, volta do login) não a toca de novo:
+    // o que já tinha acontecido aparece de uma vez; só o que chega depois anima.
+    const jaAconteceu = desde.current != null && Date.parse(evento.instante) < desde.current;
+    const instantaneo = pular || jaAconteceu;
     let andar = 0;
     if (evento.tipo === 'run.started') {
       lugarAtual.current = PONTO_DE_PARTIDA[evento.dados.canal] ?? 'canal-app';
@@ -179,7 +188,7 @@ export function useDiretor(
       const duracao = tempo.current(de, para);
       if (duracao != null) {
         const ok = evento.tipo !== 'tool.called' || evento.dados.status === 'ok';
-        setTrechos((t) => [...t, { de, para, inicio: performance.now(), duracao: pular ? 0 : duracao, ok }]);
+        setTrechos((t) => [...t, { de, para, inicio: performance.now(), duracao: instantaneo ? 0 : duracao, ok }]);
         lugarAtual.current = para;
         andar = duracao;
       }
@@ -196,8 +205,8 @@ export function useDiretor(
         })
       : null;
     rotaAtual.current = rotaDoEvento(evento, rotaNome.current) ?? rotaAtual.current;
-    if (pular || !anuncio) {
-      timer.current = window.setTimeout(avancar, pular ? 0 : andar + retencao);
+    if (instantaneo || !anuncio) {
+      timer.current = window.setTimeout(avancar, instantaneo ? 0 : andar + retencao);
       return;
     }
     // O balão abre quando o robô chega.

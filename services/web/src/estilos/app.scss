@@ -1186,7 +1186,8 @@ $altura-linha-do-tempo: 5.75rem;
   }
 
   &--incidente {
-    background: rgb(208 76 76);
+    // O vermelho do Carbon (red-60): texto branco com contraste AA (rgb(208 76 76) dava 4,4:1).
+    background: #da1e28;
     color: #fff;
     font-weight: 600;
     z-index: 2;
