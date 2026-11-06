@@ -32,6 +32,7 @@ def _atributos(atributos: dict) -> dict:
     return {f"attr_{k}": v for k, v in atributos.items() if v != []}
 
 
+# --8<-- [start:carga]
 def propriedades_no(e: Entidade, ontologia: Ontologia, posicao: list[int]) -> dict:
     props = {
         "id": e.id,
@@ -103,6 +104,7 @@ def aplicar_seed(driver: Driver, ontologia: Ontologia, layout: dict) -> tuple[in
         nos = sessao.run("MATCH (n:Entidade) RETURN count(n) AS n").single()["n"]
         arestas = sessao.run("MATCH ()-[r]->() RETURN count(r) AS n").single()["n"]
     return nos, arestas
+# --8<-- [end:carga]
 
 
 def main() -> int:

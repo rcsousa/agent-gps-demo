@@ -107,6 +107,7 @@ class RepositorioGrafo:
             raise EntidadeNaoEncontrada(f"Não existe entidade com id '{ident}' no mapa.")
         return linhas[0]["n"]
 
+    # --8<-- [start:buscar]
     async def buscar(
         self, texto: str | None, tipo: str | None, bairro: str | None, limite: int
     ) -> m.RespostaBusca:
@@ -127,6 +128,9 @@ class RepositorioGrafo:
         )
         return m.RespostaBusca(total=len(linhas), entidades=[resumo(linha["n"]) for linha in linhas[:limite]])
 
+    # --8<-- [end:buscar]
+
+    # --8<-- [start:entidade]
     async def entidade(self, ident: str) -> m.RespostaEntidade:
         no = await self._no(ident)
         linhas = await self._consultar(
@@ -149,6 +153,9 @@ class RepositorioGrafo:
         ]
         return m.RespostaEntidade(entidade=entidade(no), relacoes=relacoes)
 
+    # --8<-- [end:entidade]
+
+    # --8<-- [start:regras]
     async def regras(self, ident: str) -> m.RespostaRegras:
         alvo = await self._no(ident)
         linhas = await self._consultar(
@@ -172,6 +179,9 @@ class RepositorioGrafo:
         ]
         return m.RespostaRegras(alvo=resumo(alvo), regras=regras)
 
+    # --8<-- [end:regras]
+
+    # --8<-- [start:estado]
     async def estado(self, ids: list[str] | None, tipo: str | None) -> m.RespostaEstado:
         linhas = await self._consultar(
             """
@@ -186,6 +196,9 @@ class RepositorioGrafo:
         )
         return m.RespostaEstado(itens=[item_estado(linha["n"]) for linha in linhas])
 
+    # --8<-- [end:estado]
+
+    # --8<-- [start:proveniencia]
     async def proveniencia(self, ident: str, relacionado_a: str | None) -> m.RespostaProveniencia:
         no = await self._no(ident)
         relacoes: list[m.ProvenienciaRelacao] = []
@@ -211,6 +224,9 @@ class RepositorioGrafo:
             ]
         return m.RespostaProveniencia(alvo=resumo(no), proveniencia=_proveniencia(no), relacoes=relacoes)
 
+    # --8<-- [end:proveniencia]
+
+    # --8<-- [start:rotas]
     async def rotas(self, jornada: str, rota: str | None) -> m.RespostaRota:
         no_jornada = await self._no(jornada)
         linhas = await self._consultar(
@@ -234,6 +250,8 @@ class RepositorioGrafo:
         return m.RespostaRota(
             jornada=resumo(no_jornada), rotas=[self._montar_rota(linha) for linha in linhas]
         )
+
+    # --8<-- [end:rotas]
 
     @staticmethod
     def _montar_rota(linha: dict) -> m.Rota:
@@ -296,6 +314,7 @@ class RepositorioGrafo:
             alertas=alertas,
         )
 
+    # --8<-- [start:efeitos]
     async def aplicar_efeitos(self, efeitos: list[dict], tipos_relacao: set[str]) -> list[str]:
         """Escreve efeitos do simulador no grafo. Única escrita fora do seed.
 
@@ -341,6 +360,8 @@ class RepositorioGrafo:
         async with self.driver.session() as sessao:
             await sessao.execute_write(escrever)
         return sorted(e["entidade"] for e in efeitos)
+
+    # --8<-- [end:efeitos]
 
     async def mapa(self) -> dict:
         nos = await self._consultar(
