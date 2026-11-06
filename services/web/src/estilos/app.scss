@@ -1659,6 +1659,18 @@ $altura-linha-do-tempo: 5.75rem;
     }
   }
 
+  // Sem espaço acima do robô: o balão abre abaixo dele, com o rabicho na borda de cima.
+  &--abaixo {
+    transform: translate(-50%, 0);
+    animation-name: balao-entra-abaixo;
+
+    &::after {
+      inset-block-end: auto;
+      inset-block-start: -0.5rem;
+      transform: rotate(-135deg);
+    }
+  }
+
   // A voz do GPS (apresentação, roteiro, rota, paradas, recálculo, pedágio, pergunta e chegada):
   // azul-marinho de apoio; o laranja fica para os sistemas que o agente chama.
   &--apresentacao,
@@ -1730,6 +1742,13 @@ $altura-linha-do-tempo: 5.75rem;
   from {
     opacity: 0;
     transform: translate(-50%, calc(-100% + 0.5rem));
+  }
+}
+
+@keyframes balao-entra-abaixo {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -0.5rem);
   }
 }
 
