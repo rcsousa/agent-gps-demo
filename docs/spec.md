@@ -362,10 +362,16 @@ O liga/desliga é uma ação do apresentador sobre o mundo. Por isso vai ao `sim
   - ao fim, sobe uma vez para a cidade inteira, com o norte para cima, e fica livre para o apresentador explorar;
   - na câmera livre, o apresentador gira e inclina o mapa (botão direito e botões próprios), e uma bússola volta o norte para cima;
   - mexer na câmera pausa o seguimento, e a releitura da cidade nunca move a câmera.
-- **Balões de fala e passo a passo** (decidido antes da Fase 9):
-  - a cada `tool.called`, incidente, recálculo e pedágio, o robô chega ao lugar e abre um balão com o que está fazendo; o texto vem do evento real (tool, argumentos e status), em pt-BR;
-  - no passo a passo (toggle na barra, ligado por padrão), o mapa espera o apresentador mandar seguir (botão no balão, Espaço ou o painel do apresentador). Só o mapa para: o agente segue trabalhando, e os tempos e custos não mudam;
-  - desligado, o balão aparece e some sozinho.
+- **O GPS anuncia a viagem, como um navegador de trânsito:**
+  - ele se apresenta (`run.started`), diz o roteiro (`skill.loaded`) e a rota com o motivo e a estimativa (`route.planned`), anuncia cada parada com o que vai fazer e a próxima (`step.started`), cada sistema chamado, o incidente à frente, o recálculo com a troca e a nova estimativa, o pedágio, a pergunta à cliente e a chegada;
+  - a frase fica no arquivo de mensagens, e os dados vêm do evento real. Nada vem de um roteiro;
+  - **voz opcional** (síntese de voz pt-BR do navegador, sem rede), desligada por padrão.
+- **Três modos de pausa** (seletor na barra):
+  - **só quando precisa de você** (padrão): para na pergunta à cliente, até a resposta, e no pedágio, até o apresentador seguir;
+  - **passo a passo:** para em cada anúncio até o apresentador seguir (botão no balão, Espaço ou o painel do apresentador);
+  - **contínuo:** nunca espera o apresentador, e cada anúncio fica o tempo de leitura.
+  - Só o mapa para: o agente segue trabalhando, e os tempos e custos não mudam.
+- **Abrir uma viagem pela URL não a toca de novo.** Só a viagem iniciada na própria página, e os replays, animam desde o começo. Aberta pelo endereço (histórico, aba restaurada, volta do login ou a última viagem pelo apresentador), ela aparece no ponto em que está. Se ainda estiver em andamento, o que chegar dali em diante anima.
 - **As 3 rotas não aparecem no mapa.** O que aparece é o caminho real do robô. A escolha e o recálculo continuam como eventos (o recálculo também como aviso).
 - **A viagem é dirigida só pelo SSE da execução**, por um **diretor de animações**:
   - os eventos reais são reproduzidos na ordem, com tempo mínimo;
@@ -539,7 +545,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Modo Mapa em deck.gl, sem MapLibre: cidade 3D (`OrbitView`) sobre as coordenadas próprias do grafo, não geográficas
 - [x] Cidade em grade (quadras, ruas e avenidas), bairros só pela cor do chão, uma construção por lugar do grafo no estilo do bairro, o robô andando pelas ruas até cada lugar que o agente usa e sem as 3 rotas no mapa
 - [x] Os 5 bairros do infográfico, com cada sistema no bairro do seu domínio; construções com janelas, portas e variantes; câmera de GPS; a conversa no ritmo do robô; apresentador e Raio-X na escala de tipos do Carbon
-- [x] Balões de fala do robô a cada sistema chamado, com o passo a passo do apresentador; GPS com visão traseira e rotação livre do mapa
+- [x] O GPS anuncia toda a viagem (apresentação, rota, cada parada, recálculo, pedágio, pergunta e chegada), com voz opcional e três modos de pausa (padrão: só quando precisa de você); balões de fala do robô a cada sistema chamado; GPS com visão traseira e rotação livre do mapa
 - [x] Ritmo do mapa: fila de animações com tempo mínimo por evento, sem criar nem reordenar eventos
 - [x] Infográfico de abertura: a versão horizontal (`docs/assets/infografico_horizontal.jpeg`)
 - [x] Painel do apresentador como gaveta no próprio mapa (tecla P), numa tela só

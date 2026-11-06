@@ -5,20 +5,44 @@
 // O robô anda pelas ruas a cada evento que o leva a um lugar: um step.started (a placa da
 // parada) ou um tool.called (o prédio do sistema chamado). O tempo do trecho vem da distância.
 //
-// Ao chegar, o robô abre um balão de fala (tools, incidentes, recálculos e pedágio). No passo a
-// passo, o diretor espera o apresentador mandar seguir; o agente, não: ele continua trabalhando,
-// e o mapa só mostra o próximo evento real quando o apresentador pede.
+// Ao chegar, o robô abre um balão de fala: o anúncio do GPS (a apresentação, o roteiro, a rota, cada
+// parada, cada sistema chamado, incidentes, recálculos, o pedágio, a pergunta à cliente e a chegada).
+// Quanto o mapa espera depende do modo de pausas:
+//   contínuo   o balão fica o tempo de ser lido (e falado, com a voz ligada) e a viagem segue;
+//   input      igual, mas para no pedágio até o apresentador mandar seguir;
+//   passo      para em cada anúncio até o apresentador mandar seguir.
+// Em todos, a pergunta à cliente fica na tela até a resposta chegar. O agente não espera o mapa:
+// ele continua trabalhando, e o mapa só mostra o próximo evento real quando chega a vez dele.
 
 import { useCallback, useEffect, useReducer, useRef, useState } from 'react';
 
 import type { EventoDaExecucao } from '../tipos';
-import { type Balao, balaoDoEvento, EVENTOS_COM_BALAO } from './baloes';
+import { type Balao, balaoDoEvento, EVENTOS_COM_BALAO, type RotaAtual, rotaDoEvento } from './baloes';
 import { type EstadoDaViagem, noDaTool, reduzir, VIAGEM_VAZIA } from './viagem';
+import { calar } from './voz';
 
 const PAUSA_NA_PARADA_MS = 600;
 const PULSO_MS = 350;
-// Sem o passo a passo, o balão fica esse tempo na tela e some sozinho.
+// Sem pausa, o balão fica o tempo de leitura do anúncio: um mínimo, mais um tanto por caractere.
 const BALAO_MS = 1100;
+const LEITURA_BASE_MS = 900;
+const LEITURA_POR_CARACTERE_MS = 45;
+const LEITURA_MAXIMA_MS = 7000;
+
+export type Pausas = 'continuo' | 'input' | 'passo';
+export const PAUSAS: Pausas[] = ['continuo', 'input', 'passo'];
+
+// Em que balões o mapa espera o apresentador mandar seguir. A pergunta à cliente nunca espera o
+// apresentador: ela espera a resposta (que é a ação de quem está no palco).
+export function paraNoBalao(balao: Balao, pausas: Pausas): boolean {
+  if (balao.tipo === 'pergunta') return false;
+  return pausas === 'passo' || (pausas === 'input' && balao.tipo === 'pedagio');
+}
+
+export function tempoDeLeitura(balao: Balao): number {
+  const caracteres = balao.texto.length + (balao.subtexto?.length ?? 0);
+  return Math.min(Math.max(BALAO_MS, LEITURA_BASE_MS + caracteres * LEITURA_POR_CARACTERE_MS), LEITURA_MAXIMA_MS);
+}
 
 // --8<-- [start:retencao]
 const RETENCAO_MS: Record<string, number> = {
@@ -63,6 +87,7 @@ export interface Direcao {
   fila: number; // eventos reais ainda não mostrados
   balao: Balao | null; // o balão de fala aberto agora
   aguardando: boolean; // o mapa está parado, esperando o apresentador mandar seguir
+  aguardandoResposta: boolean; // o mapa mostra a pergunta à cliente e espera a resposta chegar
   seguir: () => void;
   pularParaOFim: () => void;
 }
@@ -77,8 +102,13 @@ function destino(evento: EventoDaExecucao): string | null {
 export function useDiretor(
   real: EstadoDaViagem,
   tempoDoTrecho: (de: string, para: string) => number | null, // ms, ou null se não há caminho
-  passoAPasso: boolean,
+  pausas: Pausas,
   nomeDoLugar: (id: string) => string | null,
+  nomeDaRota: (id: string) => string,
+  anunciar?: (balao: Balao) => Promise<void>, // a voz do GPS; resolve quando terminar de falar
+  // Eventos anteriores a este instante (epoch ms) já aconteceram quando a viagem foi aberta: passam
+  // sem animação, sem balão e sem pausa. null anima tudo (a viagem iniciada aqui e os replays).
+  animarDesde: number | null = null,
 ): Direcao {
   const [exibido, despachar] = useReducer(reduzir, VIAGEM_VAZIA);
   const [cursor, setCursor] = useState(0);
@@ -92,16 +122,28 @@ export function useDiretor(
   tempo.current = tempoDoTrecho;
   const nome = useRef(nomeDoLugar);
   nome.current = nomeDoLugar;
-  const passo = useRef(passoAPasso);
-  passo.current = passoAPasso;
+  const rotaNome = useRef(nomeDaRota);
+  rotaNome.current = nomeDaRota;
+  const pausa = useRef(pausas);
+  pausa.current = pausas;
+  const voz = useRef(anunciar);
+  voz.current = anunciar;
+  const desde = useRef(animarDesde);
+  desde.current = animarDesde;
   const timerDoBalao = useRef<number | undefined>(undefined);
+  const rotaAtual = useRef<RotaAtual | null>(null);
+  // Cada balão tem a sua vez: esperas de um balão antigo (leitura, voz) não avançam o mapa.
+  const vez = useRef(0);
   const [balao, setBalao] = useState<Balao | null>(null);
   const [aguardando, setAguardando] = useState(false);
+  const [aguardandoResposta, setAguardandoResposta] = useState(false);
 
   const avancar = useCallback(() => {
+    vez.current += 1;
     window.clearTimeout(timerDoBalao.current);
     setBalao(null);
     setAguardando(false);
+    setAguardandoResposta(false);
     setCursor((c) => c + 1);
   }, []);
 
@@ -109,10 +151,14 @@ export function useDiretor(
   useEffect(() => {
     window.clearTimeout(timer.current);
     window.clearTimeout(timerDoBalao.current);
+    vez.current += 1;
+    calar();
     setBalao(null);
     setAguardando(false);
+    setAguardandoResposta(false);
     aplicado.current = -1;
     lugarAtual.current = null;
+    rotaAtual.current = null;
     despachar({ tipo: 'reiniciar', id: real.id });
     setCursor(0);
     setPartida(null);
@@ -127,6 +173,10 @@ export function useDiretor(
     if (cursor >= eventos.length || aplicado.current === cursor) return;
     aplicado.current = cursor;
     const evento = eventos[cursor];
+    // Abrir uma viagem pela URL (histórico, aba restaurada, volta do login) não a toca de novo:
+    // o que já tinha acontecido aparece de uma vez; só o que chega depois anima.
+    const jaAconteceu = desde.current != null && Date.parse(evento.instante) < desde.current;
+    const instantaneo = pular || jaAconteceu;
     let andar = 0;
     if (evento.tipo === 'run.started') {
       lugarAtual.current = PONTO_DE_PARTIDA[evento.dados.canal] ?? 'canal-app';
@@ -138,33 +188,59 @@ export function useDiretor(
       const duracao = tempo.current(de, para);
       if (duracao != null) {
         const ok = evento.tipo !== 'tool.called' || evento.dados.status === 'ok';
-        setTrechos((t) => [...t, { de, para, inicio: performance.now(), duracao: pular ? 0 : duracao, ok }]);
+        setTrechos((t) => [...t, { de, para, inicio: performance.now(), duracao: instantaneo ? 0 : duracao, ok }]);
         lugarAtual.current = para;
         andar = duracao;
       }
     }
     despachar({ tipo: 'evento', evento });
     const retencao = RETENCAO_MS[evento.tipo] ?? 0;
-    const comBalao = !pular && EVENTOS_COM_BALAO.has(evento.tipo);
-    if (!comBalao) {
-      timer.current = window.setTimeout(avancar, pular ? 0 : andar + retencao);
+    // O anúncio usa a rota de antes do evento (o recálculo compara a estimativa nova com a anterior).
+    const lugar = para ?? lugarAtual.current;
+    const anuncio = EVENTOS_COM_BALAO.has(evento.tipo)
+      ? balaoDoEvento(evento, {
+          nomeDoLugar: lugar ? nome.current(lugar) : null,
+          nomeDaRota: rotaNome.current,
+          rota: rotaAtual.current,
+        })
+      : null;
+    rotaAtual.current = rotaDoEvento(evento, rotaNome.current) ?? rotaAtual.current;
+    if (instantaneo || !anuncio) {
+      timer.current = window.setTimeout(avancar, instantaneo ? 0 : andar + retencao);
       return;
     }
-    // O balão abre quando o robô chega. No passo a passo, o diretor espera o apresentador.
-    const lugar = para ?? lugarAtual.current;
-    const texto = balaoDoEvento(evento, lugar ? nome.current(lugar) : null);
-    const fala = texto && { ...texto, indice: cursor };
+    // O balão abre quando o robô chega.
+    const fala: Balao = { ...anuncio, indice: cursor };
+    const minhaVez = vez.current;
     timerDoBalao.current = window.setTimeout(() => {
+      if (vez.current !== minhaVez) return;
       setBalao(fala);
-      if (passo.current) setAguardando(true);
-      else timer.current = window.setTimeout(avancar, Math.max(retencao, BALAO_MS));
+      const falado = voz.current?.(fala) ?? Promise.resolve();
+      if (paraNoBalao(fala, pausa.current)) {
+        setAguardando(true);
+        return;
+      }
+      const lido = new Promise<void>((resolver) => {
+        timer.current = window.setTimeout(resolver, Math.max(retencao, tempoDeLeitura(fala)));
+      });
+      void Promise.all([lido, falado]).then(() => {
+        if (vez.current !== minhaVez) return;
+        // A pergunta fica até a resposta chegar; o resto segue.
+        if (fala.tipo === 'pergunta') setAguardandoResposta(true);
+        else avancar();
+      });
     }, andar);
   }, [cursor, eventos, pular, avancar]);
 
-  // Desligar o passo a passo com o balão esperando: a viagem segue sozinha.
+  // A pergunta já foi lida: quando o próximo evento real chegar (a resposta), a viagem segue.
   useEffect(() => {
-    if (!passoAPasso && aguardando) avancar();
-  }, [passoAPasso, aguardando, avancar]);
+    if (aguardandoResposta && eventos.length > cursor + 1) avancar();
+  }, [aguardandoResposta, eventos.length, cursor, avancar]);
+
+  // Trocar de modo com o balão esperando: se o novo modo não para aqui, a viagem segue.
+  useEffect(() => {
+    if (aguardando && balao && !paraNoBalao(balao, pausas)) avancar();
+  }, [pausas, aguardando, balao, avancar]);
 
   useEffect(
     () => () => {
@@ -180,8 +256,11 @@ export function useDiretor(
   const pularParaOFim = useCallback(() => {
     window.clearTimeout(timer.current);
     window.clearTimeout(timerDoBalao.current);
+    vez.current += 1;
+    calar();
     setBalao(null);
     setAguardando(false);
+    setAguardandoResposta(false);
     setPular(true);
     // O evento atual (talvez esperando o balão) termina já; os próximos passam sem tempo.
     setCursor((c) => (aplicado.current === c && c < totalDeEventos.current ? c + 1 : c));
@@ -193,6 +272,7 @@ export function useDiretor(
     fila: Math.max(eventos.length - cursor, 0),
     balao,
     aguardando,
+    aguardandoResposta,
     seguir,
     pularParaOFim,
   };

@@ -140,13 +140,28 @@ export const mensagens = {
       linha: (fps: number, quadroMs: number, rotulos: number, camadas: number) =>
         `${fps} quadros/s · pior quadro ${quadroMs} ms · ${rotulos} rótulos · ${camadas} camadas`,
     },
-    passoAPasso: 'Passo a passo',
-    passoAPassoAjuda: 'O robô para em cada sistema que o agente chama, até você mandar seguir (Espaço).',
+    // Quando o mapa para e espera: três ritmos para a mesma viagem real.
+    pausas: {
+      rotulo: 'Pausas',
+      continuo: 'Contínuo',
+      continuoAjuda: 'A viagem corre sozinha; cada anúncio fica na tela o tempo de ser lido.',
+      input: 'Só quando precisa de você',
+      inputAjuda: 'Para nas perguntas à Ana e no pedágio; o resto corre com os anúncios no tempo de leitura.',
+      passo: 'Passo a passo',
+      passoAjuda: 'Para em cada anúncio do GPS até você mandar seguir (Espaço).',
+    },
+    voz: {
+      rotulo: 'Voz do GPS',
+      ajuda: 'O GPS fala os anúncios em voz alta, com a voz em português do navegador.',
+      indisponivel: 'Este navegador não tem uma voz em português do Brasil.',
+    },
     aguardando: 'Aguardando o apresentador',
+    aguardandoAna: 'Aguardando a resposta da Ana',
     // Os balões de fala do robô: uma frase por tool, sempre a partir do evento real (tool, argumentos e status).
     baloes: {
       seguir: 'Seguir',
       atalho: 'Espaço',
+      gps: 'GPS',
       // No prédio do produto (bairro de produtos), a frase cita o produto em questão.
       toolsDoProduto: {
         'risco.avaliar_adequacao': (produto: string) => `Avaliando se o ${produto} faz sentido para a cliente`,
@@ -199,6 +214,56 @@ export const mensagens = {
       falhou: (lugar: string | null) => (lugar ? `${lugar} não respondeu` : 'A chamada não deu certo'),
       erro: (lugar: string | null, erro: string) => `${lugar ?? 'O sistema'} recusou: ${erro}`,
       barrada: 'O gateway barrou a chamada: fora da rota da skill',
+      // Os anúncios do GPS, no estilo de um navegador de trânsito. Cada um nasce de um evento real:
+      // a frase é fixa, os dados (rota, parada, motivo, regra, estimativa) vêm do evento.
+      anuncios: {
+        apresentacao: {
+          com_skill: 'Olá! Sou o GPS do Banco Bússola. Vou levar o pedido da cliente até a apólice, seguindo o mapa e as regras do banco.',
+          sem_skill: 'Saindo sem GPS: o agente tem o mapa e todas as ferramentas, mas nenhum roteiro. Ele vai por conta própria.',
+          sem_contexto: 'Saindo sem mapa: o agente não enxerga os sistemas do banco, só a conversa.',
+        } as Record<string, string>,
+        destino: (pedido: string) => `Destino: “${pedido}”`,
+        canal: { app: 'Partida: o app', agencia: 'Partida: a agência', central: 'Partida: a central' } as Record<string, string>,
+        roteiro: (skill: string, tools: number) =>
+          `Roteiro carregado: ${skill}. Vou seguir por ele, com ${tools} ${tools === 1 ? 'ferramenta liberada' : 'ferramentas liberadas'} no caminho.`,
+        skills: {
+          'contratacao-seguro-residencial': 'Contratação de seguro residencial',
+          'verificacao-consentimento': 'Verificação de consentimento',
+          'cotacao-multisseguradora': 'Cotação com várias seguradoras',
+          'escalonamento-humano': 'Escalonamento para um especialista',
+        } as Record<string, string>,
+        rota: (nome: string, paradas: number, tempo: string, risco: string) =>
+          `${nome} traçada: ${paradas} paradas, ${tempo}, risco ${risco}.`,
+        riscos: { baixo: 'baixo', medio: 'médio', alto: 'alto' } as Record<string, string>,
+        parada: (numero: number, total: number, nome: string) => `Parada ${numero} de ${total}: ${nome}.`,
+        paradaExtra: (nome: string) => `Parada extra: ${nome}.`,
+        aSeguir: (nome: string) => `A seguir: ${nome}.`,
+        ultima: 'É a última parada.',
+        // O que o GPS faz em cada parada (as paradas do grafo, pelo id).
+        nasParadas: {
+          'parada-intencao': 'Vou entender o pedido e confirmar que é um seguro residencial.',
+          'parada-identificacao': 'Vou identificar a cliente: perfil, relacionamento e o que ela já tem no banco.',
+          'parada-consentimento': 'Vou conferir se a cliente autorizou o uso dos dados dela nesta oferta.',
+          'parada-elegibilidade': 'Vou checar se o imóvel e a região cabem nas regras do produto.',
+          'parada-adequacao': 'Vou confirmar que o seguro faz sentido para o perfil e a necessidade dela.',
+          'parada-cotacao': 'Vou cotar com as seguradoras parceiras e comparar cobertura e preço.',
+          'parada-proposta': 'Vou apresentar a proposta, explicar as coberturas e registrar o aceite.',
+          'parada-pagamento': 'Vou cobrar o primeiro prêmio, por débito em conta ou cartão.',
+          'parada-emissao': 'Vou emitir a apólice com a seguradora e confirmar para a cliente.',
+          'parada-aprovacao-humana': 'Um especialista precisa aprovar antes da emissão.',
+          'parada-vistoria': 'A política mudou: vou agendar a vistoria do imóvel antes de emitir.',
+        } as Record<string, string>,
+        incidente: (metafora: string) => `Atenção: ${metafora.toLowerCase()} à frente.`,
+        recalculoTroca: (de: string, para: string) => `Recalculando… Saio da ${de} e sigo pela ${para}.`,
+        recalculoMesma: (rota: string) => `Recalculando… Sigo na ${rota}, por outro caminho.`,
+        novaEstimativa: (tempo: string, antes: string | null) =>
+          antes && antes !== tempo ? `Nova estimativa: ${tempo} (antes ${antes}).` : `Nova estimativa: ${tempo}.`,
+        pedagio: 'Pedágio à frente: preciso da aprovação de um especialista para seguir.',
+        pergunta: 'Preciso de uma resposta da cliente.',
+        chegada: (apolice: string) => `Você chegou ao destino: apólice ${apolice} emitida.`,
+        fimSemApolice: 'Viagem encerrada sem apólice.',
+        fimComErro: 'A viagem parou por um erro.',
+      },
       recalculo: (motivo: string) => `Recalculando: ${motivo}`,
       pedagio: (motivo: string) => `Pedágio: ${motivo}`,
       seguradoras: { ancora: 'Âncora', farol: 'Farol', horizonte: 'Horizonte' } as Record<string, string>,

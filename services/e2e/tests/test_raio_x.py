@@ -73,7 +73,7 @@ def test_apresentador_muda_o_mundo_e_decide_o_pedagio(pagina, mundo_limpo):
     # Responde pela Ana até o pedágio aparecer na gaveta; aprova e segue até o fim da viagem.
     ticket = gaveta.locator(".apresentador__ticket")
     aprovou = False
-    for _ in range(240):
+    for _ in range(720):  # a viagem exibida leva ~2,5 min: o pedágio chega depois das perguntas à Ana
         pagina.wait_for_timeout(500)
         if pagina.locator(".mapa__opcoes button:not([disabled])").count():
             pagina.locator(".mapa__opcoes button:not([disabled])").first.click()

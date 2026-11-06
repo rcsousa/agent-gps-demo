@@ -1186,7 +1186,8 @@ $altura-linha-do-tempo: 5.75rem;
   }
 
   &--incidente {
-    background: rgb(208 76 76);
+    // O vermelho do Carbon (red-60): texto branco com contraste AA (rgb(208 76 76) dava 4,4:1).
+    background: #da1e28;
     color: #fff;
     font-weight: 600;
     z-index: 2;
@@ -1659,8 +1660,29 @@ $altura-linha-do-tempo: 5.75rem;
     }
   }
 
+  // Sem espaço acima do robô: o balão abre abaixo dele, com o rabicho na borda de cima.
+  &--abaixo {
+    transform: translate(-50%, 0);
+    animation-name: balao-entra-abaixo;
+
+    &::after {
+      inset-block-end: auto;
+      inset-block-start: -0.5rem;
+      transform: rotate(-135deg);
+    }
+  }
+
+  // A voz do GPS (apresentação, roteiro, rota, paradas, recálculo, pedágio, pergunta e chegada):
+  // azul-marinho de apoio; o laranja fica para os sistemas que o agente chama.
+  &--apresentacao,
+  &--roteiro,
+  &--rota,
+  &--parada,
+  &--pergunta,
+  &--chegada,
   &--recalculo,
   &--pedagio {
+    max-inline-size: 22rem;
     border-color: #1d3557;
 
     &::after {
@@ -1679,6 +1701,23 @@ $altura-linha-do-tempo: 5.75rem;
     flex: none;
     margin-block-start: 0.125rem;
     color: #da1e28;
+  }
+
+  &__gps {
+    @include type-style('label-01');
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-02;
+    align-self: flex-start;
+    padding: 0 $spacing-02;
+    color: #fff;
+    background: #1d3557;
+    border-radius: 0.25rem;
+  }
+
+  &__subtexto {
+    margin: 0;
+    color: #393939;
   }
 
   &__detalhe {
@@ -1707,7 +1746,14 @@ $altura-linha-do-tempo: 5.75rem;
   }
 }
 
-.mapa__passo-a-passo {
+@keyframes balao-entra-abaixo {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -0.5rem);
+  }
+}
+
+.mapa__voz {
   align-self: center;
 }
 

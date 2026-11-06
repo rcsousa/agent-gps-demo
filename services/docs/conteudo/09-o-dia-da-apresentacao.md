@@ -8,7 +8,8 @@
 ### Antes de começar
 
 - **Modo telão:** tecla **T** (ou o painel do apresentador). A interface inteira cresce 25%, para ser lida a 5 m num Full HD.
-- **Passo a passo:** ligado na barra. A cada sistema que o agente usa, o robô para num balão e espera **Espaço**.
+- **Pausas:** "Só quando precisa de você" (padrão) faz a viagem fluir com os anúncios do GPS e parar só na pergunta à Ana e no pedágio. Para comentar cada passo, troque para **Passo a passo**: o robô para em cada anúncio e espera **Espaço**.
+- **Voz do GPS:** ligue na barra para o GPS falar os anúncios. Teste o som antes, porque a voz é a do sistema da máquina.
 - **Painel do apresentador:** tecla **P**. Nele ficam as cenas, os incidentes, o pedágio e as falas da Ana.
 - **Atalhos:** tecla **?** mostra todos.
 
@@ -111,7 +112,7 @@
 - [ ] `docker compose up -d` e o status (`/status`) todo verde.
 - [ ] Uma viagem pelo roteiro (ensaio sem LLM), para aquecer o navegador.
 - [ ] Mundo limpo: **Mundo limpo** no painel do apresentador (ou `./scripts/incidente.sh reset`).
-- [ ] Modo telão (**T**) e passo a passo ligados; o navegador em tela cheia (`F11`).
+- [ ] Modo telão (**T**) ligado, as pausas escolhidas e, se for usar, a voz do GPS testada no som da sala; o navegador em tela cheia (`F11`).
 
 **Se algo der errado:**
 

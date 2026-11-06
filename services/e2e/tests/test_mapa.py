@@ -114,3 +114,25 @@ def test_ancora_fora_acende_o_farol_e_a_viagem_desvia(pagina, mundo_limpo):
     avisos = pagina.locator(".mapa__avisos").inner_text()
     assert "Rua interditada" in avisos and "Âncora" in avisos
     assert re.search(r"apólice (FAR|HOR)-", avisos)
+
+
+def test_abrir_uma_viagem_pela_url_nao_a_toca_de_novo(pagina, mundo_limpo):
+    # Iniciada aqui, a viagem anima. Reaberta pela URL (histórico, aba restaurada, volta do login),
+    # ela aparece pronta: sem balão, sem andar de novo, com a fila vazia.
+    pagina.goto(f"{WEB}/mapa", wait_until="networkidle")
+    viajar_pelo_roteiro(pagina)
+    esperar_a_fila(pagina)
+    mapa = pagina.locator(".mapa")
+    url = pagina.url
+    assert "execucao=" in url
+    visitados = int(mapa.get_attribute("data-visitadas"))
+
+    pagina.goto(url, wait_until="networkidle")
+    pagina.wait_for_function(
+        "([n]) => { const m = document.querySelector('.mapa').dataset;"
+        " return m.fila === '0' && Number(m.visitadas) === n; }",
+        arg=[visitados],
+        timeout=15_000,
+    )
+    assert mapa.get_attribute("data-balao") == ""
+    assert mapa.get_attribute("data-aguardando") == "nao"

@@ -282,30 +282,38 @@ No código (`web/src/mapa/diretor.ts`):
 --8<-- "web/diretor.ts:retencao"
 ```
 
-### Os balões de fala e o passo a passo
+### Os anúncios do GPS e os modos de pausa
 
-A cada interação, o robô diz o que está fazendo num **balão de fala**, preso acima do pino. O balão nasce de um evento real do barramento, e o texto vem da tool, dos argumentos e do status desse evento (`mapa/baloes.ts`; as frases ficam no arquivo de mensagens), nunca de um roteiro:
+O robô anuncia a viagem como um navegador de trânsito, num **balão de fala** preso acima do pino. Os anúncios que são a voz do GPS (apresentação, roteiro, rota, paradas, recálculo, pedágio, pergunta e chegada) vêm com o selo **GPS**, em azul-marinho. Os sistemas que o agente chama ficam com a borda laranja, e falhas e incidentes em vermelho, sempre com ícone.
 
-| Evento | Balão |
+Cada anúncio nasce de um evento real do barramento (`mapa/baloes.ts`). A frase é fixa, no arquivo de mensagens. Os dados vêm do evento: a rota e o motivo que o agente escreveu, a parada, a regra e a estimativa. Nada vem de um roteiro.
+
+| Evento | Anúncio |
 | --- | --- |
-| `tool.called`, ok | A frase da tool em pt-BR ("Consultando o perfil da cliente no CRM", "Cotando com a Farol"), com a tool e a duração em mono embaixo |
-| `tool.called`, com erro | "API de cotação da Âncora não respondeu" ou "… recusou: <motivo>", em vermelho e com ícone |
-| `tool.called`, barrada pelo gateway | "O gateway barrou a chamada: fora da rota da skill", em vermelho e com ícone |
-| `incident.detected` | A metáfora e a descrição ("Rua interditada: …"), em vermelho e com ícone |
-| `route.recalculated` | "Recalculando: <motivo>", com a regra embaixo |
-| `human.required` | "Pedágio: <motivo>" |
+| `run.started` | "Olá! Sou o GPS do Banco Bússola…", com a partida (o canal) e o destino (o pedido da cliente). Sem skill: "Saindo sem GPS…". Sem contexto: "Saindo sem mapa…" |
+| `skill.loaded` | "Roteiro carregado: Contratação de seguro residencial. Vou seguir por ele, com 18 ferramentas liberadas no caminho." |
+| `route.planned` | "Rota rápida traçada: 9 paradas, ~5 min, risco baixo.", com o motivo escrito pelo agente embaixo |
+| `step.started` | "Parada 3 de 9: Consentimento e LGPD.", com o que o GPS vai fazer ali e "A seguir: Elegibilidade." (ou "É a última parada.") |
+| `tool.called` | A frase da tool em pt-BR ("Cotando com a Farol"), com a tool e a duração em mono. Falha: "… não respondeu" ou "O gateway barrou a chamada", em vermelho |
+| `incident.detected` | "Atenção: rua interditada à frente.", com a descrição do incidente |
+| `route.recalculated` | "Recalculando… Saio da Rota rápida e sigo pela Rota assistida." (ou "Sigo na Rota econômica, por outro caminho."), com o motivo e "Nova estimativa: ~6 min (antes ~5 min).", e a regra em mono |
+| `human.required` | "Pedágio à frente: preciso da aprovação de um especialista para seguir.", com o motivo |
+| `client.asked` | "Preciso de uma resposta da cliente.", com a primeira frase da pergunta (a pergunta inteira fica no painel Conversa) |
+| `run.finished` | "Você chegou ao destino: apólice FAR-… emitida." ou o motivo de a viagem ter parado |
 
-As tools de `contexto.*` também falam ("Consultando o mapa: quais rotas levam ao destino"), mas o robô fica onde está, porque elas não têm prédio. Os passos do modelo, o protocolo e a conversa não têm balão.
+**A voz do GPS** (interruptor "Voz do GPS" na barra, desligado por padrão e guardado no navegador) fala cada anúncio com a síntese de voz do navegador, em pt-BR. Usa as vozes do próprio sistema, como Microsoft Maria no Windows e Luciana no macOS, e funciona sem rede (`mapa/voz.ts`). Fala o anúncio e o porquê, mas não o detalhe em mono. Se o navegador não tem voz em português, o interruptor fica desligado e explica por quê. Com a voz ligada, o mapa espera a fala terminar antes do próximo anúncio. Um teto de tempo garante que nada trava se a voz não responder.
 
-**Passo a passo** (toggle na barra, ligado por padrão e guardado no navegador):
+**Os modos de pausa** (seletor "Pausas" na barra, guardado no navegador):
 
-- o robô chega ao lugar, o balão abre e o diretor **espera o apresentador**;
-- "Seguir", no balão ou no painel do apresentador, ou as teclas Espaço, Enter e →, fazem o balão sumir e a jornada continuar;
-- o selo mostra "Aguardando o apresentador".
+| Modo | Quando o mapa espera |
+| --- | --- |
+| **Só quando precisa de você** (padrão) | Na pergunta à cliente, até a resposta chegar, e no pedágio, até o apresentador mandar seguir. O resto corre com cada anúncio no tempo de leitura |
+| **Passo a passo** | Em cada anúncio, até o apresentador mandar seguir ("Seguir" no balão ou no painel, ou as teclas Espaço, Enter e →). A pergunta à cliente espera a resposta |
+| **Contínuo** | Nunca espera o apresentador. Cada anúncio fica o tempo de ser lido (de 1,1 s a 7 s, conforme o tamanho), e a pergunta espera a resposta |
 
-**O que fica parado é só o mapa.** O agente segue trabalhando de verdade, então os tempos, os custos e o Raio-X não mudam. O mapa só mostra o próximo evento real quando o apresentador pede.
+O selo mostra "Aguardando o apresentador" ou "Aguardando a resposta da Ana". Trocar de modo com um balão esperando solta o balão, se o novo modo não para ali. "Pular para o fim" fecha o balão, cala a voz e alcança o presente.
 
-Desligado, a viagem corre sozinha, e o balão fica cerca de 1 s na tela e some. "Pular para o fim" fecha o balão e alcança o presente. Os testes e os vídeos destes bastidores usam o passo a passo desligado.
+**O que fica parado é só o mapa.** O agente segue trabalhando de verdade, então os tempos, os custos e o Raio-X não mudam. O mapa só mostra o próximo evento real quando chega a vez dele. Os testes e os vídeos destes bastidores usam o modo contínuo, e o ensaio de palco usa o passo a passo.
 
 **Por que isso é honesto:**
 

@@ -34,7 +34,8 @@ def navegador():
         b.close()
 
 
-PASSO_A_PASSO_DESLIGADO = "localStorage.setItem('bussola:passo-a-passo', 'nao')"
+# Sem pausas: as viagens dos testes correm sozinhas, com os anúncios no tempo de leitura.
+PAUSAS_CONTINUO = "localStorage.setItem('bussola:pausas', 'continuo')"
 
 
 @pytest.fixture
@@ -42,7 +43,7 @@ def pagina(navegador) -> Page:
     contexto = navegador.new_context(viewport={"width": 1600, "height": 1000})
     contexto.add_cookies(sessao.cookies(WEB))
     # As viagens dos testes correm sozinhas (passo a passo desligado); o teste dos balões o liga.
-    contexto.add_init_script(PASSO_A_PASSO_DESLIGADO)
+    contexto.add_init_script(PAUSAS_CONTINUO)
     pg = contexto.new_page()
     erros: list[str] = []
     pg.on("pageerror", lambda e: erros.append(str(e)))
@@ -67,7 +68,8 @@ def mundo_limpo():
     simulador("/reset")
 
 
-def viajar_pelo_roteiro(pg: Page, modo: str = "Com skill (GPS)", limite_s: int = 90) -> int:
+# Com os anúncios do GPS no tempo de leitura, uma viagem pelo roteiro leva ~2,5 min no mapa (medido em 06/11).
+def viajar_pelo_roteiro(pg: Page, modo: str = "Com skill (GPS)", limite_s: int = 360) -> int:
     """Inicia uma viagem pelo roteiro na barra do mapa e responde pela Ana até o fim."""
     pg.click("#viagem-modo")
     pg.get_by_role("option", name=modo).click()
@@ -89,7 +91,7 @@ def viajar_pelo_roteiro(pg: Page, modo: str = "Com skill (GPS)", limite_s: int =
     raise AssertionError("A viagem não terminou no tempo limite.")
 
 
-def esperar_a_fila(pg: Page, limite_s: int = 120) -> None:
+def esperar_a_fila(pg: Page, limite_s: int = 240) -> None:
     """Espera o diretor de animações mostrar todos os eventos da viagem."""
     pg.wait_for_function(
         "document.querySelector('.mapa').dataset.fila === '0'", timeout=limite_s * 1000
