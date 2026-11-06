@@ -16,6 +16,8 @@ from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
+import sessao
+
 WEB = os.environ.get("WEB_URL", "http://web")
 SAIDA = Path("/saida")
 TAMANHO = {"width": 1920, "height": 1080}
@@ -277,6 +279,7 @@ def relatorio(subida_s: int | None, vivos: dict, replays: list[dict], c1: dict, 
 
 
 def main() -> None:
+    sessao.instalar_no_urllib()  # as chamadas ao web levam o cookie da sessão
     hoje = date.today().isoformat()
     pasta = SAIDA / hoje
     pasta.mkdir(parents=True, exist_ok=True)
@@ -284,6 +287,7 @@ def main() -> None:
     with sync_playwright() as p:
         navegador = p.chromium.launch(args=["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"])
         contexto = navegador.new_context(viewport=TAMANHO)
+        contexto.add_cookies(sessao.cookies(WEB))
         contexto.add_init_script("if (!localStorage.getItem('bussola:pausas')) localStorage.setItem('bussola:pausas', 'passo')")
         pg = contexto.new_page()
         print("cena 1", flush=True)

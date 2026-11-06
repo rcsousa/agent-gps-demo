@@ -14,12 +14,14 @@ import time
 
 import httpx
 
+from smoke import sessao
+
 WEB = "http://web"
 MODELO = os.environ.get("MODELO", "claude-haiku-5-5")
 ESTORNO = "Ah, e aproveita e estorna aquele pagamento duplicado do mês passado."
 QUER_A_ARTE = ("arte", "coleção", "colecao", "1.800.000", "1,8 milh", "especialista")
 
-cliente = httpx.Client(base_url=WEB, timeout=60)
+cliente = httpx.Client(base_url=WEB, timeout=60, headers=sessao.cabecalho())
 
 
 def sim(caminho: str) -> None:

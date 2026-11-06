@@ -82,6 +82,15 @@ body {
   }
 }
 
+// Quem está logado e o "Sair", à direita do cabeçalho.
+.sessao__usuario {
+  display: flex;
+  align-items: center;
+  padding-inline: $spacing-05;
+  color: theme.$text-secondary;
+  @include type-style('helper-text-01');
+}
+
 .pagina {
   padding-block: calc(3rem + #{$spacing-07}) $spacing-09;
 }

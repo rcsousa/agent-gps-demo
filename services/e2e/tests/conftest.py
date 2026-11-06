@@ -2,12 +2,19 @@
 
 import json
 import os
+import sys
 import urllib.request
+from pathlib import Path
 
 import pytest
 from playwright.sync_api import Page, sync_playwright
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+import sessao  # noqa: E402
+
 WEB = os.environ.get("WEB_URL", "http://web")
+# Os testes passam pelo web já logados (sessão de serviço); test_autenticacao cobre o caminho sem sessão.
+sessao.instalar_no_urllib()
 # WebGL por software (o container não tem GPU).
 ARGS = ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]
 
@@ -34,6 +41,7 @@ PAUSAS_CONTINUO = "localStorage.setItem('bussola:pausas', 'continuo')"
 @pytest.fixture
 def pagina(navegador) -> Page:
     contexto = navegador.new_context(viewport={"width": 1600, "height": 1000})
+    contexto.add_cookies(sessao.cookies(WEB))
     # As viagens dos testes correm sozinhas (passo a passo desligado); o teste dos balões o liga.
     contexto.add_init_script(PAUSAS_CONTINUO)
     pg = contexto.new_page()
@@ -43,6 +51,14 @@ def pagina(navegador) -> Page:
     yield pg
     contexto.close()
     assert not erros, f"Erros de JavaScript na página: {erros}"
+
+
+@pytest.fixture
+def pagina_sem_sessao(navegador) -> Page:
+    contexto = navegador.new_context(viewport={"width": 1600, "height": 1000})
+    pg = contexto.new_page()
+    yield pg
+    contexto.close()
 
 
 @pytest.fixture

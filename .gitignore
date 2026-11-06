@@ -12,6 +12,7 @@ __pycache__/
 # Node
 node_modules/
 dist/
+dist-entrar/
 
 # MkDocs
 site/

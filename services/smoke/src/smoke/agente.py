@@ -15,6 +15,8 @@ import sys
 
 import httpx
 
+from smoke import sessao
+
 API = "http://web/api"
 
 
@@ -65,7 +67,9 @@ def _linha(evento: dict) -> str:
 
 
 def acompanhar(ident: str, auto: bool) -> int:
-    with httpx.stream("GET", f"{API}/execucoes/{ident}/eventos", timeout=None) as resposta:
+    with httpx.stream(
+        "GET", f"{API}/execucoes/{ident}/eventos", headers=sessao.cabecalho(), timeout=None
+    ) as resposta:
         for linha in resposta.iter_lines():
             if not linha.startswith("data:"):
                 continue
@@ -74,7 +78,12 @@ def acompanhar(ident: str, auto: bool) -> int:
             if evento["tipo"] == "client.asked":
                 opcoes = evento["dados"]["opcoes"]
                 if auto and opcoes:
-                    httpx.post(f"{API}/execucoes/{ident}/resposta", json={"texto": opcoes[0]}, timeout=10)
+                    httpx.post(
+                        f"{API}/execucoes/{ident}/resposta",
+                        json={"texto": opcoes[0]},
+                        headers=sessao.cabecalho(),
+                        timeout=10,
+                    )
                 else:
                     print(
                         f"    responda em outro terminal: ./scripts/agente.sh responder {ident} --sugestao 1",
@@ -99,7 +108,7 @@ def main() -> int:
             corpo["modelo"] = args[args.index("--modelo") + 1]
         if "--provedor" in args:
             corpo["provedor"] = args[args.index("--provedor") + 1]
-        resposta = httpx.post(f"{API}/execucoes", json=corpo, timeout=10)
+        resposta = httpx.post(f"{API}/execucoes", json=corpo, headers=sessao.cabecalho(), timeout=10)
         if resposta.status_code != 201:
             print(resposta.text, file=sys.stderr)
             return 1
@@ -109,17 +118,26 @@ def main() -> int:
     if comando == "responder" and len(args) >= 3:
         ident = args[1]
         if args[2] == "--sugestao":
-            pergunta = httpx.get(f"{API}/execucoes/{ident}", timeout=10).json().get("pergunta") or {}
+            pergunta = (
+                httpx.get(f"{API}/execucoes/{ident}", headers=sessao.cabecalho(), timeout=10)
+                .json()
+                .get("pergunta")
+                or {}
+            )
             texto = pergunta.get("opcoes", [""])[int(args[3]) - 1]
         else:
             texto = args[2]
-        resposta = httpx.post(f"{API}/execucoes/{ident}/resposta", json={"texto": texto}, timeout=10)
+        resposta = httpx.post(
+            f"{API}/execucoes/{ident}/resposta", json={"texto": texto}, headers=sessao.cabecalho(), timeout=10
+        )
         print(resposta.json())
         return 0 if resposta.status_code == 200 else 1
     if comando == "estado" and len(args) >= 2:
         print(
             json.dumps(
-                httpx.get(f"{API}/execucoes/{args[1]}", timeout=10).json(), ensure_ascii=False, indent=2
+                httpx.get(f"{API}/execucoes/{args[1]}", headers=sessao.cabecalho(), timeout=10).json(),
+                ensure_ascii=False,
+                indent=2,
             )
         )
         return 0
