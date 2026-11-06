@@ -413,6 +413,16 @@ def test_com_skill_recalcula_quando_a_ancora_cai(mundo_limpo):
         r for r in _do_tipo(eventos, "route.recalculated") if r["regra"].startswith("Rua interditada")
     ]
     assert [(r["de"], r["para"]) for r in recalculos] == [("rota-rapida", "rota-economica")]
+    # Na rota econômica, a adequação de cada produto cotado, antes da proposta (issue #25).
+    chamadas = [c for c in _do_tipo(eventos, "tool.called") if c["status"] == "ok"]
+    cotados = {c["argumentos"]["seguradora"] for c in chamadas if c["tool"] == "seguradoras.cotar_seguro"}
+    proposta = next(i for i, c in enumerate(chamadas) if c["tool"] == "seguradoras.gerar_proposta")
+    avaliados = {
+        c["argumentos"]["produto_id"].removeprefix("produto-residencial-")
+        for c in chamadas[:proposta]
+        if c["tool"] == "risco.avaliar_adequacao" and "premio_anual" in c["argumentos"]
+    }
+    assert cotados == {"farol", "horizonte"} and avaliados == cotados
     fim = _do_tipo(eventos, "run.finished")[0]
     assert fim["status"] == "concluida" and not fim["apolice"].startswith("ANC-")
 

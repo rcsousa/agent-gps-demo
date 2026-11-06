@@ -29,7 +29,7 @@ As quatro skills da demo:
 | --- | --- |
 | `contratacao-seguro-residencial` | Rota principal: as 9 paradas, do pedido à apólice |
 | `verificacao-consentimento` | Trecho reutilizável: base legal LGPD e renovação |
-| `cotacao-multisseguradora` | Rota econômica: cotar as três e comparar |
+| `cotacao-multisseguradora` | Rota econômica: cotar as três, avaliar a adequação de cada produto cotado e recomendar entre os adequados |
 | `escalonamento-humano` | O pedágio: aprovação de um especialista acima da alçada |
 
 ### SEP-2640: skills servidas por MCP
