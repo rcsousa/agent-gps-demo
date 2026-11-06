@@ -317,6 +317,25 @@ class SessaoRoteiro:
         if not cotacoes:
             yield Fim("Ana, nenhuma seguradora parceira está respondendo agora. Retomo assim que voltarem.")
             return
+        # Com mais de uma cotação (rota econômica), a adequação de cada produto cotado, com o prêmio
+        # dela; a recomendação sai só das adequadas (skill cotacao-multisseguradora).
+        if len(cotacoes) > 1:
+            adequadas = []
+            for cotacao in cotacoes:
+                adequacao = self._dados(
+                    (
+                        yield from self._uma(
+                            "risco.avaliar_adequacao",
+                            **ana,
+                            produto_id=cotacao["produto_id"],
+                            necessidade="Seguro residencial para o meu apartamento",
+                            premio_anual=cotacao["premio_anual"],
+                        )
+                    )
+                )
+                if adequacao.get("adequado", True):
+                    adequadas.append(cotacao)
+            cotacoes = adequadas or cotacoes
         escolhida = min(cotacoes, key=lambda c: c["premio_anual"])
 
         # 7. Proposta e aceite

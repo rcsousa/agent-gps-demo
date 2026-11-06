@@ -167,7 +167,7 @@ Skills previstas:
 | --- | --- | --- |
 | `contratacao-seguro-residencial` | Rota principal da demo | contexto, cliente, consentimento, risco, seguradoras, pagamentos |
 | `verificacao-consentimento` | Trecho reutilizável, chamado por outras skills | consentimento, contexto |
-| `cotacao-multisseguradora` | Rota econômica | seguradoras, contexto |
+| `cotacao-multisseguradora` | Rota econômica: cota as três, avalia a adequação de cada produto cotado e recomenda entre os adequados; a proposta é só da oferta escolhida | seguradoras, contexto, risco |
 | `escalonamento-humano` | Pedágio de aprovação | atendimento, contexto |
 
 **Contraste obrigatório:** a mesma tarefa é executada (a) sem camada de contexto, (b) com todas as tools do gateway, mas sem skill, e (c) com skill. Métricas comparadas na tela: chamadas de tool, tools irrelevantes chamadas, tokens, tempo, violações de regra e se a resposta final está correta.
