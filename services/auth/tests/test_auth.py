@@ -125,7 +125,8 @@ def test_usuario_removido_do_env_perde_a_sessao():
 
 
 def test_sem_usuarios_o_login_explica():
-    cliente = TestClient(criar_app(Config(auth_segredo=SEGREDO)))
+    # Explícito: o Config também lê o ambiente, e o container de testes recebe o AUTH_USUARIOS do .env.
+    cliente = TestClient(criar_app(Config(auth_usuarios="", auth_segredo=SEGREDO)))
     resposta = _entrar(cliente)
     assert resposta.status_code == 503 and resposta.json()["erro"] == "sem_usuarios"
 
@@ -143,7 +144,7 @@ def test_sessao_interna_so_com_o_segredo():
 
 
 def test_sessao_interna_desligada_sem_segredo_no_env():
-    cliente = TestClient(criar_app(Config(auth_usuarios=f"ana={HASH}")))
+    cliente = TestClient(criar_app(Config(auth_usuarios=f"ana={HASH}", auth_segredo="")))
     assert cliente.post("/interno/sessao", json={}, headers={"Authorization": "Bearer "}).status_code == 403
 
 
@@ -157,6 +158,13 @@ def test_criar_usuario_gera_a_linha_do_env(monkeypatch, capsys):
     nome, guardado = linha.split("=", 1)
     assert nome == "maria" and senhas.conferir(SENHA, guardado)
     assert ler_usuarios(linha) == {"maria": guardado}
+
+
+def test_criar_usuario_ignora_o_fim_de_linha_do_windows(monkeypatch, capsys):
+    monkeypatch.setattr("sys.stdin", __import__("io").StringIO(SENHA + "\r\n"))
+    assert criar_usuario(["maria", "--senha-stdin"]) == 0
+    guardado = capsys.readouterr().out.strip().split("=", 1)[1]
+    assert senhas.conferir(SENHA, guardado)
 
 
 def test_criar_usuario_recusa_senha_curta(monkeypatch):

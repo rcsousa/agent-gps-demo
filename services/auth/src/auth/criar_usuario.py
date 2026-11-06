@@ -23,7 +23,9 @@ def main(argumentos: list[str]) -> int:
         print("Nome inválido: use letras minúsculas, números, ponto, hífen ou sublinhado.", file=sys.stderr)
         return 2
     if "--senha-stdin" in argumentos:
-        senha = sys.stdin.readline().rstrip("\n")
+        # No Windows (PowerShell, Git Bash), o echo termina a linha com \r\n: sem tirar o \r, ele
+        # entraria no hash, e a senha gravada nunca conferiria com a digitada no login.
+        senha = sys.stdin.readline().rstrip("\r\n")
     else:
         senha = getpass.getpass(f"Senha para {nome}: ")
         if getpass.getpass("Repita a senha: ") != senha:
