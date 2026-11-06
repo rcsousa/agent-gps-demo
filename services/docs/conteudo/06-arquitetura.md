@@ -5,6 +5,9 @@
 
 ## Aprofundamento técnico
 
+!!! tip "Aprofunde na referência técnica"
+    [A arquitetura em C4, a sequência de uma viagem real e o padrão do gateway MCP em detalhe](referencia/arquitetura.md).
+
 ### Fluxo
 
 Quem fala com quem. O diagrama é gerado no build a partir do `docker-compose.yml` e da lista de servidores do gateway (`mcp-gateway/config/upstreams.yaml`): um serviço novo aparece aqui sem ninguém editar a doc.

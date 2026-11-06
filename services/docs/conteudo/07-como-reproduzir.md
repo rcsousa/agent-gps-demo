@@ -361,6 +361,16 @@ curl -s -X POST localhost:8080/api/execucoes/<id>/resposta -H 'Content-Type: app
 
 O roteiro de fala e o checklist do dia estão no capítulo 9.
 
+### Atualizar a referência técnica
+
+Os diagramas, as tabelas e o código citado na [referência técnica](referencia/index.md) saem do repositório a cada build do `docs`. Só o catálogo do gateway (tools, prompts e skills) é um arquivo versionado, porque o build não tem o gateway no ar. Quando uma tool, um prompt ou uma skill mudar, regenere o catálogo com a demo no ar:
+
+```bash
+./scripts/gerar-referencia.sh
+```
+
+O smoke falha se o catálogo versionado divergir do gateway vivo.
+
 ### Medir com o modelo real
 
 `experimento.sh` roda cada incidente nos modos `sem_skill` e `com_skill`, com o modelo do `.env`, e confere pelo barramento se o agente seguiu a regra do banco. **Gasta tokens de verdade.**

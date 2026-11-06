@@ -12,6 +12,9 @@
 
 ## Aprofundamento técnico
 
+!!! tip "Aprofunde na referência técnica"
+    [O modelo do grafo (T-Box e A-Box), a profundidade, o modelo físico no Neo4j e o Cypher de cada tool](referencia/grafo.md).
+
 ### A metáfora, peça por peça
 
 | Navegação | Camada de contexto | Onde fica no código |
