@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <title>Entrar · Banco Bússola</title>
+    <style>
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #161616; color: #f4f4f4;
+             font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+      a { color: #78a9ff; }
+    </style>
+  </head>
+  <body>
+    <!-- Sem sessão: leva à tela de login guardando o destino. Dentro do painel de bastidores
+         (um iframe), leva a janela inteira, para o login não abrir espremido no painel. -->
+    <p><a id="entrar" href="/entrar/">Entre para acessar a demo.</a></p>
+    <script>
+      (function () {
+        var alvo = window;
+        try { if (window.top && window.top.location.host === window.location.host) alvo = window.top; } catch (e) {}
+        var destino = alvo.location.pathname + alvo.location.search + alvo.location.hash;
+        var url = '/entrar/?volta=' + encodeURIComponent(destino);
+        document.getElementById('entrar').href = url;
+        alvo.location.replace(url);
+      })();
+    </script>
+  </body>
+</html>

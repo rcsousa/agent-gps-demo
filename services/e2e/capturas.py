@@ -16,6 +16,8 @@ from pathlib import Path
 
 from playwright.sync_api import Page, sync_playwright
 
+import sessao
+
 WEB = "http://web"
 SAIDA = Path("/saida")
 TAMANHO = {"width": 1280, "height": 800}
@@ -59,6 +61,7 @@ def video(navegador, cena: str) -> None:
     gravacao, visao, alvo = VIDEOS[cena]
     pasta = Path(tempfile.mkdtemp())
     contexto = navegador.new_context(viewport=TAMANHO, record_video_dir=str(pasta), record_video_size=TAMANHO)
+    contexto.add_cookies(sessao.cookies(WEB))
     contexto.add_init_script(PASSO_A_PASSO_DESLIGADO)
     pg = contexto.new_page()
     url = f"{WEB}/mapa?gravacao={gravacao}&cena={cena}" + ("&visao=raio-x" if visao == "raio-x" else "")
@@ -132,6 +135,7 @@ def captura(navegador, cena: str) -> None:
 
 
 def main() -> None:
+    sessao.instalar_no_urllib()  # as chamadas ao web levam o cookie da sessão
     cenas = sys.argv[1:] or [*CAPTURAS, *VIDEOS]
     SAIDA.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as p:

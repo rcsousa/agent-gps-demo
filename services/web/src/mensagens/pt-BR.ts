@@ -2,11 +2,42 @@
 
 const plural = (n: number, um: string, varios: string) => (n === 1 ? `1 ${um}` : `${n} ${varios}`);
 
+const marca = {
+  prefixo: 'Banco',
+  nome: 'Bússola',
+  assinatura: 'Seu próximo passo, com mais sentido.',
+};
+
+// A tela de login é um build público à parte: importa só este objeto (e a marca), não os
+// textos da experiência, que ficam atrás do login.
+export const mensagensDoLogin = {
+  marca,
+  tituloDaPagina: 'Entrar · Banco Bússola',
+  titulo: 'Entrar na demo',
+  subtitulo: 'GPS de Contexto: agentes que chegam mais longe, porque entendem o caminho.',
+  usuario: 'Usuário',
+  senha: 'Senha',
+  mostrarSenha: 'Mostrar senha',
+  esconderSenha: 'Esconder senha',
+  entrar: 'Entrar',
+  entrando: 'Entrando…',
+  obrigatorio: 'Preencha usuário e senha.',
+  erroTitulo: 'Não foi possível entrar',
+  erros: {
+    credenciais: 'Usuário ou senha incorretos.',
+    muitasTentativas: (minutos: number) =>
+      `Muitas tentativas erradas. Tente de novo em ${minutos} ${minutos === 1 ? 'minuto' : 'minutos'}.`,
+    semUsuarios: 'Nenhum usuário está configurado no servidor. Crie um com ./scripts/criar-usuario.sh.',
+    falha: 'O servidor não respondeu. Tente de novo em instantes.',
+  },
+  rodape: 'Demonstração com banco, seguradoras e dados fictícios.',
+};
+
 export const mensagens = {
-  marca: {
-    prefixo: 'Banco',
-    nome: 'Bússola',
-    assinatura: 'Seu próximo passo, com mais sentido.',
+  marca,
+  sessao: {
+    sair: 'Sair',
+    usuario: (nome: string) => `Conectado como ${nome}`,
   },
   navegacao: {
     rotulo: 'Navegação principal',

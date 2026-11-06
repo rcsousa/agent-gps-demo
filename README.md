@@ -11,10 +11,14 @@ A especificação completa está em [`docs/spec.md`](docs/spec.md).
 Pré-requisito: Docker com Compose v2. Nada é instalado fora dos containers.
 
 ```bash
-cp .env.example .env          # ajuste senhas e chaves
+cp .env.example .env              # ajuste senhas e chaves
+./scripts/criar-usuario.sh ana    # pede a senha e imprime a linha do usuário
+# cole a linha em AUTH_USUARIOS no .env e troque o AUTH_SEGREDO (openssl rand -base64 32)
 docker compose up -d --build
-docker compose ps             # todos os serviços "healthy"
+docker compose ps                 # todos os serviços "healthy"
 ```
+
+**Login.** Nenhuma parte da demo abre sem login: quem chega sem sessão vai para <http://localhost:8080/entrar/>, e volta para onde ia depois de entrar. Os usuários ficam no `.env` (`AUTH_USUARIOS`, vários separados por vírgula), com a senha em hash scrypt. Para tirar alguém, apague a entrada e rode `docker compose up -d auth`. Atrás de HTTPS, ligue `AUTH_COOKIE_SEGURO=true`.
 
 | Endereço | O que é |
 | --- | --- |
@@ -24,7 +28,7 @@ docker compose ps             # todos os serviços "healthy"
 | <http://localhost:8080/mapa?eventos=consulta> | Modo Mapa sem SSE: para redes corporativas cujo proxy segura o stream (o mapa também troca sozinho, se nada chegar em 4 s) |
 | <http://localhost:8080/status> | Dashboard de status: serviços, tools, skills e prompts por dentro |
 | <http://localhost:8080/bastidores/> | Bastidores (documentação) |
-| <http://localhost:7474> | Neo4j Browser |
+| <http://localhost:7474> | Neo4j Browser, só no próprio servidor. De outra máquina: `ssh -L 7474:localhost:7474 -L 7687:localhost:7687 <servidor>` |
 
 ## Testes
 

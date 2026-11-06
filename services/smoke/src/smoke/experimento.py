@@ -23,6 +23,7 @@ from typing import Any
 import httpx
 
 from bussola_comum.regras import CASOS, regras
+from smoke import sessao
 
 WEB = "http://web"
 SAIDA = pathlib.Path("/saida")
@@ -54,16 +55,18 @@ def _resposta_da_ana(incidente: str, opcoes: list[str]) -> str:
 def rodar(
     incidente: str, modo: str, pasta: pathlib.Path, modelo: str | None, repeticao: int
 ) -> dict[str, Any]:
-    httpx.post(f"{WEB}/simulador/reset", timeout=30)
+    httpx.post(f"{WEB}/simulador/reset", headers=sessao.cabecalho(), timeout=30)
     if incidente != "caminho-feliz":
-        httpx.post(f"{WEB}/simulador/incidentes/{incidente}/aplicar", timeout=30)
+        httpx.post(f"{WEB}/simulador/incidentes/{incidente}/aplicar", headers=sessao.cabecalho(), timeout=30)
     corpo = {"modo": modo, **({"modelo": modelo} if modelo else {})}
-    resposta_inicio = httpx.post(f"{WEB}/api/execucoes", json=corpo, timeout=30)
+    resposta_inicio = httpx.post(f"{WEB}/api/execucoes", json=corpo, headers=sessao.cabecalho(), timeout=30)
     resposta_inicio.raise_for_status()
     ident = resposta_inicio.json()["id"]
     eventos: list[dict] = []
     inicio = time.time()
-    with httpx.stream("GET", f"{WEB}/api/execucoes/{ident}/eventos", timeout=1800) as resposta:
+    with httpx.stream(
+        "GET", f"{WEB}/api/execucoes/{ident}/eventos", headers=sessao.cabecalho(), timeout=1800
+    ) as resposta:
         for linha in resposta.iter_lines():
             if not linha.startswith("data:"):
                 continue
@@ -71,7 +74,12 @@ def rodar(
             eventos.append(evento)
             if evento["tipo"] == "client.asked":
                 texto = _resposta_da_ana(incidente, evento["dados"].get("opcoes") or ["Sim"])
-                httpx.post(f"{WEB}/api/execucoes/{ident}/resposta", json={"texto": texto}, timeout=30)
+                httpx.post(
+                    f"{WEB}/api/execucoes/{ident}/resposta",
+                    json={"texto": texto},
+                    headers=sessao.cabecalho(),
+                    timeout=30,
+                )
             if evento["tipo"] == "run.finished":
                 break
     resultado = {"incidente": incidente, "modo": modo, "id": ident, "segundos": round(time.time() - inicio)}
@@ -87,7 +95,7 @@ def rodar(
 def precos() -> dict[str, Any] | None:
     """Preços atuais do agente (US$ por milhão de tokens e fatores de cache). None se não houver."""
     try:
-        dados = httpx.get(f"{WEB}/api/llm/modelo", timeout=10).json()
+        dados = httpx.get(f"{WEB}/api/llm/modelo", headers=sessao.cabecalho(), timeout=10).json()
     except (httpx.HTTPError, ValueError):
         return None
     return {
@@ -245,7 +253,7 @@ def main() -> int:
                     r = rodar(incidente, modo, pasta, modelo, repeticao)
                     print(f"r{repeticao} {incidente:28} {modo:10} {r['segundos']} s", flush=True)
                     time.sleep(FOLGA_S)
-        httpx.post(f"{WEB}/simulador/reset", timeout=30)
+        httpx.post(f"{WEB}/simulador/reset", headers=sessao.cabecalho(), timeout=30)
         analisar(pasta)
         return 0
     if args[:1] == ["analisar"] and len(args) > 1:

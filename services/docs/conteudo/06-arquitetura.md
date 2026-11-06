@@ -22,6 +22,7 @@ Quem fala com quem. O diagrama é gerado no build a partir do `docker-compose.ym
 | --- | --- | --- |
 | `web` | Interface (Modo Mapa, Modo Raio-X, apresentador). Também serve os bastidores em `/bastidores/` | React + TypeScript, IBM Carbon, nginx |
 | `docs` | Este site | MkDocs Material com tema Carbon |
+| `auth` | Login da demo. O nginx do `web` confere aqui a sessão de cada requisição | Python, FastAPI |
 | `agent` | Host MCP. Conhece só o gateway e o barramento | Python, FastAPI |
 | `mcp-gateway` | Ponto único de acesso, governança e observação | Python, FastAPI, SDK MCP |
 | `skills-mcp` | Catálogo de skills-workflow (`io.modelcontextprotocol/skills`) | Python, SDK MCP |
@@ -96,7 +97,7 @@ As rotas `/interno/*` do `contexto-mcp` são protegidas por `SIMULADOR_TOKEN`. E
 
 Os `depends_on` usam `condition: service_healthy`, e o `seed` usa `service_completed_successfully`:
 
-`graph` → `seed` (termina) → `contexto-mcp` · (`bus` + os 9 servidores MCP) → `mcp-gateway` → `agent` → `web` (junto com `docs`). O `simulator` sobe depois do `contexto-mcp`.
+`graph` → `seed` (termina) → `contexto-mcp` · (`bus` + os 9 servidores MCP) → `mcp-gateway` → `agent` → `web` (junto com `docs` e `auth`). O `simulator` sobe depois do `contexto-mcp`.
 
 ### O agente: um host MCP que só conhece o gateway
 
@@ -452,6 +453,27 @@ GET /api/execucoes/{id}/eventos/lote  ◄── a alternativa: um lote por consu
 ```
 
 O estado de cada execução fica em `bussola:execucoes:<id>`: status, pergunta pendente e métricas.
+
+### Login: nenhuma parte da demo sem sessão
+
+**Resumo:** quem não está logado não vê nada da experiência, nem a abertura, nem o mapa, nem os bastidores, nem os dados. O nginx do `web` pergunta ao serviço `auth`, a cada requisição, se a sessão é válida. Só a tela de login é pública.
+
+```
+navegador ──► web (nginx) ── auth_request ──► auth /verificar ── 204: segue · 401: barra
+                 ├─ /entrar/   público: a tela de login (build à parte, sem nada da experiência)
+                 ├─ /auth/*    público: entrar, sair, quem sou eu
+                 └─ todo o resto (/, /mapa, /api, /simulador, /bastidores, /abertura, /assets) exige sessão
+```
+
+- **Protegido por padrão.** O `auth_request` fica no nível do servidor no `nginx.conf`, e só as exceções públicas dizem `auth_request off`. Uma rota nova já nasce protegida.
+- **Sem sessão:** uma página recebe 401 com uma página mínima, que leva a `/entrar/?volta=<destino>`, guardando caminho, busca e âncora. Dados e ações (`/api`, `/simulador`) recebem 401 em JSON, e o front leva ao login. Isso vale também quando a sessão vence no meio do uso.
+- **A tela de login** é Carbon g100, no próprio `web`, mas num build à parte (`vite.entrar.config.ts`). O bundle público leva só os textos do login (`mensagensDoLogin`). Depois de entrar, só volta a caminhos do próprio site, nunca a `//outro-site`.
+- **Usuários no `.env`:** `AUTH_USUARIOS=ana=scrypt.…,ricardo=scrypt.…`. A senha fica em hash scrypt (biblioteca padrão do Python), num formato sem `$`, que o Compose interpretaria. Cada linha é gerada por `./scripts/criar-usuario.sh <nome>`. Tirar alguém do `.env` derruba as sessões dele no próximo restart do `auth`.
+- **Sessão em cookie assinado** (HMAC-SHA256 com `AUTH_SEGREDO`), HttpOnly, SameSite=Lax, com validade de `AUTH_SESSAO_HORAS` (12 h). Com `AUTH_COOKIE_SEGURO=true`, o cookie só vai por HTTPS. Não há estado no servidor, e trocar o segredo derruba todas as sessões.
+- **Contra adivinhação:** depois de 5 senhas erradas do mesmo endereço em 5 minutos, o login fica bloqueado até a janela passar. Usuário inexistente e senha errada respondem igual, no mesmo tempo.
+- **Testes, ensaio e capturas** passam pelo web já logados, com uma sessão de serviço (`servico:e2e`, `servico:smoke`) pedida ao `auth` em `/interno/sessao`. Essa rota não passa pelo nginx: só quem está na rede interna do compose e conhece o `AUTH_SEGREDO` chega lá.
+- **O Neo4j não fura o login:** as portas 7474 e 7687 ficam em `127.0.0.1` (`NEO4J_BIND`). De outra máquina, o acesso é por túnel SSH.
+- **Testado** em `auth/tests` (hash, sessão adulterada ou vencida, bloqueio, sessão interna), no smoke (401 sem sessão) e no e2e (`test_autenticacao.py`: páginas, dados, arquivos e bastidores sem sessão, destino preservado, login errado, sair e o login de verdade com `E2E_USUARIO`/`E2E_SENHA`).
 
 ### Eventos até o navegador: SSE, com alternativa por consulta
 

@@ -1,4 +1,14 @@
-import { Content, Header, HeaderMenuItem, HeaderName, HeaderNavigation, Theme } from '@carbon/react';
+import {
+  Content,
+  Header,
+  HeaderGlobalAction,
+  HeaderGlobalBar,
+  HeaderMenuItem,
+  HeaderName,
+  HeaderNavigation,
+  Theme,
+} from '@carbon/react';
+import { Logout } from '@carbon/icons-react';
 
 import { Abertura } from './abertura/Abertura';
 import { Atalhos } from './componentes/Atalhos';
@@ -7,10 +17,12 @@ import { SimboloBussola } from './componentes/SimboloBussola';
 import { PaginaMapa } from './mapa/PaginaMapa';
 import { mensagens } from './mensagens/pt-BR';
 import { aoClicarLink, usePagina } from './navegacao';
+import { sair, useUsuario } from './sessao';
 import { PaginaStatus } from './status/PaginaStatus';
 
 export function App() {
   const pagina = usePagina();
+  const usuario = useUsuario();
   const t = mensagens.navegacao;
   return (
     <Theme theme="g100">
@@ -32,6 +44,17 @@ export function App() {
           </HeaderMenuItem>
           <HeaderMenuItem href="/bastidores/">{t.bastidores}</HeaderMenuItem>
         </HeaderNavigation>
+        <HeaderGlobalBar>
+          {usuario && <span className="sessao__usuario">{mensagens.sessao.usuario(usuario)}</span>}
+          <HeaderGlobalAction
+            aria-label={mensagens.sessao.sair}
+            tooltipAlignment="end"
+            onClick={() => void sair()}
+            className="sessao__sair"
+          >
+            <Logout size={20} />
+          </HeaderGlobalAction>
+        </HeaderGlobalBar>
       </Header>
       {pagina === 'abertura' && (
         <main className="pagina-cheia">

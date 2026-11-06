@@ -240,6 +240,7 @@ Tudo roda em Docker e sobe com um único `docker compose up`. Todo o backend é 
 | Serviço | Papel | Expõe via gateway | Stack |
 | --- | --- | --- | --- |
 | `web` | Modo Mapa, Modo Raio-X, painel do apresentador, bastidores | — | React + TypeScript, IBM Carbon, deck.gl (vista ortográfica), OpenSeadragon |
+| `auth` | Login da demo: o nginx do `web` confere a sessão de cada requisição aqui | — (fora do alcance do agente) | Python, FastAPI |
 | `agent` | Host MCP: descobre skills, planeja, executa e emite eventos para o `web` | — | Python, FastAPI, SDK MCP; Anthropic ou Azure OpenAI |
 | `mcp-gateway` | Ponto único de acesso: agrega tools e skills de todos os servidores, aplica políticas, autentica, registra proveniência e telemetria | Tudo, com nomes qualificados por servidor | Python, SDK MCP, FastAPI |
 | `skills-mcp` | Catálogo de skills-workflow (`io.modelcontextprotocol/skills`) | `skills/list`, `skills/get`, `resources/read` | Python, SDK MCP |
@@ -516,6 +517,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 | --- | --- |
 | Resposta do LLM variar entre ensaios e a cena não sair como esperado | Seeds de cenário fixos, provedor `roteiro` para ensaio e replay offline como plano B (os modelos atuais não aceitam ajuste de temperatura) |
 | Rede ou chave de API falhar no dia | Replay offline e gravação em vídeo de cada cena |
+| Demo num servidor remoto aberta a qualquer um da rede | Login obrigatório em tudo (nginx com `auth_request` no serviço `auth`), usuários com senha em hash scrypt no `.env` e Neo4j publicado só em 127.0.0.1 |
 | Proxy ou antivírus corporativo segurar o SSE e a viagem não aparecer no mapa | Sem evento em 4 s, o mapa passa sozinho para a consulta por lotes (long-polling), com os mesmos eventos; `?eventos=consulta` força esse caminho |
 | A metáfora do mapa parecer só enfeite para o público técnico | Raio-X provando que cada animação é um evento real |
 | Grafo grande demais ficar ilegível | Zoom semântico e limite de 150 a 300 nós |
@@ -543,6 +545,7 @@ O desenvolvimento segue em fases curtas. Cada fase termina com a demo subindo li
 - [x] Painel do apresentador como gaveta no próprio mapa (tecla P), numa tela só
 - [x] Placar: as viagens da sessão, com as regras conferidas pelo agente, e a referência do experimento com os modelos reais
 - [x] Replay offline por gravações versionadas no repositório, tocadas com selo "Replay" visível
+- [x] Login obrigatório para qualquer parte da experiência: serviço `auth` consultado pelo nginx a cada requisição, usuários no `.env`, sessão em cookie assinado; um papel só; Neo4j fechado à rede por padrão
 - [x] Eventos ao navegador por SSE, com alternativa automática por consulta (long-polling) quando a rede segura o stream; selo "Eventos por consulta" visível nesse caso
 - [x] Bastidores num painel lateral com o próprio site (iframe), aberto na seção da cena
 - [x] Animações das cenas em WebM curto com capa, gravadas do replay real; diagramas em SVG gerados no build com Graphviz (funcionam offline)
